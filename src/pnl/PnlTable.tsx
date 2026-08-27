@@ -1,13 +1,22 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, AlertCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { THEME } from '../colors';
 import { PnlData } from './types';
+import { calcEvolution, calcPointsEvolution } from './pnlUtils';
 
 interface PnlTableProps {
   pnl: PnlData;
+  pnlPrevious?: PnlData | null;
+  currentLabel?: string;
+  previousLabel?: string;
 }
 
-export default function PnlTable({ pnl }: PnlTableProps) {
+export default function PnlTable({
+  pnl,
+  pnlPrevious,
+  currentLabel = 'Période actuelle',
+  previousLabel = 'Période précédente',
+}: PnlTableProps) {
   const [showPertesDetails, setShowPertesDetails] = useState(false);
 
   if (!pnl) return null;
@@ -17,172 +26,402 @@ export default function PnlTable({ pnl }: PnlTableProps) {
   const hasPertes = (pnl.pertesStock || 0) > 0;
   const pertesList = pnl.detailsPertes || [];
 
+  const hasComparison = !!pnlPrevious;
+
+  // Helper pour afficher une ligne financière comparative
+  const renderRow = ({
+    title,
+    currentVal,
+    prevVal,
+    prefix = '',
+    isCharge = false,
+    isBold = false,
+    isTotal = false,
+    isGrandTotal = false,
+    currentPct,
+    prevPct,
+    customColor,
+    indent = false,
+    onClick,
+    cursor,
+    leftIcon,
+  }: {
+    title: React.ReactNode;
+    currentVal: number;
+    prevVal?: number;
+    prefix?: '+' | '-' | '';
+    isCharge?: boolean;
+    isBold?: boolean;
+    isTotal?: boolean;
+    isGrandTotal?: boolean;
+    currentPct?: number;
+    prevPct?: number;
+    customColor?: string;
+    indent?: boolean;
+    onClick?: () => void;
+    cursor?: string;
+    leftIcon?: React.ReactNode;
+  }) => {
+    // Évolution
+    let evolBadge: React.ReactNode = null;
+
+    if (hasComparison && prevVal !== undefined) {
+      if (currentPct !== undefined && prevPct !== undefined) {
+        const pEvol = calcPointsEvolution(currentPct, prevPct);
+        const Icon = pEvol.trend === 'good' ? TrendingUp : pEvol.trend === 'bad' ? TrendingDown : Minus;
+        const color = pEvol.trend === 'good' ? THEME.accent.green : pEvol.trend === 'bad' ? THEME.accent.danger : THEME.text.muted;
+        const bg = pEvol.trend === 'good' ? 'rgba(34, 197, 94, 0.12)' : pEvol.trend === 'bad' ? 'rgba(239, 68, 68, 0.12)' : THEME.bg.soft;
+
+        evolBadge = (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: bg, color }}>
+            <Icon size={12} />
+            {pEvol.formattedPoints}
+          </span>
+        );
+      } else {
+        const evol = calcEvolution(currentVal, prevVal, isCharge);
+        const Icon = evol.trend === 'good' ? TrendingUp : evol.trend === 'bad' ? TrendingDown : Minus;
+        const color = evol.trend === 'good' ? THEME.accent.green : evol.trend === 'bad' ? THEME.accent.danger : THEME.text.muted;
+        const bg = evol.trend === 'good' ? 'rgba(34, 197, 94, 0.12)' : evol.trend === 'bad' ? 'rgba(239, 68, 68, 0.12)' : THEME.bg.soft;
+
+        evolBadge = (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: bg, color }}>
+            <Icon size={12} />
+            {evol.formattedPct}
+          </span>
+        );
+      }
+    }
+
+    const currentFormatted = currentPct !== undefined
+      ? `${fmt(currentVal)} Ar (${pct(currentPct)}%)`
+      : `${prefix}${fmt(currentVal)} Ar`;
+
+    const prevFormatted = prevVal !== undefined
+      ? prevPct !== undefined
+        ? `${fmt(prevVal)} Ar (${pct(prevPct)}%)`
+        : `${prefix}${fmt(prevVal)} Ar`
+      : '-';
+
+    return (
+      <div
+        onClick={onClick}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: hasComparison ? 'minmax(220px, 1fr) 150px 140px 100px' : '1fr auto',
+          alignItems: 'center',
+          gap: 12,
+          padding: isGrandTotal
+            ? '14px 16px'
+            : isTotal
+            ? '11px 16px'
+            : '9px 16px 9px ' + (indent ? '28px' : '16px'),
+          fontSize: isGrandTotal ? 14.5 : isTotal ? 13.5 : 12.5,
+          fontWeight: isGrandTotal ? 800 : isBold || isTotal ? 700 : 400,
+          background: isGrandTotal
+            ? THEME.bg.card
+            : isTotal
+            ? THEME.bg.soft
+            : 'transparent',
+          borderBottom: isGrandTotal
+            ? 'none'
+            : isTotal
+            ? `2px solid ${THEME.border.base}`
+            : `1px solid ${THEME.border.base}`,
+          color: customColor || (isGrandTotal || isTotal ? THEME.text.primary : THEME.text.secondary),
+          cursor: cursor || 'default',
+          transition: 'background 0.15s ease',
+        }}
+      >
+        {/* Libellé du poste */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {leftIcon}
+          <span>{title}</span>
+        </div>
+
+        {/* Valeur actuelle */}
+        <div style={{ textAlign: 'right', fontWeight: isGrandTotal || isBold || isTotal ? 700 : 600, color: customColor || (isTotal ? THEME.text.primary : THEME.text.primary) }}>
+          {currentFormatted}
+        </div>
+
+        {/* Valeur précédente (si comparaison) */}
+        {hasComparison && (
+          <div style={{ textAlign: 'right', color: THEME.text.muted, fontSize: 12 }}>
+            {prevFormatted}
+          </div>
+        )}
+
+        {/* Badge d'évolution (si comparaison) */}
+        {hasComparison && (
+          <div style={{ textAlign: 'right' }}>
+            {evolBadge}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr', lg: '1fr', gap: 14 }}>
-      <div style={{ background: THEME.bg.card, borderRadius: 12, border: `1px solid ${THEME.border.base}`, overflow: 'hidden' }}>
-        <div style={{ padding: '14px 16px', background: THEME.bg.soft, borderBottom: `1px solid ${THEME.border.base}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div style={{ background: THEME.bg.card, borderRadius: 12, border: `1px solid ${THEME.border.base}`, overflow: 'hidden' }}>
+      {/* En-tête du tableau */}
+      <div style={{
+        padding: '12px 16px',
+        background: THEME.bg.soft,
+        borderBottom: `1px solid ${THEME.border.base}`,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 8,
+      }}>
+        <div>
           <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: THEME.text.primary }}>
             Structure du Compte de Résultat (P&L)
           </h3>
-          <span style={{ fontSize: 11, color: THEME.text.muted, fontWeight: 600 }}>Valeurs en Ariary (Ar)</span>
+          <div style={{ fontSize: 11, color: THEME.text.muted, marginTop: 2 }}>
+            {hasComparison ? `Comparaison active : ${currentLabel} vs ${previousLabel}` : 'Valeurs en Ariary (Ar)'}
+          </div>
+        </div>
+        <span style={{ fontSize: 11, color: THEME.text.muted, fontWeight: 600 }}>
+          Montants en Ariary (Ar)
+        </span>
+      </div>
+
+      {/* En-têtes de colonnes si comparaison */}
+      {hasComparison && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(220px, 1fr) 150px 140px 100px',
+          alignItems: 'center',
+          gap: 12,
+          padding: '8px 16px',
+          background: THEME.bg.soft,
+          borderBottom: `1px solid ${THEME.border.base}`,
+          fontSize: 11,
+          fontWeight: 700,
+          color: THEME.text.muted,
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+        }}>
+          <div>Poste Comptable</div>
+          <div style={{ textAlign: 'right' }}>{currentLabel}</div>
+          <div style={{ textAlign: 'right' }}>{previousLabel}</div>
+          <div style={{ textAlign: 'right' }}>Évolution</div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {/* I. PRODUITS D'EXPLOITATION */}
+        <div style={{ background: THEME.bg.soft, padding: '7px 16px', fontWeight: 700, fontSize: 11.5, color: THEME.text.primary, borderBottom: `1px solid ${THEME.border.base}` }}>
+          I. PRODUITS D'EXPLOITATION
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {/* I. PRODUITS D'EXPLOITATION */}
-          <div style={{ background: THEME.bg.soft, padding: '8px 16px', fontWeight: 700, fontSize: 12, color: THEME.text.primary, borderBottom: `1px solid ${THEME.border.base}` }}>
-            I. PRODUITS D'EXPLOITATION
-          </div>
+        {renderRow({
+          title: "Chiffre d'Affaires (Ventes réalisées)",
+          currentVal: pnl.chiffreAffaires,
+          prevVal: pnlPrevious?.chiffreAffaires,
+          prefix: '+',
+          isCharge: false,
+          isBold: true,
+          customColor: THEME.accent.green,
+          indent: true,
+        })}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 24px', fontSize: 13, borderBottom: `1px solid ${THEME.border.base}` }}>
-            <span style={{ color: THEME.text.secondary }}>Chiffre d'Affaires (Ventes réalisées)</span>
-            <strong style={{ color: THEME.accent.green }}>+{fmt(pnl.chiffreAffaires)} Ar</strong>
-          </div>
+        {/* II. CHARGES D'EXPLOITATION (COGS) */}
+        <div style={{ background: THEME.bg.soft, padding: '7px 16px', fontWeight: 700, fontSize: 11.5, color: THEME.text.primary, borderBottom: `1px solid ${THEME.border.base}`, marginTop: 4 }}>
+          II. CHARGES DIRECTES SUR VENTES (COGS)
+        </div>
 
-          {/* II. CHARGES D'EXPLOITATION */}
-          <div style={{ background: THEME.bg.soft, padding: '8px 16px', fontWeight: 700, fontSize: 12, color: THEME.text.primary, borderBottom: `1px solid ${THEME.border.base}`, marginTop: 4 }}>
-            II. CHARGES D'EXPLOITATION
-          </div>
+        {renderRow({
+          title: "Coût d'achat des marchandises vendues (Prix achat d'origine)",
+          currentVal: pnl.costMarchandises,
+          prevVal: pnlPrevious?.costMarchandises,
+          prefix: '-',
+          isCharge: true,
+          customColor: THEME.accent.orange,
+          indent: true,
+        })}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 24px', fontSize: 13, borderBottom: `1px solid ${THEME.border.base}` }}>
-            <span style={{ color: THEME.text.secondary }}>Coût d'achat des marchandises vendues (Prix d'achat unitaire d'origine)</span>
-            <span style={{ color: THEME.accent.orange, fontWeight: 600 }}>-{fmt(pnl.costMarchandises)} Ar</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 24px', fontSize: 13, borderBottom: `1px solid ${THEME.border.base}` }}>
-            <span style={{ color: THEME.text.secondary }}>Fret & transport d'acheminement des marchandises vendues</span>
-            <span style={{ color: THEME.accent.orange, fontWeight: 600 }}>-{fmt(pnl.fretMarchandises)} Ar</span>
-          </div>
+        {renderRow({
+          title: "Fret & logistique d'acheminement des marchandises vendues",
+          currentVal: pnl.fretMarchandises,
+          prevVal: pnlPrevious?.fretMarchandises,
+          prefix: '-',
+          isCharge: true,
+          customColor: THEME.accent.orange,
+          indent: true,
+        })}
 
-          {/* MARGE BRUTE */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', fontSize: 13.5, background: THEME.bg.soft, borderBottom: `2px solid ${THEME.border.base}`, fontWeight: 700 }}>
-            <span style={{ color: THEME.text.primary }}>MARGE COMMERCIALE BRUTE</span>
-            <span style={{ color: THEME.accent.green }}>{fmt(pnl.margeBrute)} Ar ({pct(pnl.margeBrutePct)}%)</span>
-          </div>
+        {/* MARGE BRUTE */}
+        {renderRow({
+          title: 'MARGE COMMERCIALE BRUTE',
+          currentVal: pnl.margeBrute,
+          prevVal: pnlPrevious?.margeBrute,
+          currentPct: pnl.margeBrutePct,
+          prevPct: pnlPrevious?.margeBrutePct,
+          isTotal: true,
+          customColor: THEME.accent.green,
+        })}
 
-          {/* OPEX Details */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 24px', fontSize: 12.5, borderBottom: `1px solid ${THEME.border.base}`, color: THEME.text.secondary }}>
-            <span>Loyer & Charges locatives (`#loyer-charges` & Notes de frais)</span>
-            <span>-{fmt(pnl.loyerEtCharges)} Ar</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 24px', fontSize: 12.5, borderBottom: `1px solid ${THEME.border.base}`, color: THEME.text.secondary }}>
-            <span>Marketing, Publicité & Facebook Ads (`#marketing-pub` & Notes de frais)</span>
-            <span>-{fmt(pnl.marketingEtPub)} Ar</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 24px', fontSize: 12.5, borderBottom: `1px solid ${THEME.border.base}`, color: THEME.text.secondary }}>
-            <span>Déplacements & Frais logistiques généraux (`#fret-logistique` & Notes de frais)</span>
-            <span>-{fmt(pnl.fretEtLogistique)} Ar</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 24px', fontSize: 12.5, borderBottom: `1px solid ${THEME.border.base}`, color: THEME.text.secondary }}>
-            <span>Notes de frais généraux (Repas, fournitures, honoraires...)</span>
-            <span>-{fmt(pnl.fraisGenerauxNotes)} Ar</span>
-          </div>
-          <div
-            onClick={() => pertesList.length > 0 && setShowPertesDetails(!showPertesDetails)}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '9px 24px',
-              fontSize: 12.5,
-              borderBottom: `1px solid ${THEME.border.base}`,
-              color: hasPertes ? THEME.accent.danger : THEME.text.secondary,
-              cursor: pertesList.length > 0 ? 'pointer' : 'default',
-              background: hasPertes ? 'rgba(194, 74, 63, 0.04)' : 'transparent',
-              transition: 'background 0.15s ease',
-            }}
-          >
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: hasPertes ? 600 : 400 }}>
-              {pertesList.length > 0 ? (
-                showPertesDetails ? <ChevronDown size={14} /> : <ChevronRight size={14} />
-              ) : (
-                <AlertCircle size={14} style={{ opacity: 0.6 }} />
-              )}
-              Pertes, casse & vols de stock {(pnl.quantitePertesStock || 0) > 0 ? `(${pnl.quantitePertesStock} pièce${(pnl.quantitePertesStock || 0) > 1 ? 's' : ''})` : '(0 pièce)'}
-            </span>
-            <span style={{ fontWeight: hasPertes ? 700 : 400 }}>
-              {hasPertes ? `-${fmt(pnl.pertesStock)} Ar` : '0 Ar'}
-            </span>
-          </div>
+        {/* OPEX Details */}
+        {renderRow({
+          title: 'Loyer & Charges locatives (`#loyer-charges` & Notes de frais)',
+          currentVal: pnl.loyerEtCharges,
+          prevVal: pnlPrevious?.loyerEtCharges,
+          prefix: '-',
+          isCharge: true,
+          indent: true,
+        })}
 
-          {showPertesDetails && pertesList.length > 0 && (
-            <div style={{ background: THEME.bg.soft, padding: '8px 24px 10px 42px', borderBottom: `1px solid ${THEME.border.base}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: THEME.text.muted, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Détail des pertes constatées sur la période :
-              </div>
-              {pertesList.map((item, idx) => (
-                <div key={item.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, padding: '3px 0', borderBottom: idx < pertesList.length - 1 ? `1px dashed ${THEME.border.base}` : 'none' }}>
-                  <div>
-                    <strong style={{ color: THEME.text.primary }}>{item.productNom}</strong>
-                    <span style={{ color: THEME.text.muted, marginLeft: 6 }}>({item.motif})</span>
-                    {item.date && (
-                      <span style={{ color: THEME.text.muted, fontSize: 10.5, marginLeft: 6 }}>
-                        · {new Date(item.date).toLocaleDateString('fr-FR')}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ fontWeight: 600, color: THEME.accent.danger }}>
-                    {item.delta} pc ({fmt(item.valTotale)} Ar)
-                  </div>
+        {renderRow({
+          title: 'Marketing, Publicité & Ads (`#marketing-pub` & Notes de frais)',
+          currentVal: pnl.marketingEtPub,
+          prevVal: pnlPrevious?.marketingEtPub,
+          prefix: '-',
+          isCharge: true,
+          indent: true,
+        })}
+
+        {renderRow({
+          title: 'Déplacements & Logistique générale (`#fret-logistique` & Notes)',
+          currentVal: pnl.fretEtLogistique,
+          prevVal: pnlPrevious?.fretEtLogistique,
+          prefix: '-',
+          isCharge: true,
+          indent: true,
+        })}
+
+        {renderRow({
+          title: 'Notes de frais généraux (Repas, fournitures, honoraires...)',
+          currentVal: pnl.fraisGenerauxNotes,
+          prevVal: pnlPrevious?.fraisGenerauxNotes,
+          prefix: '-',
+          isCharge: true,
+          indent: true,
+        })}
+
+        {renderRow({
+          title: `Pertes, casse & vols de stock ${(pnl.quantitePertesStock || 0) > 0 ? `(${pnl.quantitePertesStock} pc)` : '(0 pc)'}`,
+          currentVal: pnl.pertesStock,
+          prevVal: pnlPrevious?.pertesStock,
+          prefix: '-',
+          isCharge: true,
+          indent: true,
+          customColor: hasPertes ? THEME.accent.danger : undefined,
+          cursor: pertesList.length > 0 ? 'pointer' : 'default',
+          onClick: () => pertesList.length > 0 && setShowPertesDetails(!showPertesDetails),
+          leftIcon: pertesList.length > 0 ? (
+            showPertesDetails ? <ChevronDown size={14} /> : <ChevronRight size={14} />
+          ) : (
+            <AlertCircle size={14} style={{ opacity: 0.5 }} />
+          ),
+        })}
+
+        {/* Détail des pertes si déplié */}
+        {showPertesDetails && pertesList.length > 0 && (
+          <div style={{ background: THEME.bg.soft, padding: '8px 20px 10px 40px', borderBottom: `1px solid ${THEME.border.base}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: THEME.text.muted, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Détail des pertes constatées sur la période :
+            </div>
+            {pertesList.map((item, idx) => (
+              <div key={item.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, padding: '3px 0', borderBottom: idx < pertesList.length - 1 ? `1px dashed ${THEME.border.base}` : 'none' }}>
+                <div>
+                  <strong style={{ color: THEME.text.primary }}>{item.productNom}</strong>
+                  <span style={{ color: THEME.text.muted, marginLeft: 6 }}>({item.motif})</span>
+                  {item.date && (
+                    <span style={{ color: THEME.text.muted, fontSize: 10.5, marginLeft: 6 }}>
+                      · {new Date(item.date).toLocaleDateString('fr-FR')}
+                    </span>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
+                <div style={{ fontWeight: 600, color: THEME.accent.danger }}>
+                  {item.delta} pc ({fmt(item.valTotale)} Ar)
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
-          {(pnl.gainsInventaire || 0) > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 24px', fontSize: 12.5, borderBottom: `1px solid ${THEME.border.base}`, color: THEME.accent.green }}>
-              <span>Surplus / Écarts positifs d'inventaire constatés</span>
-              <span style={{ fontWeight: 700 }}>+{fmt(pnl.gainsInventaire)} Ar</span>
-            </div>
-          )}
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 24px', fontSize: 12.5, borderBottom: `1px solid ${THEME.border.base}`, color: THEME.text.secondary }}>
-            <span>Autres sorties de trésorerie courantes</span>
-            <span>-{fmt(pnl.autresSorties)} Ar</span>
-          </div>
+        {(pnl.gainsInventaire || 0) > 0 && renderRow({
+          title: "Surplus / Écarts positifs d'inventaire constatés",
+          currentVal: pnl.gainsInventaire,
+          prevVal: pnlPrevious?.gainsInventaire,
+          prefix: '+',
+          isCharge: false,
+          customColor: THEME.accent.green,
+          indent: true,
+        })}
 
-          {/* TOTAL OPEX */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 16px', fontSize: 13, background: THEME.bg.soft, borderBottom: `1px solid ${THEME.border.base}`, fontWeight: 600 }}>
-            <span style={{ color: THEME.text.secondary }}>Total des Charges de Fonctionnement (OPEX)</span>
-            <span style={{ color: THEME.accent.orange }}>-{fmt(pnl.totalOpex)} Ar</span>
-          </div>
+        {renderRow({
+          title: 'Autres sorties de trésorerie courantes',
+          currentVal: pnl.autresSorties,
+          prevVal: pnlPrevious?.autresSorties,
+          prefix: '-',
+          isCharge: true,
+          indent: true,
+        })}
 
-          {/* DOTATION AUX AMORTISSEMENTS */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 16px', fontSize: 13, borderBottom: `1px solid ${THEME.border.base}`, color: THEME.text.secondary }}>
-            <span style={{ fontWeight: 600 }}>Dotations aux Amortissements des Immobilisations</span>
-            <span style={{ color: THEME.accent.orange, fontWeight: 600 }}>-{fmt(Math.round(pnl.dotationAmortissement || 0))} Ar</span>
-          </div>
+        {/* TOTAL OPEX */}
+        {renderRow({
+          title: 'Total des Charges de Fonctionnement (OPEX)',
+          currentVal: pnl.totalOpex,
+          prevVal: pnlPrevious?.totalOpex,
+          prefix: '-',
+          isCharge: true,
+          isTotal: true,
+          customColor: THEME.accent.orange,
+        })}
 
-          {/* III. RESULTAT D'EXPLOITATION */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', fontSize: 14, background: THEME.bg.soft, borderBottom: `2px solid ${THEME.border.base}`, fontWeight: 800 }}>
-            <span style={{ color: THEME.text.primary }}>III. RÉSULTAT D'EXPLOITATION (EBIT)</span>
-            <span style={{ color: (pnl.resultatExploitation || 0) >= 0 ? THEME.accent.green : THEME.accent.danger }}>
-              {fmt(pnl.resultatExploitation)} Ar
-            </span>
-          </div>
+        {/* DOTATION AUX AMORTISSEMENTS */}
+        {renderRow({
+          title: 'Dotations aux Amortissements des Immobilisations',
+          currentVal: Math.round(pnl.dotationAmortissement || 0),
+          prevVal: pnlPrevious ? Math.round(pnlPrevious.dotationAmortissement || 0) : undefined,
+          prefix: '-',
+          isCharge: true,
+          customColor: THEME.accent.orange,
+          indent: true,
+        })}
 
-          {/* IV. CHARGES FINANCIERES */}
-          <div style={{ background: THEME.bg.soft, padding: '8px 16px', fontWeight: 700, fontSize: 12, color: THEME.text.primary, borderBottom: `1px solid ${THEME.border.base}`, marginTop: 4 }}>
-            IV. CHARGES FINANCIÈRES
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 24px', fontSize: 13, borderBottom: `1px solid ${THEME.border.base}` }}>
-            <span style={{ color: THEME.text.secondary }}>Frais bancaires, commissions & intérêts d'emprunts (`#frais-bancaires`)</span>
-            <span style={{ color: THEME.accent.orange, fontWeight: 600 }}>-{fmt(pnl.chargesFinancieres)} Ar</span>
-          </div>
+        {/* III. RESULTAT D'EXPLOITATION */}
+        {renderRow({
+          title: "III. RÉSULTAT D'EXPLOITATION (EBIT)",
+          currentVal: pnl.resultatExploitation,
+          prevVal: pnlPrevious?.resultatExploitation,
+          isTotal: true,
+          isBold: true,
+          customColor: (pnl.resultatExploitation || 0) >= 0 ? THEME.accent.green : THEME.accent.danger,
+        })}
 
-          {/* V. RESULTAT NET */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            padding: '14px 16px',
-            fontSize: 15,
-            background: THEME.bg.card,
-            border: `1.5px solid ${(pnl.resultatNet || 0) >= 0 ? THEME.accent.green : THEME.accent.danger}`,
-            borderRadius: 8,
-            marginTop: 4,
-            fontWeight: 800,
-            color: (pnl.resultatNet || 0) >= 0 ? THEME.accent.green : THEME.accent.danger,
-          }}>
-            <span>RÉSULTAT NET NET DE LA PÉRIODE</span>
-            <span>{fmt(pnl.resultatNet)} Ar ({pct(pnl.margeNettePct)}%)</span>
-          </div>
+        {/* IV. CHARGES FINANCIERES */}
+        <div style={{ background: THEME.bg.soft, padding: '7px 16px', fontWeight: 700, fontSize: 11.5, color: THEME.text.primary, borderBottom: `1px solid ${THEME.border.base}`, marginTop: 4 }}>
+          IV. CHARGES FINANCIÈRES
+        </div>
+
+        {renderRow({
+          title: "Frais bancaires, commissions & intérêts d'emprunts (`#frais-bancaires`)",
+          currentVal: pnl.chargesFinancieres,
+          prevVal: pnlPrevious?.chargesFinancieres,
+          prefix: '-',
+          isCharge: true,
+          customColor: THEME.accent.orange,
+          indent: true,
+        })}
+
+        {/* V. RESULTAT NET */}
+        <div style={{
+          borderTop: `2px solid ${(pnl.resultatNet || 0) >= 0 ? THEME.accent.green : THEME.accent.danger}`,
+          background: THEME.bg.card,
+        }}>
+          {renderRow({
+            title: 'V. RÉSULTAT NET DE LA PÉRIODE',
+            currentVal: pnl.resultatNet,
+            prevVal: pnlPrevious?.resultatNet,
+            currentPct: pnl.margeNettePct,
+            prevPct: pnlPrevious?.margeNettePct,
+            isGrandTotal: true,
+            customColor: (pnl.resultatNet || 0) >= 0 ? THEME.accent.green : THEME.accent.danger,
+          })}
         </div>
       </div>
     </div>

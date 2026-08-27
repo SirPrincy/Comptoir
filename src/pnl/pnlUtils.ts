@@ -1,9 +1,19 @@
 import { PnlPeriode, PnlData, FilteredPnlData } from './types';
+import { Product } from '../stock/types';
+import { Vente } from '../ventes/types';
+import { Commande } from '../achat/types';
+import { Mouvement } from '../Tresorerie/types';
+import { NoteDeFrais } from '../frais/NotesDeFrais';
+import { Immobilisation } from '../immobilisations/types';
 import { calculerPlanAmortissementMensuel } from '../immobilisations/immoUtils';
 
 // Calcul du coût de revient d'un produit (Achat unitaire moyen + Fret moyen)
-export function getProductCostBreakdown(productId: string, products: any[] = [], commandes: any[] = []) {
-  const productCmds = commandes.filter((c: any) => c.productId === productId && c.statut !== 'À explorer');
+export function getProductCostBreakdown(
+  productId: string,
+  products: Product[] = [],
+  commandes: Commande[] = []
+): { basePu: number; fretPu: number; coutRevient: number } {
+  const productCmds = commandes.filter((c) => c.productId === productId && c.statut !== 'À explorer');
 
   let basePu = 0;
   let fretPu = 0;
@@ -12,7 +22,7 @@ export function getProductCostBreakdown(productId: string, products: any[] = [],
     let totalValue = 0;
     let totalQty = 0;
     let totalFret = 0;
-    productCmds.forEach((c: any) => {
+    productCmds.forEach((c) => {
       const qty = Number(c.qty) || 1;
       const total = c.pu ? Number(c.pu) * qty : Number(c.total) || 0;
       totalValue += total;
@@ -22,36 +32,197 @@ export function getProductCostBreakdown(productId: string, products: any[] = [],
     basePu = totalQty > 0 ? totalValue / totalQty : 0;
     fretPu = totalQty > 0 ? totalFret / totalQty : 0;
   } else {
-    const p = products.find((pr: any) => pr.id === productId);
+    const p = products.find((pr) => pr.id === productId);
     basePu = Number(p?.prixAchatAr) || Number(p?.coutTotalRenduAr) || Number(p?.prixAchat) || (Number(p?.puRmb || 0) * 680) || 0;
   }
 
   return { basePu, fretPu, coutRevient: basePu + fretPu };
 }
 
-// Filtrage des données par période
-export function filterPnlData(
+const MOIS_NOMS = [
+  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+];
+
+// Libellé clair de la période sélectionnée
+export function getPeriodeLabel(
   periode: PnlPeriode,
-  dateDebut: string,
-  dateFin: string,
-  ventes: any[] = [],
-  mouvements: any[] = [],
-  frais: any[] = []
-): FilteredPnlData {
+  dateDebut?: string,
+  dateFin?: string
+): string {
+  const now = new Date();
+  if (periode === 'month') {
+    return `${MOIS_NOMS[now.getMonth()]} ${now.getFullYear()}`;
+  }
+  if (periode === 'quarter') {
+    const q = Math.floor(now.getMonth() / 3) + 1;
+    return `T${q} ${now.getFullYear()}`;
+  }
+  if (periode === 'year') {
+    return `Année ${now.getFullYear()}`;
+  }
+  if (periode === 'custom') {
+    if (dateDebut && dateFin) {
+      const d1 = new Date(dateDebut).toLocaleDateString('fr-FR');
+      const d2 = new Date(dateFin).toLocaleDateString('fr-FR');
+      return `${d1} au ${d2}`;
+    }
+    return 'Période personnalisée';
+  }
+  return 'Toute la période';
+}
+
+// Calcul des bornes de la période précédente (M-1, T-1, N-1, plage glissante)
+export function getPreviousPeriodeBounds(
+  periode: PnlPeriode,
+  dateDebut?: string,
+  dateFin?: string
+): { debut: Date | null; fin: Date | null; label: string } {
+  const now = new Date();
+
+  if (periode === 'month') {
+    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const pYear = prevMonthDate.getFullYear();
+    const pMonth = prevMonthDate.getMonth();
+    const debut = new Date(pYear, pMonth, 1, 0, 0, 0, 0);
+    const fin = new Date(pYear, pMonth + 1, 0, 23, 59, 59, 999);
+    return {
+      debut,
+      fin,
+      label: `M-1 (${MOIS_NOMS[pMonth]} ${pYear})`,
+    };
+  }
+
+  if (periode === 'quarter') {
+    const currentQ = Math.floor(now.getMonth() / 3);
+    const prevQ = (currentQ + 3) % 4;
+    const pYear = currentQ === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    const debut = new Date(pYear, prevQ * 3, 1, 0, 0, 0, 0);
+    const fin = new Date(pYear, (prevQ + 1) * 3, 0, 23, 59, 59, 999);
+    return {
+      debut,
+      fin,
+      label: `T-1 (T${prevQ + 1} ${pYear})`,
+    };
+  }
+
+  if (periode === 'year') {
+    const pYear = now.getFullYear() - 1;
+    const debut = new Date(pYear, 0, 1, 0, 0, 0, 0);
+    const fin = new Date(pYear, 11, 31, 23, 59, 59, 999);
+    return {
+      debut,
+      fin,
+      label: `N-1 (Année ${pYear})`,
+    };
+  }
+
+  if (periode === 'custom' && dateDebut && dateFin) {
+    const d1 = new Date(dateDebut);
+    d1.setHours(0, 0, 0, 0);
+    const d2 = new Date(dateFin);
+    d2.setHours(23, 59, 59, 999);
+    const duration = d2.getTime() - d1.getTime();
+    if (!isNaN(duration) && duration > 0) {
+      const fin = new Date(d1.getTime() - 1);
+      const debut = new Date(fin.getTime() - duration);
+      const safeDateFmt = (d: Date) => d.toLocaleDateString('fr-FR');
+      return {
+        debut,
+        fin,
+        label: `Période préc. (${safeDateFmt(debut)} - ${safeDateFmt(fin)})`,
+      };
+    }
+  }
+
+  return { debut: null, fin: null, label: 'Période précédente' };
+}
+
+// Calcul d'évolution en % et en valeur
+export function calcEvolution(
+  current: number | undefined | null,
+  previous: number | undefined | null,
+  isCharge = false
+): {
+  diff: number;
+  pct: number | null;
+  formattedPct: string;
+  trend: 'good' | 'bad' | 'neutral';
+} {
+  const c = Number(current) || 0;
+  const p = Number(previous) || 0;
+  const diff = c - p;
+
+  if (p === 0) {
+    if (c === 0) {
+      return { diff: 0, pct: 0, formattedPct: '0%', trend: 'neutral' };
+    }
+    const isGood = isCharge ? c < 0 : c > 0;
+    return {
+      diff,
+      pct: null,
+      formattedPct: isCharge ? (c > 0 ? '+Nouv.' : '-Nouv.') : (c > 0 ? '+Nouv.' : '-Nouv.'),
+      trend: isGood ? 'good' : 'bad',
+    };
+  }
+
+  const pct = (diff / Math.abs(p)) * 100;
+  const formattedPct = `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
+
+  let trend: 'good' | 'bad' | 'neutral' = 'neutral';
+  if (Math.abs(pct) < 0.05) {
+    trend = 'neutral';
+  } else if (isCharge) {
+    trend = pct < 0 ? 'good' : 'bad'; // Pour les charges, une baisse est positive
+  } else {
+    trend = pct > 0 ? 'good' : 'bad'; // Pour les revenus/marges, une hausse est positive
+  }
+
+  return { diff, pct, formattedPct, trend };
+}
+
+// Calcul d'évolution en points de pourcentage (pour les marges %)
+export function calcPointsEvolution(
+  current: number | undefined | null,
+  previous: number | undefined | null
+): {
+  diffPoints: number;
+  formattedPoints: string;
+  trend: 'good' | 'bad' | 'neutral';
+} {
+  const c = Number(current) || 0;
+  const p = Number(previous) || 0;
+  const diffPoints = c - p;
+  const formattedPoints = `${diffPoints >= 0 ? '+' : ''}${diffPoints.toFixed(1)} pts`;
+
+  let trend: 'good' | 'bad' | 'neutral' = 'neutral';
+  if (Math.abs(diffPoints) < 0.05) {
+    trend = 'neutral';
+  } else {
+    trend = diffPoints > 0 ? 'good' : 'bad';
+  }
+
+  return { diffPoints, formattedPoints, trend };
+}
+export function getPeriodeBounds(
+  periode: PnlPeriode,
+  dateDebut?: string,
+  dateFin?: string
+): { debut: Date | null; fin: Date | null } {
   let debut: Date | null = null;
   let fin: Date | null = null;
 
   const now = new Date();
   if (periode === 'month') {
     debut = new Date(now.getFullYear(), now.getMonth(), 1);
-    fin = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    fin = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
   } else if (periode === 'quarter') {
     const currentQuarter = Math.floor(now.getMonth() / 3);
     debut = new Date(now.getFullYear(), currentQuarter * 3, 1);
-    fin = new Date(now.getFullYear(), (currentQuarter + 1) * 3, 0, 23, 59, 59);
+    fin = new Date(now.getFullYear(), (currentQuarter + 1) * 3, 0, 23, 59, 59, 999);
   } else if (periode === 'year') {
     debut = new Date(now.getFullYear(), 0, 1);
-    fin = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+    fin = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
   } else if (periode === 'custom') {
     if (dateDebut) {
       debut = new Date(dateDebut);
@@ -63,7 +234,18 @@ export function filterPnlData(
     }
   }
 
-  const matchDate = (dateStr: string) => {
+  return { debut, fin };
+}
+
+// Filtrage des données par bornes de dates précises
+export function filterPnlDataWithBounds(
+  debut: Date | null,
+  fin: Date | null,
+  ventes: Vente[] = [],
+  mouvements: Mouvement[] = [],
+  frais: NoteDeFrais[] = []
+): FilteredPnlData {
+  const matchDate = (dateStr?: string) => {
     if (!debut && !fin) return true;
     if (!dateStr) return false;
     const d = new Date(dateStr);
@@ -73,9 +255,9 @@ export function filterPnlData(
     return true;
   };
 
-  const periodVentes = (ventes || []).filter((v: any) => v && matchDate(v.date));
-  const periodMouvements = (mouvements || []).filter((m: any) => m && matchDate(m.date));
-  const periodFrais = (frais || []).filter((f: any) => f && matchDate(f.date));
+  const periodVentes = (ventes || []).filter((v) => v && matchDate(v.date));
+  const periodMouvements = (mouvements || []).filter((m) => m && matchDate(m.date));
+  const periodFrais = (frais || []).filter((f) => f && matchDate(f.date));
 
   const safeDateFmt = (d: Date | null) => (d && !isNaN(d.getTime()) ? d.toLocaleDateString('fr-FR') : '');
 
@@ -88,31 +270,36 @@ export function filterPnlData(
   };
 }
 
-// Calcul complet du P&L
-export function computePnl(
-  filteredData: FilteredPnlData,
+// Filtrage des données par période
+export function filterPnlData(
   periode: PnlPeriode,
   dateDebut: string,
   dateFin: string,
-  products: any[] = [],
-  commandes: any[] = [],
-  immobilisations: any[] = [],
-  devises: { rmb: number; usd: number } = { rmb: 680, usd: 4600 }
-): PnlData {
-  const vts = (filteredData && filteredData.ventes) || [];
-  const mvts = (filteredData && filteredData.mouvements) || [];
-  const frs = (filteredData && filteredData.frais) || [];
+  ventes: Vente[] = [],
+  mouvements: Mouvement[] = [],
+  frais: NoteDeFrais[] = []
+): FilteredPnlData {
+  const { debut, fin } = getPeriodeBounds(periode, dateDebut, dateFin);
+  return filterPnlDataWithBounds(debut, fin, ventes, mouvements, frais);
+}
 
-  // 1. Chiffre d'Affaires (CA)
-  const chiffreAffaires = vts.reduce((sum: number, v: any) => {
+// 1. Calcul du Chiffre d'Affaires (CA)
+export function calculerCA(ventes: Vente[] = []): number {
+  return (ventes || []).reduce((sum: number, v) => {
     return sum + (Number(v?.total) || (Number(v?.pu || 0) * Number(v?.qty || 1)) || 0);
   }, 0);
+}
 
-  // 2. Coût des marchandises vendues (COGS)
+// 2. Calcul du Coût des marchandises vendues (COGS)
+export function calculerCogs(
+  ventes: Vente[] = [],
+  products: Product[] = [],
+  commandes: Commande[] = []
+): { costMarchandises: number; fretMarchandises: number; cogs: number } {
   let costMarchandises = 0;
   let fretMarchandises = 0;
 
-  vts.forEach((v: any) => {
+  (ventes || []).forEach((v) => {
     if (!v) return;
     const { basePu, fretPu } = getProductCostBreakdown(v.productId, products, commandes);
     const qty = Number(v.qty) || 1;
@@ -120,18 +307,31 @@ export function computePnl(
     fretMarchandises += fretPu * qty;
   });
 
-  const cogs = costMarchandises + fretMarchandises;
+  return {
+    costMarchandises,
+    fretMarchandises,
+    cogs: costMarchandises + fretMarchandises,
+  };
+}
 
-  // 3. Marge Brute
-  const margeBrute = Math.max(0, chiffreAffaires - cogs);
-  const margeBrutePct = chiffreAffaires > 0 ? (margeBrute / chiffreAffaires) * 100 : 0;
-
-  // 4. Charges d'Exploitation (OPEX)
-  let loyerEtCharges = 0;
-  let marketingEtPub = 0;
-  let fretEtLogistique = 0;
-  let fraisGenerauxNotes = 0;
-  let autresSorties = 0;
+// 3. Calcul des Pertes et Gains de stock
+export function calculerPertesEtGains(
+  mouvements: Mouvement[] = [],
+  products: Product[] = [],
+  commandes: Commande[] = []
+): {
+  pertesStock: number;
+  gainsInventaire: number;
+  quantitePertesStock: number;
+  detailsPertes: Array<{
+    id: string;
+    productNom: string;
+    delta: number;
+    motif: string;
+    date: string;
+    valTotale: number;
+  }>;
+} {
   let pertesStock = 0;
   let gainsInventaire = 0;
   let quantitePertesStock = 0;
@@ -144,8 +344,7 @@ export function computePnl(
     valTotale: number;
   }> = [];
 
-  // Pertes & Ajustements de stock de la période
-  mvts.forEach((m: any) => {
+  (mouvements || []).forEach((m) => {
     if (!m) return;
     const isAjustement = m.type === 'Ajustement Stock' || m.type === 'ajustement' || m.type === 'Ajustement' || m.type === 'perte' || m.type === 'Perte';
     const isDeltaMvt = m.productId && m.delta !== undefined && m.delta !== null;
@@ -160,7 +359,7 @@ export function computePnl(
         ? Math.abs(delta) * Number(m.valeurUnitaireAr)
         : (Math.abs(delta) * (coutRevient || 0));
 
-      const prodObj = products.find((p: any) => p.id === m.productId);
+      const prodObj = products.find((p) => p.id === m.productId);
       const productNom = m.productNom || prodObj?.nom || 'Article';
 
       if (delta < 0) {
@@ -180,8 +379,33 @@ export function computePnl(
     }
   });
 
-  // Prise en compte des Notes de Frais de la période
-  frs.forEach((f: any) => {
+  return {
+    pertesStock,
+    gainsInventaire,
+    quantitePertesStock,
+    detailsPertes,
+  };
+}
+
+// 4. Calcul des Charges d'Exploitation (OPEX)
+export function calculerOpex(
+  frais: NoteDeFrais[] = [],
+  mouvements: Mouvement[] = []
+): {
+  loyerEtCharges: number;
+  marketingEtPub: number;
+  fretEtLogistique: number;
+  fraisGenerauxNotes: number;
+  autresSorties: number;
+} {
+  let loyerEtCharges = 0;
+  let marketingEtPub = 0;
+  let fretEtLogistique = 0;
+  let fraisGenerauxNotes = 0;
+  let autresSorties = 0;
+
+  // Prise en compte des Notes de Frais
+  (frais || []).forEach((f) => {
     const mnt = Number(f.montant) || 0;
     const cat = f.categorie || '';
 
@@ -196,12 +420,13 @@ export function computePnl(
     }
   });
 
-  mvts.forEach((m: any) => {
+  // Prise en compte des mouvements de trésorerie (sorties)
+  (mouvements || []).forEach((m) => {
     if (m.type === 'sortie') {
       const montant = Number(m.montant) || 0;
       const tag = m.tag || '';
 
-      // Exclusions : Remboursements emprunts, stock achats (déjà dans COGS), immobilisations (déjà amorties en dotations), retraits perso, change devise, et notes de frais (déjà comptées ci-dessus)
+      // Exclusions : Remboursements emprunts, stock achats (déjà dans COGS), immobilisations, retraits perso, change devise, et notes de frais (déjà comptées ci-dessus)
       if (
         tag === '#remboursement' ||
         tag === '#retrait-perso' ||
@@ -232,30 +457,26 @@ export function computePnl(
     }
   });
 
-  const totalOpex = loyerEtCharges + marketingEtPub + fretEtLogistique + fraisGenerauxNotes + autresSorties + pertesStock - gainsInventaire;
+  return {
+    loyerEtCharges,
+    marketingEtPub,
+    fretEtLogistique,
+    fraisGenerauxNotes,
+    autresSorties,
+  };
+}
 
-  // Dotation aux amortissements
+// 5. Calcul de la Dotation aux amortissements
+export function calculerDotationAmortissement(
+  immobilisations: Immobilisation[] = [],
+  periode: PnlPeriode,
+  bounds: { debut: Date | null; fin: Date | null },
+  devises: { rmb: number; usd: number } = { rmb: 680, usd: 4600 }
+): number {
   let dotationAmortissement = 0;
-  let debutPériode: Date | null = null;
-  let finPériode: Date | null = null;
+  const { debut: debutPériode, fin: finPériode } = bounds;
 
-  const now = new Date();
-  if (periode === 'month') {
-    debutPériode = new Date(now.getFullYear(), now.getMonth(), 1);
-    finPériode = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-  } else if (periode === 'quarter') {
-    const currentQuarter = Math.floor(now.getMonth() / 3);
-    debutPériode = new Date(now.getFullYear(), currentQuarter * 3, 1);
-    finPériode = new Date(now.getFullYear(), (currentQuarter + 1) * 3, 0, 23, 59, 59);
-  } else if (periode === 'year') {
-    debutPériode = new Date(now.getFullYear(), 0, 1);
-    finPériode = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
-  } else if (periode === 'custom') {
-    if (dateDebut) debutPériode = new Date(dateDebut);
-    if (dateFin) finPériode = new Date(dateFin);
-  }
-
-  immobilisations.forEach((imm: any) => {
+  (immobilisations || []).forEach((imm: any) => {
     const prixAr = Number(imm.valeurOrigine) || Number(imm.prixAchatAr) || (Number(imm.prixAchatRmb || 0) * (devises?.rmb || 680)) || 0;
     if (isNaN(prixAr) || prixAr <= 0) return;
 
@@ -266,12 +487,11 @@ export function computePnl(
     const plan = calculerPlanAmortissementMensuel(prixAr, dateStr, dureeAns);
 
     if (periode === 'all') {
-      // Jusqu'à la fin du mois courant
+      const now = new Date();
       const currentYear = now.getFullYear();
       const currentMonth = now.getMonth() + 1;
       const pastRows = plan.filter(r => r.annee < currentYear || (r.annee === currentYear && r.mois <= currentMonth));
-      const totalDotation = pastRows.reduce((sum, r) => sum + r.dotation, 0);
-      dotationAmortissement += totalDotation;
+      dotationAmortissement += pastRows.reduce((sum, r) => sum + r.dotation, 0);
     } else if (debutPériode && finPériode) {
       const dYear = debutPériode.getFullYear();
       const dMonth = debutPériode.getMonth() + 1;
@@ -284,20 +504,56 @@ export function computePnl(
         return afterStart && beforeEnd;
       });
 
-      const totalDotation = inRangeRows.reduce((sum, r) => sum + r.dotation, 0);
-      dotationAmortissement += totalDotation;
+      dotationAmortissement += inRangeRows.reduce((sum, r) => sum + r.dotation, 0);
     }
   });
 
-  // 5. Résultat d'Exploitation (EBIT)
+  return dotationAmortissement;
+}
+
+// Orchestrateur : Calcul complet du P&L avec bornes explicites
+export function computePnlWithBounds(
+  filteredData: FilteredPnlData,
+  periode: PnlPeriode,
+  bounds: { debut: Date | null; fin: Date | null },
+  products: Product[] = [],
+  commandes: Commande[] = [],
+  immobilisations: Immobilisation[] = [],
+  devises: { rmb: number; usd: number } = { rmb: 680, usd: 4600 }
+): PnlData {
+  const vts = (filteredData && filteredData.ventes) || [];
+  const mvts = (filteredData && filteredData.mouvements) || [];
+  const frs = (filteredData && filteredData.frais) || [];
+
+  // 1. Chiffre d'Affaires
+  const chiffreAffaires = calculerCA(vts);
+
+  // 2. Coût des marchandises vendues (COGS)
+  const { costMarchandises, fretMarchandises, cogs } = calculerCogs(vts, products, commandes);
+
+  // 3. Marge Brute
+  const margeBrute = Math.max(0, chiffreAffaires - cogs);
+  const margeBrutePct = chiffreAffaires > 0 ? (margeBrute / chiffreAffaires) * 100 : 0;
+
+  // 4. Pertes & Gains de stock
+  const { pertesStock, gainsInventaire, quantitePertesStock, detailsPertes } = calculerPertesEtGains(mvts, products, commandes);
+
+  // 5. Charges d'Exploitation (OPEX)
+  const { loyerEtCharges, marketingEtPub, fretEtLogistique, fraisGenerauxNotes, autresSorties } = calculerOpex(frs, mvts);
+  const totalOpex = loyerEtCharges + marketingEtPub + fretEtLogistique + fraisGenerauxNotes + autresSorties + pertesStock - gainsInventaire;
+
+  // 6. Dotation aux amortissements
+  const dotationAmortissement = calculerDotationAmortissement(immobilisations, periode, bounds, devises);
+
+  // 7. Résultat d'Exploitation (EBIT)
   const resultatExploitation = margeBrute - totalOpex - dotationAmortissement;
 
-  // 6. Charges Financières
+  // 8. Charges Financières
   const chargesFinancieres = mvts
-    .filter((m: any) => m.type === 'sortie' && m.tag === '#frais-bancaires')
-    .reduce((sum: number, m: any) => sum + (Number(m.montant) || 0), 0);
+    .filter((m) => m.type === 'sortie' && m.tag === '#frais-bancaires')
+    .reduce((sum: number, m) => sum + (Number(m.montant) || 0), 0);
 
-  // 7. Résultat Net
+  // 9. Résultat Net & Marge Nette
   const resultatNet = resultatExploitation - chargesFinancieres;
   const margeNettePct = chiffreAffaires > 0 ? (resultatNet / chiffreAffaires) * 100 : 0;
 
@@ -324,4 +580,19 @@ export function computePnl(
     resultatNet,
     margeNettePct,
   };
+}
+
+// Orchestrateur principal : Calcul complet du P&L
+export function computePnl(
+  filteredData: FilteredPnlData,
+  periode: PnlPeriode,
+  dateDebut: string,
+  dateFin: string,
+  products: Product[] = [],
+  commandes: Commande[] = [],
+  immobilisations: Immobilisation[] = [],
+  devises: { rmb: number; usd: number } = { rmb: 680, usd: 4600 }
+): PnlData {
+  const bounds = getPeriodeBounds(periode, dateDebut, dateFin);
+  return computePnlWithBounds(filteredData, periode, bounds, products, commandes, immobilisations, devises);
 }

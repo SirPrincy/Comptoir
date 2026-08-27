@@ -1,14 +1,23 @@
+import { Product } from '../stock/types';
+import { Vente } from '../ventes/types';
+import { Commande } from '../achat/types';
+import { Mouvement } from '../Tresorerie/types';
+import { NoteDeFrais } from '../frais/NotesDeFrais';
+import { Immobilisation } from '../immobilisations/types';
+
+export type Frais = NoteDeFrais;
+
 export type PnlPeriode = 'month' | 'quarter' | 'year' | 'all' | 'custom';
 
 export interface ProfitLossProps {
-  products?: any[];
-  ventes?: any[];
-  commandes?: any[];
-  mouvements?: any[];
-  frais?: any[];
+  products?: Product[];
+  ventes?: Vente[];
+  commandes?: Commande[];
+  mouvements?: Mouvement[];
+  frais?: NoteDeFrais[];
   updateData?: (patch: any) => void;
   comptes?: string[];
-  immobilisations?: any[];
+  immobilisations?: Immobilisation[];
   devises?: { rmb: number; usd: number };
 }
 
@@ -44,9 +53,9 @@ export interface PnlData {
 }
 
 export interface FilteredPnlData {
-  ventes: any[];
-  mouvements: any[];
-  frais: any[];
+  ventes: Vente[];
+  mouvements: Mouvement[];
+  frais: NoteDeFrais[];
   debutStr: string;
   finStr: string;
 }

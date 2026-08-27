@@ -1,9 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { TrendingUp, AlertCircle } from 'lucide-react';
+import { TrendingUp, AlertCircle, ArrowLeftRight } from 'lucide-react';
 import { THEME } from '../colors';
 import { TYPOGRAPHY } from '../fonts';
 import { ProfitLossProps, PnlPeriode } from './types';
-import { filterPnlData, computePnl } from './pnlUtils';
+import {
+  filterPnlData,
+  filterPnlDataWithBounds,
+  computePnl,
+  computePnlWithBounds,
+  getPreviousPeriodeBounds,
+  getPeriodeLabel,
+} from './pnlUtils';
 import PnlFilterBar from './PnlFilterBar';
 import PnlKpiCards from './PnlKpiCards';
 import PnlTable from './PnlTable';
@@ -18,7 +25,8 @@ export default function ProfitLoss({
   devises = { rmb: 680, usd: 4600 },
 }: ProfitLossProps) {
   // Périodes de filtrage
-  const [periode, setPeriode] = useState<PnlPeriode>('all');
+  const [periode, setPeriode] = useState<PnlPeriode>('month');
+  const [comparaisonActive, setComparaisonActive] = useState<boolean>(true);
   
   // Plage de dates personnalisée
   const today = new Date();
@@ -27,12 +35,12 @@ export default function ProfitLoss({
   const [dateDebut, setDateDebut] = useState(formatYMD(startOfMonth));
   const [dateFin, setDateFin] = useState(formatYMD(today));
 
-  // Filtrage des données par période
+  // Filtrage des données par période actuelle
   const filteredData = useMemo(() => {
     return filterPnlData(periode, dateDebut, dateFin, ventes, mouvements, frais);
   }, [periode, dateDebut, dateFin, ventes, mouvements, frais]);
 
-  // Calculs financiers P&L
+  // Calculs financiers P&L période actuelle
   const pnl = useMemo(() => {
     return computePnl(
       filteredData,
@@ -45,6 +53,35 @@ export default function ProfitLoss({
       devises
     );
   }, [filteredData, periode, dateDebut, dateFin, products, commandes, immobilisations, devises]);
+
+  // Bornes de la période précédente pour comparaison (M-1, T-1, N-1...)
+  const prevBounds = useMemo(() => {
+    return getPreviousPeriodeBounds(periode, dateDebut, dateFin);
+  }, [periode, dateDebut, dateFin]);
+
+  // Filtrage des données de la période précédente
+  const filteredDataPrevious = useMemo(() => {
+    if (!comparaisonActive || (!prevBounds.debut && !prevBounds.fin)) return null;
+    return filterPnlDataWithBounds(prevBounds.debut, prevBounds.fin, ventes, mouvements, frais);
+  }, [comparaisonActive, prevBounds, ventes, mouvements, frais]);
+
+  // Calculs financiers P&L période précédente
+  const pnlPrevious = useMemo(() => {
+    if (!filteredDataPrevious || !comparaisonActive) return null;
+    return computePnlWithBounds(
+      filteredDataPrevious,
+      periode,
+      prevBounds,
+      products,
+      commandes,
+      immobilisations,
+      devises
+    );
+  }, [filteredDataPrevious, comparaisonActive, periode, prevBounds, products, commandes, immobilisations, devises]);
+
+  // Libellés clairs des périodes
+  const currentLabel = getPeriodeLabel(periode, dateDebut, dateFin);
+  const previousLabel = prevBounds.label;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -60,23 +97,57 @@ export default function ProfitLoss({
           </p>
         </div>
 
-        <PnlFilterBar
-          periode={periode}
-          setPeriode={setPeriode}
-          dateDebut={dateDebut}
-          setDateDebut={setDateDebut}
-          dateFin={dateFin}
-          setDateFin={setDateFin}
-          debutStr={filteredData.debutStr}
-          finStr={filteredData.finStr}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {periode !== 'all' && (
+            <button
+              onClick={() => setComparaisonActive(!comparaisonActive)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 12px',
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                border: `1px solid ${comparaisonActive ? THEME.accent.primary : THEME.border.base}`,
+                background: comparaisonActive ? 'rgba(59, 130, 246, 0.1)' : THEME.bg.card,
+                color: comparaisonActive ? THEME.accent.primary : THEME.text.secondary,
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <ArrowLeftRight size={13} />
+              {comparaisonActive ? `Comparé à ${previousLabel}` : 'Comparer avec période N-1'}
+            </button>
+          )}
+
+          <PnlFilterBar
+            periode={periode}
+            setPeriode={setPeriode}
+            dateDebut={dateDebut}
+            setDateDebut={setDateDebut}
+            dateFin={dateFin}
+            setDateFin={setDateFin}
+            debutStr={filteredData.debutStr}
+            finStr={filteredData.finStr}
+          />
+        </div>
       </div>
 
       {/* KPI Cards */}
-      <PnlKpiCards pnl={pnl} />
+      <PnlKpiCards
+        pnl={pnl}
+        pnlPrevious={comparaisonActive ? pnlPrevious : null}
+        previousLabel={previousLabel}
+      />
 
       {/* Structure du Compte de Résultat */}
-      <PnlTable pnl={pnl} />
+      <PnlTable
+        pnl={pnl}
+        pnlPrevious={comparaisonActive ? pnlPrevious : null}
+        currentLabel={currentLabel}
+        previousLabel={previousLabel}
+      />
 
       {/* Warning Box */}
       <div style={{
@@ -101,3 +172,4 @@ export default function ProfitLoss({
 
 export * from './types';
 export * from './pnlUtils';
+

@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { Wallet, FileText, ArrowLeftRight } from 'lucide-react';
+import { Wallet, FileText, ArrowLeftRight, CreditCard } from 'lucide-react';
 import { THEME } from '../colors';
 import { TYPOGRAPHY } from '../fonts';
 import Tresorerie from './index';
 import NotesDeFrais from '../frais/NotesDeFrais';
 import ChangeRMB from '../change/ChangeRMB';
+import CreancesClients from './CreancesClients';
+import ModalPaiementFacture from './ModalPaiementFacture';
+import { useTresorerieForms } from './useTresorerieForms';
+import { getRestePayeVente, calculerSoldeRMB } from '../paymentUtils';
 
 interface TresorerieEtFraisProps {
   ventes?: any[];
@@ -19,7 +23,7 @@ interface TresorerieEtFraisProps {
   comptes?: string[];
   paiements?: any[];
   updateData: (patch: any) => void;
-  initialSubTab?: 'tresorerie' | 'frais' | 'change';
+  initialSubTab?: 'tresorerie' | 'creances' | 'frais' | 'change';
 }
 
 export default function TresorerieEtFrais({
@@ -37,12 +41,84 @@ export default function TresorerieEtFrais({
   updateData,
   initialSubTab = 'tresorerie',
 }: TresorerieEtFraisProps) {
-  const [subTab, setSubTab] = useState<'tresorerie' | 'frais' | 'change'>(
-    initialSubTab === 'frais' || initialSubTab === 'change' ? initialSubTab : 'tresorerie'
+  const [subTab, setSubTab] = useState<'tresorerie' | 'creances' | 'frais' | 'change'>(
+    initialSubTab
   );
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const {
+    showPaiementFactureModal,
+    setShowPaiementFactureModal,
+    factureForm,
+    setFactureForm,
+    ventesUnpaid,
+    commandesUnpaidMarchandise,
+    commandesUnpaidFret,
+    handleNatureChange,
+    handleToggleSelectId,
+    handleToggleSelectAll,
+    enregistrerPaiementFacture,
+  } = useTresorerieForms({
+    ventes,
+    commandes,
+    products,
+    fournisseurs,
+    clients,
+    mouvements,
+    paiements,
+    updateData,
+    today,
+  });
+
+  const handleEncaisserVente = (venteId: string) => {
+    const v = ventes.find(item => item.id === venteId);
+    const reste = v ? getRestePayeVente(v, paiements) : 0;
+    const cl = clients.find(c => c.id === v?.clientId);
+
+    setFactureForm({
+      nature: 'vente',
+      selectedIds: [venteId],
+      selectedId: venteId,
+      compte: v?.modePaiement || 'Caisse / Espèces',
+      montant: String(reste),
+      frais: '',
+      beneficiaire: cl?.nom || v?.description || 'Client',
+      description: `Encaissement Solde Vente #${venteId.slice(0, 6)}`,
+      reference: '',
+      date: today,
+    });
+    setShowPaiementFactureModal(true);
+  };
+
+  const handleEncaisserClient = (clientId: string, venteIds: string[]) => {
+    let sum = 0;
+    venteIds.forEach(id => {
+      const v = ventes.find(item => item.id === id);
+      if (v) sum += getRestePayeVente(v, paiements);
+    });
+    const cl = clients.find(c => c.id === clientId);
+
+    setFactureForm({
+      nature: 'vente',
+      selectedIds: venteIds,
+      selectedId: venteIds[0] || '',
+      compte: 'Caisse / Espèces',
+      montant: String(sum),
+      frais: '',
+      beneficiaire: cl?.nom || 'Client',
+      description: `Encaissement groupé Client (${venteIds.length} factures)`,
+      reference: '',
+      date: today,
+    });
+    setShowPaiementFactureModal(true);
+  };
+
+  const soldeRmbInfo = calculerSoldeRMB(changes, mouvements, [], devises, paiements);
 
   const TABS = [
     { id: 'tresorerie', label: 'Trésorerie & Mouvements', icon: Wallet },
+    { id: 'creances', label: 'Créances Clients', icon: CreditCard },
     { id: 'change', label: 'Change RMB', icon: ArrowLeftRight },
     { id: 'frais', label: 'Notes de Frais', icon: FileText },
   ] as const;
@@ -77,7 +153,7 @@ export default function TresorerieEtFrais({
               Trésorerie & Devises
             </h1>
             <p style={{ margin: '2px 0 0', fontSize: 12.5, color: THEME.text.muted }}>
-              Gestion des comptes financiers, opérations de change RMB et notes de frais.
+              Gestion des comptes financiers, créances clients, change RMB et notes de frais.
             </p>
           </div>
         </div>
@@ -140,6 +216,17 @@ export default function TresorerieEtFrais({
         />
       )}
 
+      {subTab === 'creances' && (
+        <CreancesClients
+          ventes={ventes}
+          clients={clients}
+          products={products}
+          paiements={paiements}
+          onEncaisserVente={handleEncaisserVente}
+          onEncaisserClient={handleEncaisserClient}
+        />
+      )}
+
       {subTab === 'change' && (
         <ChangeRMB
           changes={changes}
@@ -161,6 +248,29 @@ export default function TresorerieEtFrais({
           updateData={updateData}
         />
       )}
+
+      {/* Modal de paiement déclenché depuis Créances Clients */}
+      <ModalPaiementFacture
+        show={showPaiementFactureModal}
+        onClose={() => setShowPaiementFactureModal(false)}
+        factureForm={factureForm}
+        setFactureForm={setFactureForm}
+        handleNatureChange={handleNatureChange}
+        handleToggleSelectId={handleToggleSelectId}
+        handleToggleSelectAll={handleToggleSelectAll}
+        enregistrerPaiementFacture={enregistrerPaiementFacture}
+        ventesUnpaid={ventesUnpaid}
+        commandesUnpaidMarchandise={commandesUnpaidMarchandise}
+        commandesUnpaidFret={commandesUnpaidFret}
+        products={products}
+        clients={clients}
+        fournisseurs={fournisseurs}
+        paiements={paiements}
+        today={today}
+        comptes={comptes}
+        soldeRmbInfo={soldeRmbInfo}
+      />
     </div>
   );
 }
+
