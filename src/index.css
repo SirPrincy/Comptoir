@@ -15,69 +15,69 @@
   --font-display: 'Space Grotesk', system-ui, -apple-system, sans-serif;
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
 
-  /* Theme Style Bois (Light - Chêne clair & Parchemin) */
-  --color-bg-base: #FAF6F0;
+  /* Theme Modern Executive Slate (Light - Slate & Sapphire Blue) */
+  --color-bg-base: #F8FAFC;
   --color-bg-card: #FFFFFF;
-  --color-bg-surface: #F2E9DC;
-  --color-bg-soft: #F5EEDC;
-  --color-bg-inputDisabled: #EBE0D0;
-  --color-bg-alert: #F9EAE1;
-  --color-bg-chip: #EDE2D3;
+  --color-bg-surface: #F1F5F9;
+  --color-bg-soft: #EDF2F7;
+  --color-bg-inputDisabled: #E2E8F0;
+  --color-bg-alert: #FEF2F2;
+  --color-bg-chip: #E2E8F0;
 
-  --color-border-base: #E2D5C3;
-  --color-border-strong: #C8B69E;
+  --color-border-base: #E2E8F0;
+  --color-border-strong: #CBD5E1;
 
-  --color-text-primary: #2C1F16;
-  --color-text-secondary: #5E4A3C;
-  --color-text-muted: #8C7868;
-  --color-text-light: #FAF6F0;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748B;
+  --color-text-light: #FFFFFF;
 
-  --color-accent-primary: #6B4226; /* Chêne foncé / Warm Oak */
-  --color-accent-orange: #D97724; /* Ambre / Warm Terracotta */
-  --color-accent-green: #2D6A4F; /* Vert Forêt / Cedar */
-  --color-accent-greenLight: #8BBF9F;
-  --color-accent-danger: #C0392B;
-  --color-accent-dangerSoft: #D9534F;
-  --color-accent-purple: #5A4A6E;
+  --color-accent-primary: #2563EB; /* Sapphire Royal Blue */
+  --color-accent-orange: #F59E0B; /* Vibrant Amber */
+  --color-accent-green: #10B981; /* Emerald Green */
+  --color-accent-greenLight: #A7F3D0;
+  --color-accent-danger: #EF4444; /* Rose Red */
+  --color-accent-dangerSoft: #FCA5A5;
+  --color-accent-purple: #8B5CF6; /* Violet */
 
-  --color-chart-0: #D97724;
-  --color-chart-1: #6B4226;
-  --color-chart-2: #2D6A4F;
-  --color-chart-3: #C0392B;
-  --color-chart-4: #5A4A6E;
+  --color-chart-0: #2563EB;
+  --color-chart-1: #10B981;
+  --color-chart-2: #F59E0B;
+  --color-chart-3: #8B5CF6;
+  --color-chart-4: #EF4444;
 }
 
-/* Theme Style Bois (Dark - Ébène & Noyer Sombre) */
+/* Theme Modern Executive Slate (Dark - Night Slate & Neon Blue) */
 .dark {
-  --color-bg-base: #14100D;
-  --color-bg-card: #1E1814;
-  --color-bg-surface: #2A211B;
-  --color-bg-soft: #251D17;
-  --color-bg-inputDisabled: #1A1410;
-  --color-bg-alert: #3D1C16;
-  --color-bg-chip: #2A211B;
+  --color-bg-base: #0F172A;
+  --color-bg-card: #1E293B;
+  --color-bg-surface: #334155;
+  --color-bg-soft: #1E293B;
+  --color-bg-inputDisabled: #0F172A;
+  --color-bg-alert: #451A20;
+  --color-bg-chip: #334155;
 
-  --color-border-base: #382C23;
-  --color-border-strong: #4D3D31;
+  --color-border-base: #334155;
+  --color-border-strong: #475569;
 
-  --color-text-primary: #F5ECE4;
-  --color-text-secondary: #BAA698;
-  --color-text-muted: #857264;
-  --color-text-light: #FAF6F0;
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #CBD5E1;
+  --color-text-muted: #94A3B8;
+  --color-text-light: #FFFFFF;
 
-  --color-accent-primary: #C68B59; /* Bois Doré / Amber Gold */
-  --color-accent-orange: #E08938; /* Ambre Cuivré */
-  --color-accent-green: #52B788;
-  --color-accent-greenLight: #90D5B6;
-  --color-accent-danger: #E74C3C;
-  --color-accent-dangerSoft: #ED6A5A;
-  --color-accent-purple: #8B7A9E;
+  --color-accent-primary: #3B82F6;
+  --color-accent-orange: #F59E0B;
+  --color-accent-green: #10B981;
+  --color-accent-greenLight: #34D399;
+  --color-accent-danger: #F87171;
+  --color-accent-dangerSoft: #FCA5A5;
+  --color-accent-purple: #A78BFA;
 
-  --color-chart-0: #E08938;
-  --color-chart-1: #C68B59;
-  --color-chart-2: #52B788;
-  --color-chart-3: #E74C3C;
-  --color-chart-4: #8B7A9E;
+  --color-chart-0: #3B82F6;
+  --color-chart-1: #10B981;
+  --color-chart-2: #F59E0B;
+  --color-chart-3: #A78BFA;
+  --color-chart-4: #F87171;
 }
 
 html, body, #root {

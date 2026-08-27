@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { STATUTS_LOGISTIQUE } from '../constants';
 import { calculerSoldeRMB } from '../paymentUtils';
 
@@ -21,38 +21,71 @@ export function useDashboardMetrics({
   paiements = [],
   devises = { rmb: 680, usd: 4600 },
 }: DashboardMetricsProps) {
-  // Helper pour trouver le coût unitaire réel d'un produit (achat + livraison Chine + fret + transport local)
-  const getProductCostBreakdown = (productId: string) => {
-    const productCmds = commandes.filter(
-      (c: any) => c.productId === productId && (
-        (c.pu && Number(c.pu) > 0) || (c.total && Number(c.total) > 0) || (c.qty && Number(c.qty) > 0)
-      )
-    );
+  // O(1) Map des produits par ID
+  const productMap = useMemo(() => {
+    const map = new Map<string, any>();
+    products.forEach((p: any) => {
+      if (p && p.id) map.set(p.id, p);
+    });
+    return map;
+  }, [products]);
 
-    if (productCmds.length > 0) {
-      let totalLandedCost = 0;
-      let totalQty = 0;
-      productCmds.forEach((c: any) => {
-        const qty = Math.max(1, Number(c.qty) || 1);
-        const pu = Number(c.pu) || 0;
-        const fraisChine = Number(c.fraisLivraisonChine || c.fraisLivraison) || 0;
-        const totalMarchandise = (c.total !== undefined && c.total !== null && Number(c.total) > 0)
-          ? Number(c.total)
-          : ((pu * qty) + fraisChine);
-        const fret = Number(c.fraisTransport || c.fretEstimeAr) || 0;
-        const transportLocal = Number(c.fraisTransportLocal) || 0;
+  // O(1) Groupement des commandes par productId
+  const cmdsByProduct = useMemo(() => {
+    const map = new Map<string, any[]>();
+    commandes.forEach((c: any) => {
+      if (!c || !c.productId) return;
+      if (!map.has(c.productId)) map.set(c.productId, []);
+      map.get(c.productId)!.push(c);
+    });
+    return map;
+  }, [commandes]);
 
-        totalLandedCost += (totalMarchandise + fret + transportLocal);
-        totalQty += qty;
-      });
-      const coutRevient = totalQty > 0 ? totalLandedCost / totalQty : 0;
-      return { coutRevient };
-    } else {
-      const p = products.find((pr: any) => pr.id === productId);
-      const coutRevient = Number(p?.prixAchat) || 0;
-      return { coutRevient };
+  // Precalculer la table des couts de revient par productId (O(N) total)
+  const costMapByProduct = useMemo(() => {
+    const map = new Map<string, number>();
+
+    // Pour chaque produit, calculer son cout de revient
+    products.forEach((p: any) => {
+      if (!p || !p.id) return;
+      const productCmds = (cmdsByProduct.get(p.id) || []).filter(
+        (c: any) => (c.pu && Number(c.pu) > 0) || (c.total && Number(c.total) > 0) || (c.qty && Number(c.qty) > 0)
+      );
+
+      if (productCmds.length > 0) {
+        let totalLandedCost = 0;
+        let totalQty = 0;
+        productCmds.forEach((c: any) => {
+          const qty = Math.max(1, Number(c.qty) || 1);
+          const pu = Number(c.pu) || 0;
+          const fraisChine = Number(c.fraisLivraisonChine || c.fraisLivraison) || 0;
+          const totalMarchandise = (c.total !== undefined && c.total !== null && Number(c.total) > 0)
+            ? Number(c.total)
+            : ((pu * qty) + fraisChine);
+          const fret = Number(c.fraisTransport || c.fretEstimeAr) || 0;
+          const transportLocal = Number(c.fraisTransportLocal) || 0;
+
+          totalLandedCost += (totalMarchandise + fret + transportLocal);
+          totalQty += qty;
+        });
+        const coutRevient = totalQty > 0 ? totalLandedCost / totalQty : 0;
+        map.set(p.id, coutRevient);
+      } else {
+        map.set(p.id, Number(p?.prixAchat) || 0);
+      }
+    });
+
+    return map;
+  }, [products, cmdsByProduct]);
+
+  // Helper rapide O(1) pour trouver le coût unitaire réel d'un produit
+  const getProductCostBreakdown = useCallback((productId: string) => {
+    if (costMapByProduct.has(productId)) {
+      return { coutRevient: costMapByProduct.get(productId)! };
     }
-  };
+    const p = productMap.get(productId);
+    return { coutRevient: Number(p?.prixAchat) || 0 };
+  }, [costMapByProduct, productMap]);
 
   // 1. Chiffre d'Affaires Encaissé
   const caTotal = useMemo(() => {
@@ -62,12 +95,12 @@ export function useDashboardMetrics({
   // 2. Marge Commerciale Réelle des ventes
   const margeTotale = useMemo(() => {
     return ventes.reduce((s: number, v: any) => {
-      const p = products.find((pr: any) => pr.id === v.productId);
+      const p = productMap.get(v.productId);
       const puVente = v.pu ?? (p?.prixVente || (v.total && v.qty ? v.total / v.qty : 0));
-      const { coutRevient } = getProductCostBreakdown(v.productId);
+      const coutRevient = costMapByProduct.get(v.productId) ?? (Number(p?.prixAchat) || 0);
       return s + (Number(puVente) - Number(coutRevient)) * (Number(v.qty) || 1);
     }, 0);
-  }, [ventes, products, commandes]);
+  }, [ventes, productMap, costMapByProduct]);
 
   // 3. Capital Investi
   const capitalInvesti = useMemo(() => {
@@ -118,8 +151,7 @@ export function useDashboardMetrics({
     ajustementsStock.forEach((m: any) => {
       if (!m) return;
       const delta = Number(m.delta) || 0;
-      const costData = getProductCostBreakdown(m.productId);
-      const coutRevient = (costData && Number(costData.coutRevient)) || 0;
+      const coutRevient = costMapByProduct.get(m.productId) ?? 0;
       const valTotale = m.valeurTotaleAr !== undefined && m.valeurTotaleAr !== null && !isNaN(Number(m.valeurTotaleAr))
         ? Number(m.valeurTotaleAr)
         : (m.valeurUnitaireAr !== undefined && m.valeurUnitaireAr !== null && !isNaN(Number(m.valeurUnitaireAr)))
@@ -146,7 +178,7 @@ export function useDashboardMetrics({
         return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
       }),
     };
-  }, [ajustementsStock, products, commandes]);
+  }, [ajustementsStock, costMapByProduct]);
 
   // 6. Dépenses d'exploitation globales & Bénéfices
   const totalDepensesGlobales = totalAchatsChine + totalFret + chargesOperationnelles + statsPertes.totalPertesAr;
@@ -203,10 +235,10 @@ export function useDashboardMetrics({
     return products.reduce((s: number, p: any) => {
       const stock = Number(p.stock) || 0;
       if (stock <= 0) return s;
-      const { coutRevient } = getProductCostBreakdown(p.id);
+      const coutRevient = costMapByProduct.get(p.id) ?? (Number(p.prixAchat) || 0);
       return s + (stock * coutRevient);
     }, 0);
-  }, [products, commandes]);
+  }, [products, costMapByProduct]);
 
   const stockAlertesList = useMemo(() => {
     return products.filter((p: any) => {
@@ -224,22 +256,22 @@ export function useDashboardMetrics({
     return ventes.length > 0 ? Math.round(caTotal / ventes.length) : 0;
   }, [ventes, caTotal]);
 
-  // 11. Répartitions & Graphiques
+  // 11. Répartitions & Graphiques (O(N) optimisés)
   const parCategorie = useMemo(() => {
     const map: Record<string, number> = {};
     ventes.forEach((v: any) => {
-      const p = products.find((pr: any) => pr.id === v.productId);
+      const p = productMap.get(v.productId);
       if (!p) return;
       const cat = p.categorie || 'Autre';
       map[cat] = (map[cat] || 0) + (Number(v.total) || (Number(v.pu || 0) * Number(v.qty || 1)) || 0);
     });
     return Object.entries(map).map(([name, value]) => ({ name, value }));
-  }, [ventes, products]);
+  }, [ventes, productMap]);
 
   const parProduit = useMemo(() => {
     const map: Record<string, number> = {};
     ventes.forEach((v: any) => {
-      const p = products.find((pr: any) => pr.id === v.productId);
+      const p = productMap.get(v.productId);
       if (!p) return;
       const key = p.nom + (p.couleur ? ` (${p.couleur})` : '');
       const tot = Number(v.total) || (Number(v.pu || 0) * Number(v.qty || 1)) || 0;
@@ -249,12 +281,30 @@ export function useDashboardMetrics({
       .map(([name, ca]) => ({ name, ca }))
       .sort((a, b) => b.ca - a.ca)
       .slice(0, 6);
-  }, [ventes, products]);
+  }, [ventes, productMap]);
 
-  // 12. Rentabilité Détaillée par Produit
+  // 12. Rentabilité Détaillée par Produit (O(N) avec Maps pré-groupées)
   const rentabiliteParProduit = useMemo(() => {
+    // Groupement des ventes par productId
+    const ventesByProduct = new Map<string, any[]>();
+    ventes.forEach((v: any) => {
+      if (!v || !v.productId) return;
+      if (!ventesByProduct.has(v.productId)) ventesByProduct.set(v.productId, []);
+      ventesByProduct.get(v.productId)!.push(v);
+    });
+
+    // Groupement des ajustements par productId ou nom
+    const ajustementsByProduct = new Map<string, any[]>();
+    ajustementsStock.forEach((m: any) => {
+      if (!m) return;
+      const key = m.productId || m.productNom;
+      if (!key) return;
+      if (!ajustementsByProduct.has(key)) ajustementsByProduct.set(key, []);
+      ajustementsByProduct.get(key)!.push(m);
+    });
+
     return products.map((p: any) => {
-      const pCmds = commandes.filter((c: any) => c.productId === p.id);
+      const pCmds = cmdsByProduct.get(p.id) || [];
       const qtyAchetee = pCmds.reduce((s: number, c: any) => s + (Number(c.qty) || 0), 0);
       const totalAchatsEtFret = pCmds.reduce((s: number, c: any) => {
         const qty = Number(c.qty) || 1;
@@ -269,7 +319,7 @@ export function useDashboardMetrics({
       }, 0);
 
       const prixMoyenAchat = qtyAchetee > 0 ? totalAchatsEtFret / qtyAchetee : (Number(p.prixAchat) || 0);
-      const pVentes = ventes.filter((v: any) => v.productId === p.id);
+      const pVentes = ventesByProduct.get(p.id) || [];
       const qtyVendue = pVentes.reduce((s: number, v: any) => s + (Number(v.qty) || 0), 0);
       const caTotalProduit = pVentes.reduce((s: number, v: any) => {
         const pu = v.pu ?? (p.prixVente || (v.total && v.qty ? v.total / v.qty : 0));
@@ -280,7 +330,11 @@ export function useDashboardMetrics({
       const margeUnitaire = prixMoyenVente - prixMoyenAchat;
       const tauxMargePct = prixMoyenAchat > 0 ? (margeUnitaire / prixMoyenAchat) * 100 : 0;
 
-      const pAjustements = ajustementsStock.filter((m: any) => m.productId === p.id || m.productNom === p.nom);
+      const pAjustements = [
+        ...(ajustementsByProduct.get(p.id) || []),
+        ...(p.nom ? (ajustementsByProduct.get(p.nom) || []) : [])
+      ];
+
       let pertesProduitAr = 0;
       let pertesProduitQty = 0;
       pAjustements.forEach((m: any) => {
@@ -313,7 +367,7 @@ export function useDashboardMetrics({
         caTotalProduit: Math.round(caTotalProduit),
       };
     });
-  }, [products, commandes, ventes, ajustementsStock]);
+  }, [products, cmdsByProduct, ventes, ajustementsStock]);
 
   return {
     getProductCostBreakdown,
@@ -345,3 +399,4 @@ export function useDashboardMetrics({
     rentabiliteParProduit,
   };
 }
+

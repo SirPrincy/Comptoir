@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, memo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, memo, useCallback, useRef } from 'react';
 import { Zap, Package, LayoutDashboard, Plus, Trash2, TrendingUp, Ship, ShoppingCart, Truck, Wallet, Factory, Users, Compass, ArrowDownCircle, ArrowUpCircle, Menu, X, ChevronRight, ArrowRightLeft, HardDrive, ExternalLink, Coins, Sun, Moon, Settings, Activity, FileSpreadsheet } from 'lucide-react';
 import { THEME, CHART_COLORS as COLORS } from './colors';
 import { FONTS, TYPOGRAPHY } from './fonts';
@@ -40,6 +40,8 @@ import ModalDevises from './components/ModalDevises';
 import ModalExportCsv from './components/ModalExportCsv';
 import GlobalSearchBar from './components/GlobalSearchBar';
 import DiagnosticReport from './dashboard/DiagnosticReport';
+import SetupWizard from './setup/SetupWizard';
+import { Sparkles } from 'lucide-react';
 import { persistDouble, loadWithFallback } from './backup/indexedDbStore';
 import { verifierAutoBackupQuotidien, verifierAutoBackupApresVente, migrateDataSchema } from './backup/backupUtils';
 
@@ -51,6 +53,7 @@ export default function App() {
   const [diagnosticOpen, setDiagnosticOpen] = useState(false);
   const [devisesOpen, setDevisesOpen] = useState(false);
   const [exportCsvOpen, setExportCsvOpen] = useState(false);
+  const [setupWizardOpen, setSetupWizardOpen] = useState(false);
   const [products, setProducts] = useState([]);
   const [ventes, setVentes] = useState([]);
   const [commandes, setCommandes] = useState([]);
@@ -112,6 +115,11 @@ export default function App() {
           if (data.comptes && Array.isArray(data.comptes) && data.comptes.length > 0) setComptes(data.comptes);
           verifierAutoBackupQuotidien(data, 1);
         }
+
+        // Première utilisation : afficher le Setup Wizard si non encore complété
+        if (!localStorage.getItem('comptoir_setup_done')) {
+          setSetupWizardOpen(true);
+        }
       } catch (e) {
         console.error('Erreur chargement backup', e);
       }
@@ -119,50 +127,92 @@ export default function App() {
     })();
   }, []);
 
-  const persist = async (next: any) => {
-    setSaving(true);
-    await persistDouble('erp-data', next);
-    setTimeout(() => setSaving(false), 300);
+  // Ref pour garder l'état courant à jour sans déclencher de re-rendu de callback
+  const stateRef = useRef<any>({});
+  stateRef.current = {
+    products, ventes, commandes, fournisseurs, clients, sourcing,
+    mouvements, changes, devises, comptes, immobilisations, emprunts,
+    frais, chargesFixes, paiements
   };
 
-  const save = (overrides: any) => {
+  const persist = useCallback(async (next: any) => {
+    await persistDouble('erp-data', next);
+  }, []);
+
+  const save = useCallback((overrides: any) => {
+    const cur = stateRef.current;
     const next = {
-      products: overrides.products ?? products,
-      ventes: overrides.ventes ?? ventes,
-      commandes: overrides.commandes ?? commandes,
-      fournisseurs: overrides.fournisseurs ?? fournisseurs,
-      clients: overrides.clients ?? clients,
-      sourcing: overrides.sourcing ?? sourcing,
-      mouvements: overrides.mouvements ?? mouvements,
-      changes: overrides.changes ?? changes,
-      devises: overrides.devises ?? devises,
-      comptes: overrides.comptes ?? comptes,
-      immobilisations: overrides.immobilisations ?? immobilisations,
-      emprunts: overrides.emprunts ?? emprunts,
-      frais: overrides.frais ?? frais,
-      chargesFixes: overrides.chargesFixes ?? chargesFixes,
-      paiements: overrides.paiements ?? paiements,
+      products: overrides.products ?? cur.products,
+      ventes: overrides.ventes ?? cur.ventes,
+      commandes: overrides.commandes ?? cur.commandes,
+      fournisseurs: overrides.fournisseurs ?? cur.fournisseurs,
+      clients: overrides.clients ?? cur.clients,
+      sourcing: overrides.sourcing ?? cur.sourcing,
+      mouvements: overrides.mouvements ?? cur.mouvements,
+      changes: overrides.changes ?? cur.changes,
+      devises: overrides.devises ?? cur.devises,
+      comptes: overrides.comptes ?? cur.comptes,
+      immobilisations: overrides.immobilisations ?? cur.immobilisations,
+      emprunts: overrides.emprunts ?? cur.emprunts,
+      frais: overrides.frais ?? cur.frais,
+      chargesFixes: overrides.chargesFixes ?? cur.chargesFixes,
+      paiements: overrides.paiements ?? cur.paiements,
     };
-    if (overrides.ventes && overrides.ventes.length > ventes.length) {
+
+    if (overrides.ventes && overrides.ventes.length > cur.ventes.length) {
       verifierAutoBackupApresVente(next, 10);
     }
-    setProducts(next.products); setVentes(next.ventes); setCommandes(next.commandes);
-    setFournisseurs(next.fournisseurs); setClients(next.clients);
-    setSourcing(next.sourcing); setMouvements(next.mouvements);
-    setChanges(next.changes);
-    setDevises(next.devises);
-    setComptes(next.comptes);
-    setImmobilisations(next.immobilisations);
-    setEmprunts(next.emprunts);
-    setFrais(next.frais);
-    setChargesFixes(next.chargesFixes);
-    setPaiements(next.paiements);
+
+    if (overrides.products !== undefined) setProducts(next.products);
+    if (overrides.ventes !== undefined) setVentes(next.ventes);
+    if (overrides.commandes !== undefined) setCommandes(next.commandes);
+    if (overrides.fournisseurs !== undefined) setFournisseurs(next.fournisseurs);
+    if (overrides.clients !== undefined) setClients(next.clients);
+    if (overrides.sourcing !== undefined) setSourcing(next.sourcing);
+    if (overrides.mouvements !== undefined) setMouvements(next.mouvements);
+    if (overrides.changes !== undefined) setChanges(next.changes);
+    if (overrides.devises !== undefined) setDevises(next.devises);
+    if (overrides.comptes !== undefined) setComptes(next.comptes);
+    if (overrides.immobilisations !== undefined) setImmobilisations(next.immobilisations);
+    if (overrides.emprunts !== undefined) setEmprunts(next.emprunts);
+    if (overrides.frais !== undefined) setFrais(next.frais);
+    if (overrides.chargesFixes !== undefined) setChargesFixes(next.chargesFixes);
+    if (overrides.paiements !== undefined) setPaiements(next.paiements);
+
     persist(next);
-  };
+  }, [persist]);
 
+  const updateAll = useCallback((p: any, v: any, c: any) => save({ products: p, ventes: v, commandes: c }), [save]);
+  const updateData = useCallback((patch: any) => save(patch), [save]);
 
-  const updateAll = useCallback((p: any, v: any, c: any) => save({ products: p, ventes: v, commandes: c }), [products, ventes, commandes, fournisseurs, clients, sourcing, mouvements, changes, devises, comptes, immobilisations, emprunts, frais, chargesFixes, paiements]);
-  const updateData = useCallback((patch: any) => save(patch), [products, ventes, commandes, fournisseurs, clients, sourcing, mouvements, changes, devises, comptes, immobilisations, emprunts, frais, chargesFixes, paiements]);
+  const handleSetupComplete = useCallback((setupData: any) => {
+    try {
+      localStorage.setItem('comptoir_setup_done', 'true');
+    } catch (_) {}
+
+    const patch: any = {};
+    if (setupData.devises) patch.devises = setupData.devises;
+    if (setupData.comptes) patch.comptes = setupData.comptes;
+
+    if (setupData.newProduct) {
+      patch.products = [setupData.newProduct, ...products];
+    }
+    if (setupData.newFournisseur) {
+      patch.fournisseurs = [setupData.newFournisseur, ...fournisseurs];
+    }
+    if (setupData.newClient) {
+      patch.clients = [setupData.newClient, ...clients];
+    }
+    if (setupData.initialMouvements) {
+      patch.mouvements = [...(setupData.initialMouvements), ...mouvements];
+    }
+    if (setupData.newChargeFixe) {
+      patch.chargesFixes = [setupData.newChargeFixe, ...chargesFixes];
+    }
+
+    save(patch);
+    setSetupWizardOpen(false);
+  }, [products, fournisseurs, clients, mouvements, chargesFixes]);
 
 
 
@@ -238,6 +288,10 @@ export default function App() {
         onOpenExportCsv={() => {
           setDrawerOpen(false);
           setExportCsvOpen(true);
+        }}
+        onOpenSetupWizard={() => {
+          setDrawerOpen(false);
+          setSetupWizardOpen(true);
         }}
         devises={devises}
         darkMode={darkMode}
@@ -420,11 +474,24 @@ export default function App() {
         clients={clients}
         fournisseurs={fournisseurs}
       />
+
+      <SetupWizard
+        show={setupWizardOpen}
+        onClose={() => {
+          try {
+            localStorage.setItem('comptoir_setup_done', 'true');
+          } catch (_) {}
+          setSetupWizardOpen(false);
+        }}
+        onComplete={handleSetupComplete}
+        currentDevises={devises}
+        currentComptes={comptes}
+      />
     </div>
   );
 }
 
-function Header({ saving, onOpenDrawer, onOpenBackup, onOpenDevises, devises, currentSection, darkMode, onToggleDarkMode, products, commandes, clients, fournisseurs, onNavigate }: any) {
+const Header = memo(function Header({ saving, onOpenDrawer, onOpenBackup, onOpenDevises, devises, currentSection, darkMode, onToggleDarkMode, products, commandes, clients, fournisseurs, onNavigate }: any) {
   const Icon = currentSection.icon;
   return (
     <div style={{
@@ -505,9 +572,9 @@ function Header({ saving, onOpenDrawer, onOpenBackup, onOpenDevises, devises, cu
       </div>
     </div>
   );
-}
+});
 
-function NavDrawer({ open, onClose, tab, setTab, counts, onOpenBackup, onOpenDiagnostic, onOpenDevises, onOpenExportCsv, devises, darkMode, onToggleDarkMode, saving }: any) {
+const NavDrawer = memo(function NavDrawer({ open, onClose, tab, setTab, counts, onOpenBackup, onOpenDiagnostic, onOpenDevises, onOpenExportCsv, onOpenSetupWizard, devises, darkMode, onToggleDarkMode, saving }: any) {
   if (!open) return null;
 
   const groups = Array.from(new Set(SECTIONS.map(s => s.group)));
@@ -640,6 +707,31 @@ function NavDrawer({ open, onClose, tab, setTab, counts, onOpenBackup, onOpenDia
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {/* Assistant Setup Wizard */}
+              {onOpenSetupWizard && (
+                <button
+                  onClick={onOpenSetupWizard}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '9px 12px', borderRadius: 8,
+                    border: '1px solid ' + THEME.border.base, background: THEME.bg.base,
+                    color: THEME.text.primary, fontWeight: 500, fontSize: 13.5, cursor: 'pointer',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+                    width: '100%',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 6, background: THEME.bg.chip, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Sparkles size={15} color={THEME.accent.primary} />
+                    </div>
+                    <span>Assistant Configuration</span>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: THEME.accent.primary, background: THEME.bg.card, padding: '2px 8px', borderRadius: 10, border: '1px solid ' + THEME.border.base }}>
+                    10 Étapes
+                  </span>
+                </button>
+              )}
+
               {/* Thème */}
               {onToggleDarkMode && (
                 <button
@@ -785,7 +877,7 @@ function NavDrawer({ open, onClose, tab, setTab, counts, onOpenBackup, onOpenDia
       </div>
     </div>
   );
-}
+});
 
 
 

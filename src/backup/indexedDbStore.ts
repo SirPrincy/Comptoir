@@ -53,20 +53,54 @@ export async function idbGet<T = any>(key: string): Promise<T | null> {
   }
 }
 
+// Queue de sauvegarde debouncée non bloquante
+const pendingPersistData = new Map<string, any>();
+const persistTimers = new Map<string, any>();
+
+function executePersist(key: string) {
+  if (!pendingPersistData.has(key)) return;
+  const data = pendingPersistData.get(key);
+  pendingPersistData.delete(key);
+  persistTimers.delete(key);
+
+  try {
+    const serialized = JSON.stringify(data);
+    localStorage.setItem(key, serialized);
+  } catch (e) {
+    console.warn('localStorage a échoué, IndexedDB prend le relais :', e);
+  }
+
+  idbSet(key, data).catch(err => {
+    console.warn('Erreur ecriture IndexedDB non bloquante', err);
+  });
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    persistTimers.forEach((timer) => clearTimeout(timer));
+    pendingPersistData.forEach((_, key) => {
+      executePersist(key);
+    });
+  });
+}
+
 /**
  * Sauvegarde les données à la fois dans localStorage (rapide, lecture immédiate)
  * ET dans IndexedDB (plus de capacité, filet de sécurité).
- * À appeler à la place de ton simple `localStorage.setItem` actuel.
+ * Debouncée à 250ms pour ne pas figer l'IHM lors des saisies et actions rapides.
  */
 export async function persistDouble(key: string, data: any) {
-  const serialized = JSON.stringify(data);
-  try {
-    localStorage.setItem(key, serialized);
-  } catch (e) {
-    // localStorage plein ou indisponible — IndexedDB devient le seul filet
-    console.warn('localStorage a échoué, IndexedDB prend le relais :', e);
+  pendingPersistData.set(key, data);
+
+  if (persistTimers.has(key)) {
+    clearTimeout(persistTimers.get(key));
   }
-  await idbSet(key, data); // objet brut, pas besoin de re-sérialiser pour IndexedDB
+
+  const timer = setTimeout(() => {
+    executePersist(key);
+  }, 250);
+
+  persistTimers.set(key, timer);
 }
 
 /**
@@ -82,3 +116,4 @@ export async function loadWithFallback<T = any>(key: string): Promise<T | null> 
   }
   return await idbGet<T>(key);
 }
+
