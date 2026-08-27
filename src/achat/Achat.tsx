@@ -20,10 +20,12 @@ const Achat = memo(function Achat({
   changes = [],
   mouvements = [],
   sourcing = [],
+  paiements = [],
   updateAll,
   updateData,
   onNavigateTab,
   initialSearch = '',
+  comptes = [],
 }: any) {
   // Safe array guards against null/undefined props
   const safeProducts = Array.isArray(products) ? products : [];
@@ -33,6 +35,7 @@ const Achat = memo(function Achat({
   const safeChanges = Array.isArray(changes) ? changes : [];
   const safeMouvements = Array.isArray(mouvements) ? mouvements : [];
   const safeSourcing = Array.isArray(sourcing) ? sourcing : [];
+  const safePaiements = Array.isArray(paiements) ? paiements : [];
 
   const [showCmd, setShowCmd] = useState(false);
   const [subTab, setSubTab] = useState<'attente' | 'historique'>('attente');
@@ -63,20 +66,20 @@ const Achat = memo(function Achat({
   const [datePaiementChoisie, setDatePaiementChoisie] = useState(today);
 
   const soldeRmbInfo = useMemo(() => {
-    return calculerSoldeRMB(safeChanges, safeMouvements, safeCommandes, devises);
-  }, [safeChanges, safeMouvements, safeCommandes, devises]);
+    return calculerSoldeRMB(safeChanges, safeMouvements, safeCommandes, devises, safePaiements);
+  }, [safeChanges, safeMouvements, safeCommandes, devises, safePaiements]);
 
 
   const supprimerCommande = (id: string) => updateAll(safeProducts, safeVentes, safeCommandes.filter((c: any) => c.id !== id));
 
   // Commandes avec solde restant à payer (non payées ou avec acompte partiel)
   const commandesAvecSolde = safeCommandes.filter((c: any) => {
-    const reste = getRestePayeMarchandise(c);
+    const reste = getRestePayeMarchandise(c, safePaiements);
     return reste > 0 || c.statut === 'Commandé';
   }).sort((a: any, b: any) => new Date(b.dateAchat || 0).getTime() - new Date(a.dateAchat || 0).getTime());
 
-  const soldeTotalRestantDu = commandesAvecSolde.reduce((acc, c) => acc + getRestePayeMarchandise(c), 0);
-  const dejaPayeesTotal = safeCommandes.filter((c: any) => getRestePayeMarchandise(c) <= 0 && STATUTS_LOGISTIQUE.includes(c.statut)).length;
+  const soldeTotalRestantDu = commandesAvecSolde.reduce((acc, c) => acc + getRestePayeMarchandise(c, safePaiements), 0);
+  const dejaPayeesTotal = safeCommandes.filter((c: any) => getRestePayeMarchandise(c, safePaiements) <= 0 && STATUTS_LOGISTIQUE.includes(c.statut)).length;
 
   return (
     <div>
@@ -206,6 +209,7 @@ const Achat = memo(function Achat({
         ouvrirModalPaiement={setPaiementCommande}
         supprimerCommande={supprimerCommande}
         onNavigateTab={onNavigateTab}
+        paiements={safePaiements}
       />
 
       <AchatPaiementModal
@@ -224,6 +228,12 @@ const Achat = memo(function Achat({
         devises={devises}
         today={today}
         updateAll={updateAll}
+        updateData={updateData}
+        paiements={safePaiements}
+        changes={safeChanges}
+        comptes={comptes}
+        mouvements={safeMouvements}
+        fournisseurs={safeFournisseurs}
       />
     </div>
   );

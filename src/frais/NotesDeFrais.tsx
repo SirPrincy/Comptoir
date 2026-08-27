@@ -238,8 +238,6 @@ export default function NotesDeFrais({
 
   // Suppression
   const handleDelete = (id: string) => {
-    if (!window.confirm('Supprimer cette note de frais ?')) return;
-
     const target = frais.find((f) => f.id === id);
     const nextFrais = frais.filter((f) => f.id !== id);
     let nextMouvements = mouvements;

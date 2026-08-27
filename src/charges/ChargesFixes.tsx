@@ -152,7 +152,6 @@ export default function ChargesFixes({
   };
 
   const handleDelete = (id: string) => {
-    if (!window.confirm('Supprimer cette charge fixe ?')) return;
     const next = chargesFixes.filter((c) => c.id !== id);
     updateData({ chargesFixes: next });
   };

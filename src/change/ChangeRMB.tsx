@@ -16,6 +16,7 @@ interface ChangeRMBProps {
   devises?: any;
   fournisseurs?: any[];
   comptes?: string[];
+  paiements?: any[];
   updateData: (patch: any) => void;
   onApplyTauxToApp?: (taux: number) => void;
 }
@@ -26,6 +27,7 @@ const ChangeRMB = memo(function ChangeRMB({
   commandes = [],
   devises,
   comptes,
+  paiements = [],
   updateData,
   onApplyTauxToApp,
 }: ChangeRMBProps) {
@@ -90,8 +92,8 @@ const ChangeRMB = memo(function ChangeRMB({
 
   // Solde RMB dispo
   const soldeRmbInfo = useMemo(() => {
-    return calculerSoldeRMB(changes, mouvements, commandes, devises);
-  }, [changes, mouvements, commandes, devises]);
+    return calculerSoldeRMB(changes, mouvements, commandes, devises, paiements);
+  }, [changes, mouvements, commandes, devises, paiements]);
 
   // Analyse et Historique de Fiabilité des Exchangers P2P
   const exchangersAnalysis = useMemo(() => {

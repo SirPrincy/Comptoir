@@ -64,23 +64,27 @@ export function filterPnlData(
   }
 
   const matchDate = (dateStr: string) => {
+    if (!debut && !fin) return true;
     if (!dateStr) return false;
     const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return false;
     if (debut && d < debut) return false;
     if (fin && d > fin) return false;
     return true;
   };
 
-  const periodVentes = ventes.filter((v: any) => matchDate(v.date));
-  const periodMouvements = mouvements.filter((m: any) => matchDate(m.date));
-  const periodFrais = frais.filter((f: any) => matchDate(f.date));
+  const periodVentes = (ventes || []).filter((v: any) => v && matchDate(v.date));
+  const periodMouvements = (mouvements || []).filter((m: any) => m && matchDate(m.date));
+  const periodFrais = (frais || []).filter((f: any) => f && matchDate(f.date));
+
+  const safeDateFmt = (d: Date | null) => (d && !isNaN(d.getTime()) ? d.toLocaleDateString('fr-FR') : '');
 
   return {
     ventes: periodVentes,
     mouvements: periodMouvements,
     frais: periodFrais,
-    debutStr: debut ? debut.toLocaleDateString('fr-FR') : 'Début des temps',
-    finStr: fin ? fin.toLocaleDateString('fr-FR') : 'Présent',
+    debutStr: debut ? safeDateFmt(debut) : 'Début des temps',
+    finStr: fin ? safeDateFmt(fin) : 'Présent',
   };
 }
 
@@ -95,13 +99,13 @@ export function computePnl(
   immobilisations: any[] = [],
   devises: { rmb: number; usd: number } = { rmb: 680, usd: 4600 }
 ): PnlData {
-  const vts = filteredData.ventes;
-  const mvts = filteredData.mouvements;
-  const frs = filteredData.frais || [];
+  const vts = (filteredData && filteredData.ventes) || [];
+  const mvts = (filteredData && filteredData.mouvements) || [];
+  const frs = (filteredData && filteredData.frais) || [];
 
   // 1. Chiffre d'Affaires (CA)
   const chiffreAffaires = vts.reduce((sum: number, v: any) => {
-    return sum + (Number(v.total) || 0);
+    return sum + (Number(v?.total) || (Number(v?.pu || 0) * Number(v?.qty || 1)) || 0);
   }, 0);
 
   // 2. Coût des marchandises vendues (COGS)
@@ -109,6 +113,7 @@ export function computePnl(
   let fretMarchandises = 0;
 
   vts.forEach((v: any) => {
+    if (!v) return;
     const { basePu, fretPu } = getProductCostBreakdown(v.productId, products, commandes);
     const qty = Number(v.qty) || 1;
     costMarchandises += basePu * qty;
@@ -127,6 +132,28 @@ export function computePnl(
   let fretEtLogistique = 0;
   let fraisGenerauxNotes = 0;
   let autresSorties = 0;
+  let pertesStock = 0;
+  let gainsInventaire = 0;
+  let quantitePertesStock = 0;
+
+  // Pertes & Ajustements de stock de la période
+  mvts.forEach((m: any) => {
+    if (!m) return;
+    if (m.type === 'Ajustement Stock') {
+      const delta = Number(m.delta) || 0;
+      const { coutRevient } = getProductCostBreakdown(m.productId, products, commandes);
+      const valTotale = m.valeurTotaleAr !== undefined && m.valeurTotaleAr !== null && Number(m.valeurTotaleAr) > 0
+        ? Number(m.valeurTotaleAr)
+        : (Math.abs(delta) * (Number(m.valeurUnitaireAr) || coutRevient || 0));
+
+      if (delta < 0) {
+        pertesStock += valTotale;
+        quantitePertesStock += Math.abs(delta);
+      } else if (delta > 0) {
+        gainsInventaire += valTotale;
+      }
+    }
+  });
 
   // Prise en compte des Notes de Frais de la période
   frs.forEach((f: any) => {
@@ -180,7 +207,7 @@ export function computePnl(
     }
   });
 
-  const totalOpex = loyerEtCharges + marketingEtPub + fretEtLogistique + fraisGenerauxNotes + autresSorties;
+  const totalOpex = loyerEtCharges + marketingEtPub + fretEtLogistique + fraisGenerauxNotes + autresSorties + pertesStock - gainsInventaire;
 
   // Dotation aux amortissements
   let dotationAmortissement = 0;
@@ -261,6 +288,9 @@ export function computePnl(
     fretEtLogistique,
     fraisGenerauxNotes,
     autresSorties,
+    pertesStock,
+    gainsInventaire,
+    quantitePertesStock,
     totalOpex,
     dotationAmortissement,
     resultatExploitation,

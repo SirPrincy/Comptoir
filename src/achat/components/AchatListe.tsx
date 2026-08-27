@@ -12,6 +12,7 @@ export default function AchatListe({
   ouvrirModalPaiement, 
   supprimerCommande,
   onNavigateTab,
+  paiements = [],
 }: any) {
 
   const listeFiltree = useMemo(() => {
@@ -37,9 +38,9 @@ export default function AchatListe({
         const p = products.find((pr: any) => pr.id === c.productId);
         const fourn = fournisseurs.find((f: any) => f.id === c.fournisseurId);
         const itemTotal = c.total !== undefined ? Number(c.total) : (Number(c.pu || 0) * Number(c.qty || 1));
-        const paye = getMontantPayeMarchandise(c);
-        const reste = getRestePayeMarchandise(c);
-        const statutInfo = getStatutMarchandiseLabel(c);
+        const paye = getMontantPayeMarchandise(c, paiements);
+        const reste = getRestePayeMarchandise(c, paiements);
+        const statutInfo = getStatutMarchandiseLabel(c, paiements);
 
         return (
           <div key={c.id} style={{ background: THEME.bg.card, border: `1px solid ${THEME.border.base}`, borderRadius: 10, padding: '10px 14px' }}>
@@ -55,6 +56,16 @@ export default function AchatListe({
                   <span style={{ fontSize: 11, background: THEME.bg.soft, color: THEME.text.secondary, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>
                     {c.qty} pcs
                   </span>
+                  {(c.payeEnMgaDirect || c.modeReglement === 'mga_direct') && (
+                    <span style={{ fontSize: 10.5, background: '#FEF3C7', color: '#92400E', padding: '2px 6px', borderRadius: 4, fontWeight: 700, border: '1px solid #FDE68A' }}>
+                      🇲🇬 Payé MGA Direct (Exclu Réserve RMB)
+                    </span>
+                  )}
+                  {c.modeReglement === 'change_auto' && (
+                    <span style={{ fontSize: 10.5, background: '#D1FAE5', color: '#065F46', padding: '2px 6px', borderRadius: 4, fontWeight: 700, border: '1px solid #A7F3D0' }}>
+                      🔄 Change Auto RMB
+                    </span>
+                  )}
                 </div>
                 <div style={{ fontSize: 11.5, color: THEME.text.muted, marginTop: 4, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   <span>🏪 Fournisseur: <strong>{fourn ? fourn.nom : c.source}</strong></span>
@@ -101,7 +112,7 @@ export default function AchatListe({
                     {reste > 0 ? 'Payer le solde' : 'Historique Pmt'}
                   </button>
                   <button onClick={() => {
-                    if(window.confirm("Supprimer cette commande d'achat ?")) supprimerCommande(c.id);
+                    supprimerCommande(c.id);
                   }} style={iconBtn} title="Supprimer la commande">
                     <Trash2 size={16} color={THEME.accent.danger} />
                   </button>

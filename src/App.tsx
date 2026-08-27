@@ -63,6 +63,7 @@ export default function App() {
   const [emprunts, setEmprunts] = useState([]);
   const [frais, setFrais] = useState([]);
   const [chargesFixes, setChargesFixes] = useState([]);
+  const [paiements, setPaiements] = useState([]);
   const [devises, setDevises] = useState({ rmb: 680, usd: 4600 });
   const [comptes, setComptes] = useState<string[]>(COMPTES_FINANCIERS);
   const [loading, setLoading] = useState(true);
@@ -106,6 +107,7 @@ export default function App() {
           setEmprunts(data.emprunts || []);
           setFrais(data.frais || []);
           setChargesFixes(data.chargesFixes || []);
+          setPaiements(data.paiements || []);
           if (data.devises) setDevises(data.devises);
           if (data.comptes && Array.isArray(data.comptes) && data.comptes.length > 0) setComptes(data.comptes);
           verifierAutoBackupQuotidien(data, 1);
@@ -139,6 +141,7 @@ export default function App() {
       emprunts: overrides.emprunts ?? emprunts,
       frais: overrides.frais ?? frais,
       chargesFixes: overrides.chargesFixes ?? chargesFixes,
+      paiements: overrides.paiements ?? paiements,
     };
     if (overrides.ventes && overrides.ventes.length > ventes.length) {
       verifierAutoBackupApresVente(next, 10);
@@ -153,12 +156,13 @@ export default function App() {
     setEmprunts(next.emprunts);
     setFrais(next.frais);
     setChargesFixes(next.chargesFixes);
+    setPaiements(next.paiements);
     persist(next);
   };
 
 
-  const updateAll = useCallback((p: any, v: any, c: any) => save({ products: p, ventes: v, commandes: c }), [products, ventes, commandes, fournisseurs, clients, sourcing, mouvements, changes, devises, comptes, immobilisations, emprunts, frais, chargesFixes]);
-  const updateData = useCallback((patch: any) => save(patch), [products, ventes, commandes, fournisseurs, clients, sourcing, mouvements, changes, devises, comptes, immobilisations, emprunts, frais, chargesFixes]);
+  const updateAll = useCallback((p: any, v: any, c: any) => save({ products: p, ventes: v, commandes: c }), [products, ventes, commandes, fournisseurs, clients, sourcing, mouvements, changes, devises, comptes, immobilisations, emprunts, frais, chargesFixes, paiements]);
+  const updateData = useCallback((patch: any) => save(patch), [products, ventes, commandes, fournisseurs, clients, sourcing, mouvements, changes, devises, comptes, immobilisations, emprunts, frais, chargesFixes, paiements]);
 
 
 
@@ -243,10 +247,21 @@ export default function App() {
 
       <div style={{ padding: '20px 16px 80px', maxWidth: 1140, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
         {tab === 'vente' && (
-          <VenteRapide products={products} ventes={ventes} commandes={commandes} clients={clients} updateAll={updateAll} comptes={comptes} />
+          <VenteRapide
+            products={products}
+            ventes={ventes}
+            commandes={commandes}
+            clients={clients}
+            updateAll={updateAll}
+            updateData={updateData}
+            comptes={comptes}
+            paiements={paiements}
+            mouvements={mouvements}
+            fournisseurs={fournisseurs}
+          />
         )}
         {tab === 'achat' && (
-          <Achat products={products} commandes={commandes} ventes={ventes} fournisseurs={fournisseurs} devises={devises} changes={changes} mouvements={mouvements} updateAll={updateAll} sourcing={sourcing} updateData={updateData} onNavigateTab={(targetTab: string) => setTab(targetTab)} initialSearch={searchPreset} />
+          <Achat products={products} commandes={commandes} ventes={ventes} fournisseurs={fournisseurs} devises={devises} changes={changes} mouvements={mouvements} updateAll={updateAll} sourcing={sourcing} updateData={updateData} onNavigateTab={(targetTab: string) => setTab(targetTab)} initialSearch={searchPreset} paiements={paiements} comptes={comptes} />
         )}
         {tab === 'logistique' && (
           <Logistique products={products} commandes={commandes} ventes={ventes} fournisseurs={fournisseurs} devises={devises} updateAll={updateAll} onNavigateTab={(targetTab: string) => setTab(targetTab)} />
@@ -266,6 +281,7 @@ export default function App() {
             devises={devises}
             frais={frais}
             comptes={comptes}
+            paiements={paiements}
             updateData={updateData}
             initialSubTab={tab === 'frais' ? 'frais' : tab === 'change' ? 'change' : 'tresorerie'}
           />
@@ -285,7 +301,7 @@ export default function App() {
             initialSubTab={tab === 'immobilisations' || tab === 'emprunts' ? tab : 'charges-fixes'}
           />
         )}
-        {(tab === 'etats-financiers' || tab === 'pnl' || tab === 'bilan') && (
+        {(tab === 'etats-financiers' || tab === 'pnl' || tab === 'bilan' || tab === 'projection-tresorerie') && (
           <EtatsFinanciers
             products={products}
             ventes={ventes}
@@ -296,7 +312,10 @@ export default function App() {
             emprunts={emprunts}
             comptes={comptes}
             devises={devises}
-            initialSubTab={tab === 'bilan' ? 'bilan' : 'pnl'}
+            chargesFixes={chargesFixes}
+            paiements={paiements}
+            fournisseurs={fournisseurs}
+            initialSubTab={tab === 'bilan' ? 'bilan' : tab === 'projection-tresorerie' ? 'projection' : 'pnl'}
           />
         )}
         {(tab === 'partenaires' || tab === 'fournisseurs' || tab === 'clients') && (
@@ -326,6 +345,10 @@ export default function App() {
             emprunts={emprunts}
             fournisseurs={fournisseurs}
             clients={clients}
+            paiements={paiements}
+            devises={devises}
+            chargesFixes={chargesFixes}
+            comptes={comptes}
             onNavigateTab={(targetTab) => setTab(targetTab)}
           />
         )}

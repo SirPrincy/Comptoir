@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { TrendingUp, Scale, FileSpreadsheet } from 'lucide-react';
+import { TrendingUp, Scale, FileSpreadsheet, Coins } from 'lucide-react';
 import { THEME } from '../colors';
 import { TYPOGRAPHY } from '../fonts';
 import ProfitLoss from '../pnl/ProfitLoss';
 import Bilan from '../bilan/Bilan';
+import ProjectionTresorerie from './ProjectionTresorerie';
 
 interface EtatsFinanciersProps {
   products?: any[];
@@ -15,7 +16,10 @@ interface EtatsFinanciersProps {
   emprunts?: any[];
   comptes?: string[];
   devises?: { rmb: number; usd: number };
-  initialSubTab?: 'pnl' | 'bilan';
+  chargesFixes?: any[];
+  paiements?: any[];
+  fournisseurs?: any[];
+  initialSubTab?: 'pnl' | 'bilan' | 'projection';
 }
 
 export default function EtatsFinanciers({
@@ -28,15 +32,19 @@ export default function EtatsFinanciers({
   emprunts = [],
   comptes = [],
   devises = { rmb: 680, usd: 4600 },
+  chargesFixes = [],
+  paiements = [],
+  fournisseurs = [],
   initialSubTab = 'pnl',
 }: EtatsFinanciersProps) {
-  const [subTab, setSubTab] = useState<'pnl' | 'bilan'>(
-    initialSubTab === 'bilan' ? 'bilan' : 'pnl'
+  const [subTab, setSubTab] = useState<'pnl' | 'bilan' | 'projection'>(
+    initialSubTab === 'bilan' ? 'bilan' : initialSubTab === 'projection' ? 'projection' : 'pnl'
   );
 
   const TABS = [
     { id: 'pnl', label: 'Compte de Résultat (P&L)', icon: TrendingUp },
     { id: 'bilan', label: 'Bilan Comptable', icon: Scale },
+    { id: 'projection', label: 'Projection Trésorerie (3 Mois)', icon: Coins },
   ] as const;
 
   return (
@@ -44,7 +52,7 @@ export default function EtatsFinanciers({
       {/* En-tête principal & Navigation par onglets */}
       <div style={{
         display: 'flex',
-        justify: 'space-between',
+        justifyContent: 'space-between',
         alignItems: 'center',
         flexWrap: 'wrap',
         gap: 12,
@@ -60,7 +68,7 @@ export default function EtatsFinanciers({
             color: THEME.accent.primary,
             display: 'flex',
             alignItems: 'center',
-            justify: 'center',
+            justifyContent: 'center',
           }}>
             <FileSpreadsheet size={20} />
           </div>
@@ -69,7 +77,7 @@ export default function EtatsFinanciers({
               États Financiers
             </h1>
             <p style={{ margin: '2px 0 0', fontSize: 12.5, color: THEME.text.muted }}>
-              P&L analytique (Compte de résultat) et Bilan comptable synthétique de l'entreprise.
+              P&L analytique, Bilan comptable et Projection de trésorerie prévisionnelle à 3 mois.
             </p>
           </div>
         </div>
@@ -138,6 +146,18 @@ export default function EtatsFinanciers({
           emprunts={emprunts}
           comptes={comptes}
           devises={devises}
+        />
+      )}
+
+      {subTab === 'projection' && (
+        <ProjectionTresorerie
+          mouvements={mouvements}
+          ventes={ventes}
+          commandes={commandes}
+          chargesFixes={chargesFixes}
+          paiements={paiements}
+          products={products}
+          fournisseurs={fournisseurs}
         />
       )}
     </div>

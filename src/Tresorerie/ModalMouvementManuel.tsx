@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, Field, inputStyle, selectStyle, primaryBtn } from '../ui';
 import { COMPTES_FINANCIERS, TAGS_TRANSACTION } from '../constants';
+import SoldeCompteInfo from './SoldeCompteInfo';
 
 interface FormSaisieProps {
   form: any;
@@ -8,6 +9,8 @@ interface FormSaisieProps {
   ajouterMouvement: () => void;
   today: string;
   comptes?: string[];
+  soldesParCompte?: Record<string, number>;
+  soldeRmbInfo?: any;
 }
 
 export default function ModalMouvementManuel({
@@ -16,6 +19,8 @@ export default function ModalMouvementManuel({
   ajouterMouvement,
   today,
   comptes,
+  soldesParCompte = {},
+  soldeRmbInfo,
 }: FormSaisieProps) {
   const activeComptes = (comptes && comptes.length > 0) ? comptes : COMPTES_FINANCIERS;
 
@@ -80,9 +85,18 @@ export default function ModalMouvementManuel({
             value={form.compte}
             onChange={e => setForm({ ...form, compte: e.target.value })}
           >
-            {activeComptes.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
+            {activeComptes.map(c => {
+              const isRmbOpt = c === 'Réserve RMB (¥)' || c.toLowerCase().includes('rmb');
+              const s = isRmbOpt
+                ? (soldeRmbInfo?.soldeRmbDispo || 0)
+                : (soldesParCompte[c] || 0);
+              const sLabel = isRmbOpt ? `${s.toFixed(2)} ¥` : `${s.toLocaleString('fr-FR')} Ar`;
+              return (
+                <option key={c} value={c}>
+                  {c} (Solde : {sLabel})
+                </option>
+              );
+            })}
           </select>
         </Field>
 
@@ -117,6 +131,17 @@ export default function ModalMouvementManuel({
             onChange={e => setForm({ ...form, date: e.target.value })}
           />
         </Field>
+      </div>
+
+      <div style={{ marginTop: 8 }}>
+        <SoldeCompteInfo
+          compteSelectionne={form.compte}
+          soldesParCompte={soldesParCompte}
+          soldeRmbDispo={soldeRmbInfo?.soldeRmbDispo}
+          montantOperation={Number(form.montant) || 0}
+          typeOperation={form.type === 'entrée' ? 'credit' : 'debit'}
+          activeComptes={activeComptes}
+        />
       </div>
 
       <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>

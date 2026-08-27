@@ -9,6 +9,11 @@ interface PnlKpiCardsProps {
 }
 
 export default function PnlKpiCards({ pnl }: PnlKpiCardsProps) {
+  if (!pnl) return null;
+
+  const fmt = (n: number | undefined | null) => (Number(n) || 0).toLocaleString('fr-FR');
+  const pct = (n: number | undefined | null) => (Number(n) || 0).toFixed(1);
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
       <div style={{ background: THEME.bg.card, border: `1px solid ${THEME.border.base}`, borderRadius: 12, padding: '12px 14px' }}>
@@ -17,7 +22,7 @@ export default function PnlKpiCards({ pnl }: PnlKpiCardsProps) {
           Chiffre d'Affaires
         </div>
         <div style={{ ...TYPOGRAPHY.statValue, color: THEME.text.primary }}>
-          {pnl.chiffreAffaires.toLocaleString()} Ar
+          {fmt(pnl.chiffreAffaires)} Ar
         </div>
         <div style={{ fontSize: 11, color: THEME.text.muted, marginTop: 2 }}>
           Total des ventes enregistrées
@@ -30,7 +35,7 @@ export default function PnlKpiCards({ pnl }: PnlKpiCardsProps) {
           Marge Brute %
         </div>
         <div style={{ ...TYPOGRAPHY.statValue, color: THEME.accent.primary }}>
-          {pnl.margeBrutePct.toFixed(1)}%
+          {pct(pnl.margeBrutePct)}%
         </div>
         <div style={{ fontSize: 11, color: THEME.text.muted, marginTop: 2 }}>
           Marge après coût de revient
@@ -43,31 +48,37 @@ export default function PnlKpiCards({ pnl }: PnlKpiCardsProps) {
           Charges Générales
         </div>
         <div style={{ ...TYPOGRAPHY.statValue, color: THEME.accent.orange }}>
-          {pnl.totalOpex.toLocaleString()} Ar
+          {fmt(pnl.totalOpex)} Ar
         </div>
         <div style={{ fontSize: 11, color: THEME.text.muted, marginTop: 2 }}>
-          Loyer, Pub, Matériel & Fonctionnement
+          {(pnl.pertesStock || 0) > 0 ? (
+            <span style={{ color: THEME.accent.danger }}>
+              Dont {fmt(pnl.pertesStock)} Ar pertes stock
+            </span>
+          ) : (
+            'Loyer, Pub, Pertes stock & Frais'
+          )}
         </div>
       </div>
 
       <div style={{
         background: THEME.bg.card,
-        border: `1px solid ${pnl.resultatNet >= 0 ? THEME.accent.green : THEME.accent.danger}`,
+        border: `1px solid ${(pnl.resultatNet || 0) >= 0 ? THEME.accent.green : THEME.accent.danger}`,
         borderRadius: 12,
         padding: '12px 14px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: pnl.resultatNet >= 0 ? THEME.accent.green : THEME.accent.danger, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
-          {pnl.resultatNet >= 0 ? <ShieldCheck size={14} /> : <AlertCircle size={14} />}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: (pnl.resultatNet || 0) >= 0 ? THEME.accent.green : THEME.accent.danger, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+          {(pnl.resultatNet || 0) >= 0 ? <ShieldCheck size={14} /> : <AlertCircle size={14} />}
           Résultat Net Net
         </div>
         <div style={{
           ...TYPOGRAPHY.statValue,
-          color: pnl.resultatNet >= 0 ? THEME.accent.green : THEME.accent.danger,
+          color: (pnl.resultatNet || 0) >= 0 ? THEME.accent.green : THEME.accent.danger,
         }}>
-          {pnl.resultatNet.toLocaleString()} Ar
+          {fmt(pnl.resultatNet)} Ar
         </div>
         <div style={{ fontSize: 11, color: THEME.text.muted, marginTop: 2, fontWeight: 500 }}>
-          Marge nette : {pnl.margeNettePct.toFixed(1)}%
+          Marge nette : {pct(pnl.margeNettePct)}%
         </div>
       </div>
     </div>

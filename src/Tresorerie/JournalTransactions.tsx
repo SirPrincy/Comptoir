@@ -1,6 +1,6 @@
-import React from 'react';
-import { Search, Trash2 } from 'lucide-react';
-import { Empty, inputStyle, selectStyle, ghostBtn, iconBtn, rowCard } from '../ui';
+import React, { useState } from 'react';
+import { Search, Trash2, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Empty, inputStyle, selectStyle, ghostBtn, iconBtn, rowCard, Modal, primaryBtn } from '../ui';
 import { COMPTES_FINANCIERS } from '../constants';
 import { getAccountIcon } from './ComptesFinanciers';
 
@@ -18,8 +18,9 @@ interface JournalTransactionsProps {
   filtreTag: string;
   setFiltreTag: (t: string) => void;
   tagsDisponibles: string[];
-  supprimerMouvement: (id: string) => void;
+  supprimerMouvement: (id: string, item?: any) => void;
   comptes?: string[];
+  onSelectTransaction?: (transaction: any) => void;
 }
 
 export function formatDateDisplay(dateString: string) {
@@ -74,8 +75,16 @@ export default function JournalTransactions({
   tagsDisponibles,
   supprimerMouvement,
   comptes,
+  onSelectTransaction,
 }: JournalTransactionsProps) {
   const activeComptes = (comptes && comptes.length > 0) ? comptes : COMPTES_FINANCIERS;
+  const [transactionToDelete, setTransactionToDelete] = useState<any | null>(null);
+
+  const confirmerSuppression = () => {
+    if (!transactionToDelete || !supprimerMouvement) return;
+    supprimerMouvement(transactionToDelete.id, transactionToDelete);
+    setTransactionToDelete(null);
+  };
   return (
     <>
       {/* BARRE DE FILTRES MULTICRITÈRES & RECHERCHE */}
@@ -179,10 +188,13 @@ export default function JournalTransactions({
           {transactionsFiltrees.map(item => {
             const badge = getCategoryBadge(item.categorie, item.tag, item.isInvestissement);
             const isPositif = item.type === 'entrée';
+            const nbLignes = item.paiementObj?.lignes?.length || 0;
+            const isRegroupe = nbLignes > 1;
 
             return (
               <div
                 key={item.id}
+                onClick={() => onSelectTransaction && onSelectTransaction(item)}
                 style={{
                   ...rowCard,
                   padding: '10px 12px',
@@ -191,7 +203,10 @@ export default function JournalTransactions({
                   alignItems: 'center',
                   flexWrap: 'wrap',
                   gap: 8,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
                 } as any}
+                className="hover:border-emerald-600 hover:shadow-sm"
               >
                 <div style={{ flex: '1 1 200px', minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -208,6 +223,23 @@ export default function JournalTransactions({
                     >
                       {badge.label}
                     </span>
+
+                    {isRegroupe && (
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          padding: '2px 6px',
+                          borderRadius: 4,
+                          background: '#EBF5FF',
+                          color: '#0066CC',
+                          whiteSpace: 'nowrap',
+                          border: '1px solid #BEE3F8',
+                        }}
+                      >
+                        📑 Multi-Règlement ({nbLignes} factures)
+                      </span>
+                    )}
 
                     {item.compte && (
                       <span
@@ -274,20 +306,122 @@ export default function JournalTransactions({
                     {item.montant.toLocaleString('fr-FR')} Ar
                   </span>
 
-                  {item.isManuel && (
+                  {supprimerMouvement && (
                     <button
-                      onClick={() => supprimerMouvement(item.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTransactionToDelete(item);
+                      }}
                       style={iconBtn}
-                      title="Supprimer ce mouvement"
+                      title="Supprimer cette transaction"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={14} style={{ color: '#C24A3F' }} />
                     </button>
                   )}
+
+                  <ChevronRight size={16} style={{ color: '#A0AEC0' }} />
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {/* MODAL DE CONFIRMATION DE SUPPRESSION */}
+      {transactionToDelete && (
+        <Modal
+          title="Supprimer la transaction"
+          onClose={() => setTransactionToDelete(null)}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '12px 14px',
+                background: '#FEF2F2',
+                border: '1px solid #FEE2E2',
+                borderRadius: 8,
+                color: '#991B1B',
+              }}
+            >
+              <AlertTriangle size={22} style={{ flexShrink: 0, color: '#DC2626' }} />
+              <div style={{ fontSize: 13, lineHeight: 1.4 }}>
+                Êtes-vous sûr de vouloir supprimer cette transaction de trésorerie ?
+              </div>
+            </div>
+
+            {/* Récapitulatif de la transaction ciblée */}
+            <div
+              style={{
+                background: '#FAF6F0',
+                border: '1px solid #EAE2D4',
+                borderRadius: 8,
+                padding: '12px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#5E584E' }}>
+                  {formatDateDisplay(transactionToDelete.date)}
+                </span>
+                <span
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: transactionToDelete.type === 'entrée' ? '#3F7A5C' : '#C24A3F',
+                  }}
+                >
+                  {transactionToDelete.type === 'entrée' ? '+' : '−'}
+                  {Number(transactionToDelete.montant || 0).toLocaleString('fr-FR')} Ar
+                </span>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#26333D', wordBreak: 'break-word' }}>
+                {transactionToDelete.description}
+              </div>
+              <div style={{ fontSize: 11.5, color: '#8A8375', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                {transactionToDelete.compte && <span>Compte : <strong>{transactionToDelete.compte}</strong></span>}
+                {transactionToDelete.tag && <span>Tag : <strong>{transactionToDelete.tag}</strong></span>}
+              </div>
+            </div>
+
+            <div style={{ fontSize: 12, color: '#718096', lineHeight: 1.45 }}>
+              Cette action supprimera l'écriture du journal et mettra à jour automatiquement le solde des comptes ainsi que le statut des factures ou commandes rattachées.
+            </div>
+
+            {/* Boutons d'action */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 6, paddingTop: 12, borderTop: '1px solid #EAE2D4' }}>
+              <button
+                type="button"
+                onClick={() => setTransactionToDelete(null)}
+                style={{ ...ghostBtn, padding: '8px 16px', fontSize: 13 }}
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={confirmerSuppression}
+                style={{
+                  ...primaryBtn,
+                  background: '#DC2626',
+                  borderColor: '#B91C1C',
+                  boxShadow: '0 2px 6px rgba(220, 38, 38, 0.3)',
+                  padding: '8px 18px',
+                  fontSize: 13,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <Trash2 size={15} />
+                <span>Supprimer définitivement</span>
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </>
   );

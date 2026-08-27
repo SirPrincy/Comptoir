@@ -4,11 +4,36 @@ import { COMPTES_FINANCIERS, uid } from '../constants';
 import { SectionHeader, Modal, Field, Empty, inputStyle, selectStyle, primaryBtn, ghostBtn, iconBtn } from '../ui';
 import { computeStock } from '../stock/stockUtils';
 import { getStatutVenteLabel, getMontantPayeVente, getRestePayeVente } from '../paymentUtils';
+import { calculerSoldesComptes } from '../Tresorerie/tresorerieUtils';
+import SoldeCompteInfo from '../Tresorerie/SoldeCompteInfo';
 import ModalDeleteVente from './ModalDeleteVente';
 
-const VenteRapide = memo(function VenteRapide({ products = [], ventes = [], commandes = [], clients = [], updateAll, comptes }: any) {
+const VenteRapide = memo(function VenteRapide({
+  products = [],
+  ventes = [],
+  commandes = [],
+  clients = [],
+  paiements = [],
+  mouvements = [],
+  fournisseurs = [],
+  updateAll,
+  updateData,
+  comptes
+}: any) {
   const activeComptes = (comptes && comptes.length > 0) ? comptes : COMPTES_FINANCIERS;
   const [showModal, setShowModal] = useState(false);
+
+  const soldesParCompte = useMemo(() => {
+    return calculerSoldesComptes({
+      ventes,
+      commandes,
+      mouvements,
+      paiements,
+      products,
+      fournisseurs,
+      comptes: activeComptes,
+    });
+  }, [ventes, commandes, mouvements, paiements, products, fournisseurs, activeComptes]);
   const [venteASupprimer, setVenteASupprimer] = useState<any | null>(null);
   const [productId, setProductId] = useState('');
   const [qty, setQty] = useState<number | string>(1);
@@ -56,11 +81,6 @@ const VenteRapide = memo(function VenteRapide({ products = [], ventes = [], comm
   const enregistrerVente = () => {
     if (!selected || Number(qty) < 1 || !dateVente || depasseStock || pu < 0) return;
 
-    if (pu === 0 && fraisLivraisonNum === 0) {
-      const confirmZero = window.confirm("Le prix total de cette vente est à 0 Ar. Confirmez-vous cette vente gratuite ?");
-      if (!confirmZero) return;
-    }
-
     const payeFinal = statutPaiement === 'Payé'
       ? total
       : (statutPaiement === 'Non payé' ? 0 : Math.min(total, Number(montantPaye) || 0));
@@ -69,8 +89,9 @@ const VenteRapide = memo(function VenteRapide({ products = [], ventes = [], comm
       ? 'Payé'
       : (payeFinal > 0 ? 'Partiel' : 'Non payé');
 
+    const venteId = uid();
     const vente = {
-      id: uid(),
+      id: venteId,
       productId,
       qty: Number(qty),
       pu,
@@ -85,7 +106,39 @@ const VenteRapide = memo(function VenteRapide({ products = [], ventes = [], comm
       dateEncaissement: statutFinal === 'Payé' ? new Date(dateVente).toISOString() : undefined,
       total,
     };
-    updateAll(products, [...ventes, vente], commandes);
+
+    if (payeFinal > 0) {
+      const cl = clients.find((c: any) => c.id === clientId);
+      const nouveauPaiement = {
+        id: uid(),
+        date: new Date(dateVente).toISOString(),
+        nature: 'vente',
+        compte: modePaiement,
+        montantTotal: payeFinal,
+        beneficiaire: cl?.nom || 'Client de passage',
+        description: `Encaissement Vente ${selected.nom}`,
+        reference: '',
+        lignes: [
+          {
+            cibleType: 'vente',
+            cibleId: venteId,
+            montantAlloue: payeFinal,
+          }
+        ]
+      };
+
+      if (typeof updateData === 'function') {
+        updateData({
+          ventes: [...ventes, vente],
+          paiements: [...paiements, nouveauPaiement],
+        });
+      } else {
+        updateAll(products, [...ventes, vente], commandes);
+      }
+    } else {
+      updateAll(products, [...ventes, vente], commandes);
+    }
+
     setProductId('');
     setQty(1);
     setPrixUnitaire('');
@@ -100,17 +153,51 @@ const VenteRapide = memo(function VenteRapide({ products = [], ventes = [], comm
   };
 
   const marquerEncaisse = (vId: string) => {
-    const updated = ventes.map((v: any) => {
-      if (v.id !== vId) return v;
-      const totalVente = Number(v.total) || ((Number(v.pu || 0) * Number(v.qty || 1)) + (Number(v.fraisLivraison) || 0));
+    const v = ventes.find((item: any) => item.id === vId);
+    if (!v) return;
+    const reste = getRestePayeVente(v, paiements);
+    if (reste <= 0) return;
+
+    const iso = new Date().toISOString();
+    const cl = clients.find((c: any) => c.id === v.clientId);
+
+    const nouveauPaiement = {
+      id: uid(),
+      date: iso,
+      nature: 'vente',
+      compte: v.modePaiement || 'Caisse / Espèces',
+      montantTotal: reste,
+      beneficiaire: cl?.nom || 'Client de passage',
+      description: `Encaissement Solde Vente`,
+      reference: '',
+      lignes: [
+        {
+          cibleType: 'vente',
+          cibleId: v.id,
+          montantAlloue: reste,
+        }
+      ]
+    };
+
+    const updated = ventes.map((item: any) => {
+      if (item.id !== vId) return item;
+      const totalVente = Number(item.total) || ((Number(item.pu || 0) * Number(item.qty || 1)) + (Number(item.fraisLivraison) || 0));
       return {
-        ...v,
+        ...item,
         montantPaye: totalVente,
         statutPaiement: 'Payé',
-        dateEncaissement: new Date().toISOString(),
+        dateEncaissement: iso,
       };
     });
-    updateAll(products, updated, commandes);
+
+    if (typeof updateData === 'function') {
+      updateData({
+        ventes: updated,
+        paiements: [...paiements, nouveauPaiement],
+      });
+    } else {
+      updateAll(products, updated, commandes);
+    }
   };
 
   const confirmerSupprimerVente = () => {
@@ -125,7 +212,7 @@ const VenteRapide = memo(function VenteRapide({ products = [], ventes = [], comm
       .filter((v: any) => {
         const p = products.find((pr: any) => pr.id === v.productId);
         const cl = clients.find((c: any) => c.id === v.clientId);
-        const stVente = getStatutVenteLabel(v);
+        const stVente = getStatutVenteLabel(v, paiements);
 
         // Filtre Statut
         if (filterStatut === 'paye' && stVente.type !== 'paye') return false;
@@ -157,7 +244,7 @@ const VenteRapide = memo(function VenteRapide({ products = [], ventes = [], comm
         return true;
       })
       .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [ventes, products, clients, filterStatut, filterClientId, filterDateDebut, filterDateFin, searchQuery]);
+  }, [ventes, products, clients, filterStatut, filterClientId, filterDateDebut, filterDateFin, searchQuery, paiements]);
 
   // Totaux filtrés
   const statsFiltrees = useMemo(() => {
@@ -167,15 +254,15 @@ const VenteRapide = memo(function VenteRapide({ products = [], ventes = [], comm
 
     ventesFiltrees.forEach((v: any) => {
       const tot = Number(v.total) || ((Number(v.pu) || 0) * (Number(v.qty) || 1));
-      const paye = getMontantPayeVente(v);
-      const reste = getRestePayeVente(v);
+      const paye = getMontantPayeVente(v, paiements);
+      const reste = getRestePayeVente(v, paiements);
       totalCA += tot;
       totalEncaisse += paye;
       totalRestantDu += reste;
     });
 
     return { totalCA, totalEncaisse, totalRestantDu };
-  }, [ventesFiltrees]);
+  }, [ventesFiltrees, paiements]);
 
   const hasActiveFilters = searchQuery.trim() !== '' || filterStatut !== 'all' || filterClientId !== '' || filterDateDebut !== '' || filterDateFin !== '';
 
@@ -285,10 +372,30 @@ const VenteRapide = memo(function VenteRapide({ products = [], ventes = [], comm
 
                 <Field label="Compte de règlement" style={{ flex: '1 1 140px' }}>
                   <select style={selectStyle as any} value={modePaiement} onChange={e => setModePaiement(e.target.value)}>
-                    {activeComptes.map((c: string) => <option key={c} value={c}>{c}</option>)}
+                    {activeComptes.map((c: string) => {
+                      const s = soldesParCompte[c] || 0;
+                      return (
+                        <option key={c} value={c}>
+                          {c} (Solde : {s.toLocaleString('fr-FR')} Ar)
+                        </option>
+                      );
+                    })}
                   </select>
                 </Field>
               </div>
+
+              {/* Visualisation du solde du compte sélectionné pour l'encaissement de la vente */}
+              {statutPaiement !== 'Non payé' && (
+                <div style={{ marginBottom: 4 }}>
+                  <SoldeCompteInfo
+                    compteSelectionne={modePaiement}
+                    soldesParCompte={soldesParCompte}
+                    montantOperation={statutPaiement === 'Partiel' ? montantPayeNum : total}
+                    typeOperation="credit"
+                    activeComptes={activeComptes}
+                  />
+                </div>
+              )}
 
               {/* Info récapitulative Acompte / Reste dû */}
               {statutPaiement === 'Partiel' && (

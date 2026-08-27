@@ -24,6 +24,9 @@ export interface PnlData {
   fretEtLogistique: number;
   fraisGenerauxNotes: number;
   autresSorties: number;
+  pertesStock: number;
+  gainsInventaire: number;
+  quantitePertesStock: number;
   totalOpex: number;
   dotationAmortissement: number;
   resultatExploitation: number;

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowRightLeft, Smartphone, Landmark, Wallet, Banknote, Coins, Plus, Trash2, X } from 'lucide-react';
+import { ArrowRightLeft, Smartphone, Landmark, Wallet, Banknote, Coins, Plus, Trash2, X, AlertTriangle } from 'lucide-react';
 import { COMPTES_FINANCIERS } from '../constants';
+import { Modal, ghostBtn, primaryBtn } from '../ui';
 
 interface ComptesFinanciersProps {
   soldesParCompte: Record<string, number>;
@@ -50,12 +51,14 @@ export default function ComptesFinanciers({
   const activeComptes = (comptes && comptes.length > 0) ? comptes : COMPTES_FINANCIERS;
   const [showAdd, setShowAdd] = useState(false);
   const [newCompteName, setNewCompteName] = useState('');
+  const [addError, setAddError] = useState('');
+  const [compteToDelete, setCompteToDelete] = useState<string | null>(null);
 
   const handleAddCompte = () => {
     const trimmed = newCompteName.trim();
     if (!trimmed) return;
     if (activeComptes.includes(trimmed)) {
-      alert('Ce compte existe déjà.');
+      setAddError('Ce compte existe déjà.');
       return;
     }
     const nextComptes = [...activeComptes, trimmed];
@@ -63,24 +66,28 @@ export default function ComptesFinanciers({
       updateData({ comptes: nextComptes });
     }
     setNewCompteName('');
+    setAddError('');
     setShowAdd(false);
   };
 
-  const handleDeleteCompte = (e: React.MouseEvent, compteToDelete: string) => {
+  const handleDeleteCompte = (e: React.MouseEvent, cName: string) => {
     e.stopPropagation();
     if (activeComptes.length <= 1) {
-      alert('Vous devez conserver au moins un portefeuille ou compte.');
       return;
     }
-    if (window.confirm(`Voulez-vous vraiment supprimer le compte "${compteToDelete}" ?`)) {
-      const nextComptes = activeComptes.filter(c => c !== compteToDelete);
-      if (updateData) {
-        updateData({ comptes: nextComptes });
-      }
-      if (filtreCompte === compteToDelete) {
-        setFiltreCompte('all');
-      }
+    setCompteToDelete(cName);
+  };
+
+  const confirmDeleteCompte = () => {
+    if (!compteToDelete) return;
+    const nextComptes = activeComptes.filter(c => c !== compteToDelete);
+    if (updateData) {
+      updateData({ comptes: nextComptes });
     }
+    if (filtreCompte === compteToDelete) {
+      setFiltreCompte('all');
+    }
+    setCompteToDelete(null);
   };
 
   return (
@@ -292,6 +299,57 @@ export default function ComptesFinanciers({
           </div>
         )}
       </div>
+
+      {addError && (
+        <div style={{ color: '#DC2626', fontSize: 12, marginTop: 4, fontWeight: 500 }}>
+          {addError}
+        </div>
+      )}
+
+      {compteToDelete && (
+        <Modal
+          title="Supprimer le compte"
+          onClose={() => setCompteToDelete(null)}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#FEF2F2', border: '1px solid #FEE2E2', borderRadius: 8, color: '#991B1B' }}>
+              <AlertTriangle size={20} color="#DC2626" style={{ flexShrink: 0 }} />
+              <div style={{ fontSize: 13, lineHeight: 1.4 }}>
+                Voulez-vous vraiment supprimer le compte <strong>"{compteToDelete}"</strong> ?
+              </div>
+            </div>
+            <div style={{ fontSize: 12, color: '#718096', lineHeight: 1.4 }}>
+              Ce compte ne sera plus proposé pour les nouveaux paiements. L'historique des transactions passées restera intact.
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 10, borderTop: '1px solid #EAE2D4' }}>
+              <button
+                type="button"
+                onClick={() => setCompteToDelete(null)}
+                style={{ ...ghostBtn, padding: '8px 16px', fontSize: 12.5 }}
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteCompte}
+                style={{
+                  ...primaryBtn,
+                  background: '#DC2626',
+                  borderColor: '#B91C1C',
+                  padding: '8px 16px',
+                  fontSize: 12.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <Trash2 size={14} />
+                <span>Supprimer</span>
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

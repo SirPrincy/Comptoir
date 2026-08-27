@@ -17,6 +17,7 @@ interface TresorerieEtFraisProps {
   devises?: { rmb: number; usd: number };
   frais?: any[];
   comptes?: string[];
+  paiements?: any[];
   updateData: (patch: any) => void;
   initialSubTab?: 'tresorerie' | 'frais' | 'change';
 }
@@ -32,6 +33,7 @@ export default function TresorerieEtFrais({
   devises = { rmb: 680, usd: 4600 },
   frais = [],
   comptes = [],
+  paiements = [],
   updateData,
   initialSubTab = 'tresorerie',
 }: TresorerieEtFraisProps) {
@@ -134,6 +136,7 @@ export default function TresorerieEtFrais({
           devises={devises}
           updateData={updateData}
           comptes={comptes}
+          paiements={paiements}
         />
       )}
 
@@ -146,6 +149,7 @@ export default function TresorerieEtFrais({
           fournisseurs={fournisseurs}
           updateData={updateData}
           comptes={comptes}
+          paiements={paiements}
         />
       )}
 

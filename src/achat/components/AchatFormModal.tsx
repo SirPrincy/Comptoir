@@ -162,12 +162,8 @@ export default function AchatFormModal({
   const ajouterCommande = () => {
     if (!cmdForm.productId || !cmdForm.qty || !cmdForm.dateAchat) return;
 
-    // Calcul de l'acompte réel payable selon le solde RMB disponible
-    let acompteEffectifAr = acompteCalcule;
-    if (cmdForm.devise === 'RMB' && requestedRmbAcompte > 0) {
-      const rmbAcomptePayable = Math.min(requestedRmbAcompte, Math.max(0, soldeRmbInfo.soldeRmbDispo));
-      acompteEffectifAr = Math.round(rmbAcomptePayable * userTauxRmb);
-    }
+    // Conversion directe Ariary <-> RMB : l'acompte est directement pris en compte au taux de change
+    const acompteEffectifAr = acompteCalcule;
 
     const montantPayeInitial = acompteEffectifAr > 0 ? Math.min(totalCalcule, acompteEffectifAr) : 0;
     const statutPaiementInitial = montantPayeInitial >= totalCalcule && totalCalcule > 0
@@ -196,6 +192,8 @@ export default function AchatFormModal({
       statutPaiementMarchandise: statutPaiementInitial,
       datePaiementMarchandise: montantPayeInitial > 0 ? isoDateAchat : undefined,
       datePaiement: (montantPayeInitial >= totalCalcule && totalCalcule > 0) ? isoDateAchat : undefined,
+      payeEnMgaDirect: true,
+      modeReglement: 'mga_direct',
       tracking: cmdForm.tracking,
       statut: (montantPayeInitial >= totalCalcule && totalCalcule > 0) ? 'En livraison' : 'Commandé',
       dateAchat: isoDateAchat,
@@ -745,25 +743,25 @@ export default function AchatFormModal({
               <input type="date" style={inputStyle as any} max={today} value={cmdForm.dateAchat} onChange={e => setCmdForm({ ...cmdForm, dateAchat: e.target.value })} />
             </Field>
 
-            {cmdForm.devise === 'RMB' && isRmbTotalSuperieurSolde && (
+            {cmdForm.devise === 'RMB' && (
               <div
                 style={{
-                  background: '#FFF8E1',
-                  border: '1.5px solid #F0DDB3',
+                  background: '#F0F9FF',
+                  border: '1px solid #BAE6FD',
                   borderRadius: 8,
-                  padding: '10px 14px',
+                  padding: '9px 12px',
                   fontSize: 12,
-                  fontWeight: 600,
-                  color: '#B78103',
+                  fontWeight: 500,
+                  color: '#0369A1',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 10,
+                  gap: 8,
                   marginTop: 6,
                 }}
               >
-                <AlertCircle size={18} color="#B78103" style={{ flexShrink: 0 }} />
+                <Coins size={16} color="#0284C7" style={{ flexShrink: 0 }} />
                 <span>
-                  💡 <strong>Commande enregistrable</strong> : Votre solde RMB disponible ({soldeRmbInfo.soldeRmbDispo.toLocaleString('fr-FR')} ¥) est inférieur au total ({totalRmbCommande.toLocaleString('fr-FR')} ¥). La commande sera enregistrée sous « Non payé » jusqu'à ce que vous ajoutiez une recharge dans <strong>Change RMB</strong>.
+                  💡 <strong>Conversion directe</strong> : Facturation au taux de <strong>{userTauxRmb} Ar / ¥</strong>. Le paiement s'effectue directement en Ariary (MGA) avec conversion automatique en RMB.
                 </span>
               </div>
             )}

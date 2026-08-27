@@ -1,8 +1,9 @@
 import React, { useState, useMemo, memo } from 'react';
-import { Trash2, ExternalLink, AlertTriangle, Search, TrendingUp, Sliders, Edit2, Plus, ArrowDownRight, ArrowUpRight, History, Package, Wallet, DollarSign, Camera, Image as ImageIcon, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, ExternalLink, AlertTriangle, Search, TrendingUp, Sliders, Edit2, Plus, ArrowDownRight, ArrowUpRight, History, Package, Wallet, DollarSign, Camera, Image as ImageIcon, X, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { CATEGORIES, uid } from '../constants';
 import { SectionHeader, Card, Field, Modal, Empty, Stat, inputStyle, selectStyle, primaryBtn, ghostBtn, rowCard, iconBtn } from '../ui';
 import { computeStock, compressAndReadFile } from './stockUtils';
+import ModalDetailArticle from './ModalDetailArticle';
 
 const Stock = memo(function Stock({
   products = [],
@@ -33,10 +34,14 @@ const Stock = memo(function Stock({
   const [adjustType, setAdjustType] = useState<'perte' | 'echantillon' | 'inventaire'>('perte');
   const [adjustDelta, setAdjustDelta] = useState<number | string>(-1);
   const [adjustMotif, setAdjustMotif] = useState('Casse / Défectueux');
+  const [adjustValeurUnitaire, setAdjustValeurUnitaire] = useState<number | string>('');
   const [showHistory, setShowHistory] = useState(false);
 
   // Modal Galerie Photo
   const [selectedGallery, setSelectedGallery] = useState<{ title: string; images: string[]; index: number } | null>(null);
+
+  // Modal Fiche & Historique Produit
+  const [selectedDetailProduct, setSelectedDetailProduct] = useState<any | null>(null);
 
   // Formulaire Produit
   const [form, setForm] = useState<{
@@ -251,6 +256,9 @@ const Stock = memo(function Stock({
     const deltaVal = Number(adjustDelta) || 0;
     if (deltaVal === 0) return;
 
+    const valUnit = Number(adjustValeurUnitaire) || 0;
+    const valTotale = Math.abs(deltaVal) * valUnit;
+
     const nvMouvement = {
       id: uid(),
       type: 'Ajustement Stock',
@@ -258,6 +266,8 @@ const Stock = memo(function Stock({
       productNom: adjustProduct.nom,
       delta: deltaVal,
       motif: adjustMotif,
+      valeurUnitaireAr: valUnit > 0 ? valUnit : undefined,
+      valeurTotaleAr: valTotale > 0 ? valTotale : undefined,
       date: new Date().toISOString(),
     };
 
@@ -270,6 +280,7 @@ const Stock = memo(function Stock({
     setAdjustProduct(null);
     setAdjustDelta(-1);
     setAdjustMotif('Casse / Défectueux');
+    setAdjustValeurUnitaire('');
   };
 
   const ajustementsProduct = useMemo(() => {
@@ -511,13 +522,27 @@ const Stock = memo(function Stock({
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {ajustementsProduct.map((m: any) => (
-              <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, borderBottom: '1px solid #EAE2D4', paddingBottom: 4 }}>
+              <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, borderBottom: '1px solid #EAE2D4', paddingBottom: 6 }}>
                 <div>
                   <strong>{m.productNom}</strong> · <span style={{ color: '#8A8375' }}>{m.motif}</span>
-                  <div style={{ fontSize: 11, color: '#8A8375' }}>{new Date(m.date).toLocaleString('fr-FR')}</div>
+                  <div style={{ fontSize: 11, color: '#8A8375', marginTop: 1 }}>
+                    {new Date(m.date).toLocaleString('fr-FR')}
+                    {m.valeurTotaleAr && (
+                      <span style={{ color: m.delta < 0 ? '#C24A3F' : '#3D5A6C', fontWeight: 600, marginLeft: 6 }}>
+                        · Impact valorisé : {Number(m.valeurTotaleAr).toLocaleString('fr-FR')} Ar ({Number(m.valeurUnitaireAr || 0).toLocaleString('fr-FR')} Ar/u)
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div style={{ fontWeight: 700, color: m.delta < 0 ? '#C24A3F' : '#3F7A5C' }}>
-                  {m.delta > 0 ? `+${m.delta}` : m.delta} unité{Math.abs(m.delta) > 1 ? 's' : ''}
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 700, color: m.delta < 0 ? '#C24A3F' : '#3F7A5C' }}>
+                    {m.delta > 0 ? `+${m.delta}` : m.delta} unité{Math.abs(m.delta) > 1 ? 's' : ''}
+                  </div>
+                  {m.valeurTotaleAr && (
+                    <div style={{ fontSize: 11, fontWeight: 700, color: m.delta < 0 ? '#C24A3F' : '#3D5A6C' }}>
+                      {m.delta < 0 ? '-' : '+'}{Number(m.valeurTotaleAr).toLocaleString('fr-FR')} Ar
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -526,51 +551,150 @@ const Stock = memo(function Stock({
       )}
 
       {/* Modal d'Ajustement de Stock */}
-      {adjustProduct && (
-        <Modal title={`Ajuster le stock : ${adjustProduct.nom}`} onClose={() => setAdjustProduct(null)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ fontSize: 12.5, color: '#5E584E' }}>
-              Stock actuel constaté : <strong>{stockByProduct[adjustProduct.id] || 0} unité(s)</strong>
-            </div>
+      {adjustProduct && (() => {
+        const pCost = adjustProduct.coutTotalRenduAr || adjustProduct.prixAchatAr || (adjustProduct.puRmb ? Math.round(adjustProduct.puRmb * (adjustProduct.tauxRmb || devises?.rmb || 680)) : 0);
+        const pPrice = adjustProduct.prixVente || adjustProduct.prixVenteEstime || 0;
+        const currentQty = stockByProduct[adjustProduct.id] || 0;
+        const deltaNum = Number(adjustDelta) || 0;
+        const newQty = Math.max(0, currentQty + deltaNum);
+        const valUnitNum = Number(adjustValeurUnitaire) || 0;
+        const totalValorise = Math.abs(deltaNum) * valUnitNum;
+        const isPerte = deltaNum < 0;
 
-            <Field label="Raison de la modification">
-              <select
-                style={selectStyle as any}
-                value={adjustMotif}
-                onChange={e => {
-                  setAdjustMotif(e.target.value);
-                  if (e.target.value.includes('Casse') || e.target.value.includes('Vol')) {
-                    setAdjustDelta(-1);
-                  }
-                }}
-              >
-                <option value="Casse / Défectueux">📉 Casse / Produit défectueux (-1)</option>
-                <option value="Vol ou Perte">🚨 Vol ou Perte (-1)</option>
-                <option value="Échantillon / Usage perso">🎁 Échantillon commercial / Usage perso (-1)</option>
-                <option value="Correction d'inventaire (Retrait)">➖ Correction d'inventaire (Retrait)</option>
-                <option value="Correction d'inventaire (Ajout)">➕ Correction d'inventaire (Ajout)</option>
-              </select>
-            </Field>
-
-            <Field label="Quantité à ajouter ou retirer">
-              <input
-                type="number"
-                style={{ ...inputStyle, fontWeight: 700, fontSize: 15 } as any}
-                value={adjustDelta}
-                onChange={e => setAdjustDelta(e.target.value)}
-                placeholder="Ex: -1 pour retirer, +2 pour ajouter"
-              />
-              <div style={{ fontSize: 11, color: '#8A8375', marginTop: 4 }}>
-                Nouveau stock estimé après ajustement : <strong>{Math.max(0, (stockByProduct[adjustProduct.id] || 0) + Number(adjustDelta))}</strong>
+        return (
+          <Modal title={`⚙️ Ajuster le stock : ${adjustProduct.nom}`} onClose={() => setAdjustProduct(null)}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{
+                background: '#FAF7F2',
+                border: '1px solid #EAE2D4',
+                borderRadius: 8,
+                padding: '10px 12px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: 8
+              }}>
+                <div>
+                  <div style={{ fontSize: 11, color: '#8A8375', fontWeight: 600 }}>STOCK ACTUEL</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#26333D' }}>{currentQty} unité(s)</div>
+                </div>
+                {pCost > 0 && (
+                  <div>
+                    <div style={{ fontSize: 11, color: '#8A8375', fontWeight: 600 }}>COÛT D'ACHAT (PRU)</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#3D5A6C' }}>{pCost.toLocaleString('fr-FR')} Ar</div>
+                  </div>
+                )}
+                {pPrice > 0 && (
+                  <div>
+                    <div style={{ fontSize: 11, color: '#8A8375', fontWeight: 600 }}>PRIX DE VENTE</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#3F7A5C' }}>{pPrice.toLocaleString('fr-FR')} Ar</div>
+                  </div>
+                )}
               </div>
-            </Field>
 
-            <button onClick={validerAjustement} style={{ ...primaryBtn, height: 40, width: '100%', justifyContent: 'center', marginTop: 8 }}>
-              Enregistrer l'ajustement
-            </button>
-          </div>
-        </Modal>
-      )}
+              <Field label="Raison de la modification">
+                <select
+                  style={selectStyle as any}
+                  value={adjustMotif}
+                  onChange={e => {
+                    const motif = e.target.value;
+                    setAdjustMotif(motif);
+                    if (motif.includes('Casse') || motif.includes('Vol') || motif.includes('Échantillon') || motif.includes('Retrait')) {
+                      if (deltaNum >= 0) setAdjustDelta(-1);
+                    } else if (motif.includes('Ajout')) {
+                      if (deltaNum <= 0) setAdjustDelta(1);
+                    }
+                  }}
+                >
+                  <option value="Casse / Défectueux">📉 Casse / Produit défectueux (Perte)</option>
+                  <option value="Vol ou Perte">🚨 Vol ou Perte de marchandise (Perte)</option>
+                  <option value="Échantillon / Usage perso">🎁 Échantillon commercial / Usage perso</option>
+                  <option value="Correction d'inventaire (Retrait)">➖ Correction d'inventaire (Écart négatif)</option>
+                  <option value="Correction d'inventaire (Ajout)">➕ Correction d'inventaire (Écart positif)</option>
+                </select>
+              </Field>
+
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <Field label="Quantité (+ ajout, - retrait)" style={{ flex: '1 1 140px' }}>
+                  <input
+                    type="number"
+                    style={{ ...inputStyle, fontWeight: 800, fontSize: 15, color: deltaNum < 0 ? '#C24A3F' : '#3F7A5C' } as any}
+                    value={adjustDelta}
+                    onChange={e => setAdjustDelta(e.target.value)}
+                    placeholder="Ex: -1 ou 2"
+                  />
+                  <div style={{ fontSize: 11, color: '#8A8375', marginTop: 3 }}>
+                    Nouveau stock : <strong>{newQty} u</strong>
+                  </div>
+                </Field>
+
+                <Field label="Valeur unitaire retenue (Ar)" style={{ flex: '1 1 170px' }}>
+                  <input
+                    type="number"
+                    style={{ ...inputStyle, fontWeight: 700, fontSize: 14 } as any}
+                    value={adjustValeurUnitaire}
+                    onChange={e => setAdjustValeurUnitaire(e.target.value)}
+                    placeholder={pCost ? String(pCost) : 'Ex: 25000'}
+                  />
+                  <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                    {pCost > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setAdjustValeurUnitaire(pCost)}
+                        style={{ fontSize: 10, padding: '2px 6px', background: '#EAE2D4', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600, color: '#26333D' }}
+                      >
+                        Au coût d'achat ({pCost.toLocaleString('fr-FR')} Ar)
+                      </button>
+                    )}
+                    {pPrice > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setAdjustValeurUnitaire(pPrice)}
+                        style={{ fontSize: 10, padding: '2px 6px', background: '#EAE2D4', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600, color: '#26333D' }}
+                      >
+                        Au prix vente ({pPrice.toLocaleString('fr-FR')} Ar)
+                      </button>
+                    )}
+                  </div>
+                </Field>
+              </div>
+
+              {/* Synthèse de la Valorisation Financière de l'Ajustement */}
+              {totalValorise > 0 && (
+                <div style={{
+                  background: isPerte ? '#FBEAE8' : '#E9F2EC',
+                  border: `1px solid ${isPerte ? '#F0C6C0' : '#BBDBC7'}`,
+                  borderRadius: 8,
+                  padding: '10px 12px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: isPerte ? '#991B1B' : '#166534' }}>
+                      {isPerte ? '💸 VALORISATION DE LA PERTE' : '📈 VALEUR DU STOCK AJOUTÉ'}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#5E584E', marginTop: 1 }}>
+                      {Math.abs(deltaNum)} unité(s) × {valUnitNum.toLocaleString('fr-FR')} Ar
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: isPerte ? '#C24A3F' : '#166534' }}>
+                    {isPerte ? '-' : '+'}{totalValorise.toLocaleString('fr-FR')} Ar
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={validerAjustement}
+                style={{ ...primaryBtn, height: 42, width: '100%', justifyContent: 'center', marginTop: 6 }}
+              >
+                Valider l'ajustement {totalValorise > 0 ? `(${totalValorise.toLocaleString('fr-FR')} Ar)` : ''}
+              </button>
+            </div>
+          </Modal>
+        );
+      })()}
 
       {/* Liste des produits */}
       {filteredProducts.length === 0 ? (
@@ -591,13 +715,31 @@ const Stock = memo(function Stock({
             const pImages = Array.isArray(p.images) ? p.images : (p.image ? [p.image] : []);
 
             return (
-              <div key={p.id} style={{ ...rowCard, borderLeft: isAlert ? '4px solid #C24A3F' : '1px solid #EAE2D4' } as any}>
+              <div
+                key={p.id}
+                style={{
+                  ...rowCard,
+                  borderLeft: isAlert ? '4px solid #C24A3F' : '1px solid #EAE2D4',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.15s ease, transform 0.1s ease',
+                } as any}
+                onClick={(e: any) => {
+                  // Éviter d'ouvrir le détail si on clique sur un bouton, un lien ou une image
+                  if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input')) {
+                    return;
+                  }
+                  setSelectedDetailProduct(p);
+                }}
+              >
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flex: '1 1 200px', minWidth: 0 }}>
                   {/* Miniature Image(s) */}
                   <div style={{ flexShrink: 0 }}>
                     {pImages.length > 0 ? (
                       <div
-                        onClick={() => setSelectedGallery({ title: p.nom, images: pImages, index: 0 })}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedGallery({ title: p.nom, images: pImages, index: 0 });
+                        }}
                         style={{
                           width: 50, height: 50, borderRadius: 8, overflow: 'hidden', border: '1px solid #EAE2D4',
                           cursor: 'pointer', background: '#F5F0EB', position: 'relative', boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
@@ -627,7 +769,9 @@ const Stock = memo(function Stock({
 
                   <div style={{ flex: '1 1 auto', minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                      <span style={{ fontWeight: 700, fontSize: 14 }}>{p.nom} {p.couleur ? `· ${p.couleur}` : ''}</span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: '#26333D' }}>
+                        {p.nom} {p.couleur ? `· ${p.couleur}` : ''}
+                      </span>
                       {isAlert && (
                         <span style={{
                           fontSize: 10.5, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
@@ -648,6 +792,7 @@ const Stock = memo(function Stock({
                           href={(p.lien || p.reference).startsWith('http') ? (p.lien || p.reference) : `https://${p.lien || p.reference}`}
                           target="_blank"
                           rel="noreferrer"
+                          onClick={e => e.stopPropagation()}
                           style={{ color: '#3D5A6C', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3, textDecoration: 'none' }}
                         >
                           <span>🔗 Lien 1688 / Taobao</span>
@@ -683,7 +828,20 @@ const Stock = memo(function Stock({
                   </span>
 
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedDetailProduct(p);
+                    }}
+                    style={{ ...ghostBtn, padding: '4px 8px', fontSize: 11, borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4 }}
+                    title="Voir l'historique et la fiche détaillée de l'article"
+                  >
+                    <History size={12} />
+                    <span>Historique</span>
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setAdjustProduct(p);
                       setAdjustDelta(-1);
                       setAdjustMotif('Casse / Défectueux');
@@ -694,11 +852,25 @@ const Stock = memo(function Stock({
                     ⚙️ Ajuster
                   </button>
 
-                  <button onClick={() => editerProduit(p)} style={iconBtn} title="Modifier le produit">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      editerProduit(p);
+                    }}
+                    style={iconBtn}
+                    title="Modifier le produit"
+                  >
                     <Edit2 size={14} />
                   </button>
 
-                  <button onClick={() => supprimerProduit(p.id)} style={iconBtn} title="Supprimer">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      supprimerProduit(p.id);
+                    }}
+                    style={iconBtn}
+                    title="Supprimer"
+                  >
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -706,6 +878,26 @@ const Stock = memo(function Stock({
             );
           })}
         </div>
+      )}
+
+      {/* Modal Fiche & Historique de l'Article */}
+      {selectedDetailProduct && (
+        <ModalDetailArticle
+          product={selectedDetailProduct}
+          stock={stockByProduct[selectedDetailProduct.id] || 0}
+          commandes={commandes}
+          ventes={ventes}
+          mouvements={mouvements}
+          devises={devises}
+          onClose={() => setSelectedDetailProduct(null)}
+          onEdit={(p) => editerProduit(p)}
+          onAdjust={(p) => {
+            setAdjustProduct(p);
+            setAdjustDelta(-1);
+            setAdjustMotif('Casse / Défectueux');
+          }}
+          onOpenGallery={(title, images) => setSelectedGallery({ title, images, index: 0 })}
+        />
       )}
 
       {/* Modal Lightbox Galerie Photo */}
