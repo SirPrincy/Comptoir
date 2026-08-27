@@ -102,13 +102,8 @@ export default function ModalDetailArticle({
     });
 
     let totalAjustements = 0;
-    let valeurAjustementsAr = 0;
     productAjustements.forEach((m: any) => {
-      const delta = Number(m.delta) || 0;
-      totalAjustements += delta;
-      if (m.valeurTotaleAr) {
-        valeurAjustementsAr += (delta < 0 ? -1 : 1) * Number(m.valeurTotaleAr);
-      }
+      totalAjustements += Number(m.delta) || 0;
     });
 
     return {
@@ -119,7 +114,6 @@ export default function ModalDetailArticle({
       totalVendu,
       caVentesAr,
       totalAjustements,
-      valeurAjustementsAr,
     };
   }, [productCommandes, productVentes, productAjustements]);
 
@@ -163,11 +157,9 @@ export default function ModalDetailArticle({
     // Ajustements
     productAjustements.forEach((m: any) => {
       const delta = Number(m.delta) || 0;
-      const valTotale = Number(m.valeurTotaleAr) || 0;
-      const valUnit = Number(m.valeurUnitaireAr) || 0;
-      const detailsTxt = valTotale > 0
-        ? `Impact valorisé : ${valTotale.toLocaleString('fr-FR')} Ar (${valUnit.toLocaleString('fr-FR')} Ar/u)`
-        : 'Ajustement manuel';
+      const val = m.valeurTotaleAr !== undefined && m.valeurTotaleAr !== null
+        ? Number(m.valeurTotaleAr)
+        : (m.valeurUnitaireAr ? Math.abs(delta) * Number(m.valeurUnitaireAr) : null);
 
       items.push({
         id: `adj-${m.id}`,
@@ -176,10 +168,9 @@ export default function ModalDetailArticle({
         quantite: delta,
         titre: delta < 0 ? 'Perte / Déduction' : 'Ajustement Inventaire',
         sousTitre: m.motif || 'Régularisation de stock',
-        details: detailsTxt,
+        details: val !== null ? `Valeur ajustée : ${val.toLocaleString('fr-FR')} Ar` : 'Ajustement manuel',
         statutBadge: delta < 0 ? 'Perte' : 'Ajout',
         impactStock: delta > 0 ? `+${delta}` : `${delta}`,
-        valeurTotaleAr: valTotale,
         isAjustement: true,
       });
     });
@@ -363,10 +354,8 @@ export default function ModalDetailArticle({
             <div style={{ fontSize: 17, fontWeight: 800, color: stats.totalAjustements < 0 ? '#C24A3F' : '#26333D', marginTop: 2 }}>
               {stats.totalAjustements > 0 ? `+${stats.totalAjustements}` : stats.totalAjustements} u
             </div>
-            <div style={{ fontSize: 10, color: stats.valeurAjustementsAr !== 0 ? (stats.valeurAjustementsAr < 0 ? '#C24A3F' : '#3F7A5C') : '#736B5E', marginTop: 1, fontWeight: stats.valeurAjustementsAr !== 0 ? 600 : 400 }}>
-              {stats.valeurAjustementsAr !== 0
-                ? `${stats.valeurAjustementsAr > 0 ? '+' : ''}${stats.valeurAjustementsAr.toLocaleString('fr-FR')} Ar`
-                : `${productAjustements.length} régularisation(s)`}
+            <div style={{ fontSize: 10, color: '#736B5E', marginTop: 1 }}>
+              {productAjustements.length} régularisation(s)
             </div>
           </div>
         </div>

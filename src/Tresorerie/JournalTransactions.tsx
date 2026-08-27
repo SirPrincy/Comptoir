@@ -41,6 +41,9 @@ export function getCategoryBadge(cat: string, tag?: string, isInvest = false) {
   if (tag === '#retrait-perso') {
     return { label: '👤 Prélèvement Perso', bg: '#FFF8E1', color: '#B78103' };
   }
+  if (tag === '#amortissement' || cat === 'amortissement') {
+    return { label: '📉 Amortissement', bg: '#F3E8FF', color: '#7E22CE' };
+  }
   if (isInvest || cat === 'investissement' || tag === '#investissement' || tag === '#capital') {
     return { label: '👤 Apport / Capital', bg: '#FEF3EB', color: '#E8985E' };
   }

@@ -34,6 +34,9 @@ export interface DashboardWidgetConfig {
   };
 }
 
+export type DashboardKpisConfig = DashboardWidgetConfig['kpis'];
+export type DashboardWidgetsConfig = DashboardWidgetConfig['widgets'];
+
 export interface KpiMeta {
   id: keyof DashboardWidgetConfig['kpis'];
   label: string;

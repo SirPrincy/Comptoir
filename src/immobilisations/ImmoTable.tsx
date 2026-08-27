@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Trash2 } from 'lucide-react';
+import { FileText, Trash2, CheckCircle2, Zap } from 'lucide-react';
 import { THEME } from '../colors';
 import { Empty, ghostBtn, iconBtn } from '../ui';
 import { ImmoCalculatedDetail, Immobilisation } from './types';
@@ -9,16 +9,20 @@ interface ImmoTableProps {
   immoDetails: ImmoCalculatedDetail[];
   selectedYear: number;
   selectedMonth: number;
+  amortissementsDuMois?: any[];
   onSelectImmo: (immo: Immobilisation) => void;
   onDeleteImmo: (immo: Immobilisation) => void;
+  onCreerAmortissementImmo?: (immo: ImmoCalculatedDetail) => void;
 }
 
 export default function ImmoTable({
   immoDetails,
   selectedYear,
   selectedMonth,
+  amortissementsDuMois = [],
   onSelectImmo,
   onDeleteImmo,
+  onCreerAmortissementImmo,
 }: ImmoTableProps) {
   if (immoDetails.length === 0) {
     return <Empty text="Aucune immobilisation enregistrée pour le moment. Cliquez sur 'Nouvelle Immo' pour commencer !" />;
@@ -44,6 +48,7 @@ export default function ImmoTable({
               <th style={{ padding: '12px 14px', textAlign: 'right' }}>V. Origine (MGA)</th>
               <th style={{ padding: '12px 14px', textAlign: 'right' }}>Dotation / Mois</th>
               <th style={{ padding: '12px 14px', textAlign: 'right' }}>Dotation {labelMois}</th>
+              <th style={{ padding: '12px 14px', textAlign: 'center' }}>Statut {labelMois}</th>
               <th style={{ padding: '12px 14px', textAlign: 'right' }}>Cumul fin {labelMois}</th>
               <th style={{ padding: '12px 14px', textAlign: 'right' }}>VNC fin {labelMois}</th>
               <th style={{ padding: '12px 14px', textAlign: 'center' }}>État</th>
@@ -53,6 +58,9 @@ export default function ImmoTable({
           <tbody>
             {immoDetails.map((immo) => {
               const isStarted = immo.moisEcoules > 0;
+              const isAmortiCeMois = amortissementsDuMois.some(
+                (m: any) => m.immoId === immo.id || (m.immoNom && m.immoNom === immo.nom) || (m.reference && m.reference.includes(immo.id))
+              );
 
               return (
                 <tr
@@ -82,6 +90,50 @@ export default function ImmoTable({
                   </td>
                   <td style={{ padding: '12px 14px', textAlign: 'right', color: immo.dotationMois > 0 ? THEME.accent.orange : THEME.text.muted, fontWeight: 600 }}>
                     {immo.dotationMois > 0 ? immo.dotationMois.toLocaleString() : '-'}
+                  </td>
+                  <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                    {immo.dotationMois > 0 ? (
+                      isAmortiCeMois ? (
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: 20,
+                          background: '#EBF4EC',
+                          color: '#3F7A5C',
+                        }}>
+                          <CheckCircle2 size={12} />
+                          Comptabilisé
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => onCreerAmortissementImmo?.(immo)}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            padding: '3px 8px',
+                            borderRadius: 20,
+                            background: '#F3E8FF',
+                            color: '#7E22CE',
+                            border: '1px solid #E9D5FF',
+                            cursor: 'pointer',
+                          }}
+                          title={`Créer l'écriture d'amortissement de ${labelMois} pour ${immo.nom}`}
+                        >
+                          <Zap size={11} />
+                          Créer
+                        </button>
+                      )
+                    ) : (
+                      <span style={{ fontSize: 11, color: THEME.text.muted }}>-</span>
+                    )}
                   </td>
                   <td style={{ padding: '12px 14px', textAlign: 'right', color: THEME.accent.green, fontWeight: 600 }}>
                     {isStarted ? immo.cumulMois.toLocaleString() : '-'}
@@ -130,4 +182,3 @@ export default function ImmoTable({
     </div>
   );
 }
-

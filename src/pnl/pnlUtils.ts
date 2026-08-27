@@ -135,20 +135,45 @@ export function computePnl(
   let pertesStock = 0;
   let gainsInventaire = 0;
   let quantitePertesStock = 0;
+  const detailsPertes: Array<{
+    id: string;
+    productNom: string;
+    delta: number;
+    motif: string;
+    date: string;
+    valTotale: number;
+  }> = [];
 
   // Pertes & Ajustements de stock de la période
   mvts.forEach((m: any) => {
     if (!m) return;
-    if (m.type === 'Ajustement Stock') {
+    const isAjustement = m.type === 'Ajustement Stock' || m.type === 'ajustement' || m.type === 'Ajustement' || m.type === 'perte' || m.type === 'Perte';
+    const isDeltaMvt = m.productId && m.delta !== undefined && m.delta !== null;
+
+    if (isAjustement || isDeltaMvt) {
       const delta = Number(m.delta) || 0;
+      if (delta === 0) return;
       const { coutRevient } = getProductCostBreakdown(m.productId, products, commandes);
-      const valTotale = m.valeurTotaleAr !== undefined && m.valeurTotaleAr !== null && Number(m.valeurTotaleAr) > 0
+      const valTotale = m.valeurTotaleAr !== undefined && m.valeurTotaleAr !== null && !isNaN(Number(m.valeurTotaleAr))
         ? Number(m.valeurTotaleAr)
-        : (Math.abs(delta) * (Number(m.valeurUnitaireAr) || coutRevient || 0));
+        : (m.valeurUnitaireAr !== undefined && m.valeurUnitaireAr !== null && !isNaN(Number(m.valeurUnitaireAr)))
+        ? Math.abs(delta) * Number(m.valeurUnitaireAr)
+        : (Math.abs(delta) * (coutRevient || 0));
+
+      const prodObj = products.find((p: any) => p.id === m.productId);
+      const productNom = m.productNom || prodObj?.nom || 'Article';
 
       if (delta < 0) {
         pertesStock += valTotale;
         quantitePertesStock += Math.abs(delta);
+        detailsPertes.push({
+          id: m.id || `${m.productId}-${m.date}`,
+          productNom,
+          delta,
+          motif: m.motif || 'Perte / Casse',
+          date: m.date || '',
+          valTotale: Math.round(valTotale),
+        });
       } else if (delta > 0) {
         gainsInventaire += valTotale;
       }
@@ -199,7 +224,7 @@ export function computePnl(
         marketingEtPub += montant;
       } else if (tag === '#fret-logistique') {
         fretEtLogistique += montant;
-      } else if (tag === '#frais-bancaires') {
+      } else if (tag === '#frais-bancaires' || tag === '#amortissement') {
         return;
       } else {
         autresSorties += montant;
@@ -291,6 +316,7 @@ export function computePnl(
     pertesStock,
     gainsInventaire,
     quantitePertesStock,
+    detailsPertes,
     totalOpex,
     dotationAmortissement,
     resultatExploitation,

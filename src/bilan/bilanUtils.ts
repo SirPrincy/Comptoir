@@ -43,7 +43,7 @@ export function computeBilanData(
 
   // 2. Actif Circulant
   // A. Stocks physiques à leur coût de revient moyen (Achat + Fret)
-  const stockByProduct = computeStock(products, commandes, ventes);
+  const stockByProduct = computeStock(products, commandes, ventes, mouvements);
   let valeurStockTotal = 0;
 
   products.forEach((p: any) => {

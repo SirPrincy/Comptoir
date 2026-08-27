@@ -27,6 +27,14 @@ export interface PnlData {
   pertesStock: number;
   gainsInventaire: number;
   quantitePertesStock: number;
+  detailsPertes?: Array<{
+    id: string;
+    productNom: string;
+    delta: number;
+    motif: string;
+    date: string;
+    valTotale: number;
+  }>;
   totalOpex: number;
   dotationAmortissement: number;
   resultatExploitation: number;

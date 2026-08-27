@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDown, ChevronRight, AlertCircle } from 'lucide-react';
 import { THEME } from '../colors';
 import { PnlData } from './types';
 
@@ -7,10 +8,14 @@ interface PnlTableProps {
 }
 
 export default function PnlTable({ pnl }: PnlTableProps) {
+  const [showPertesDetails, setShowPertesDetails] = useState(false);
+
   if (!pnl) return null;
 
   const fmt = (n: number | undefined | null) => (Number(n) || 0).toLocaleString('fr-FR');
   const pct = (n: number | undefined | null) => (Number(n) || 0).toFixed(1);
+  const hasPertes = (pnl.pertesStock || 0) > 0;
+  const pertesList = pnl.detailsPertes || [];
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr', lg: '1fr', gap: 14 }}>
@@ -70,12 +75,58 @@ export default function PnlTable({ pnl }: PnlTableProps) {
             <span>Notes de frais généraux (Repas, fournitures, honoraires...)</span>
             <span>-{fmt(pnl.fraisGenerauxNotes)} Ar</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 24px', fontSize: 12.5, borderBottom: `1px solid ${THEME.border.base}`, color: (pnl.pertesStock || 0) > 0 ? THEME.accent.danger : THEME.text.secondary }}>
-            <span>
-              Pertes, casse & vols de stock {(pnl.quantitePertesStock || 0) > 0 ? `(${pnl.quantitePertesStock} pièce${(pnl.quantitePertesStock || 0) > 1 ? 's' : ''})` : ''}
+          <div
+            onClick={() => pertesList.length > 0 && setShowPertesDetails(!showPertesDetails)}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '9px 24px',
+              fontSize: 12.5,
+              borderBottom: `1px solid ${THEME.border.base}`,
+              color: hasPertes ? THEME.accent.danger : THEME.text.secondary,
+              cursor: pertesList.length > 0 ? 'pointer' : 'default',
+              background: hasPertes ? 'rgba(194, 74, 63, 0.04)' : 'transparent',
+              transition: 'background 0.15s ease',
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: hasPertes ? 600 : 400 }}>
+              {pertesList.length > 0 ? (
+                showPertesDetails ? <ChevronDown size={14} /> : <ChevronRight size={14} />
+              ) : (
+                <AlertCircle size={14} style={{ opacity: 0.6 }} />
+              )}
+              Pertes, casse & vols de stock {(pnl.quantitePertesStock || 0) > 0 ? `(${pnl.quantitePertesStock} pièce${(pnl.quantitePertesStock || 0) > 1 ? 's' : ''})` : '(0 pièce)'}
             </span>
-            <span style={{ fontWeight: (pnl.pertesStock || 0) > 0 ? 700 : 400 }}>-{fmt(pnl.pertesStock)} Ar</span>
+            <span style={{ fontWeight: hasPertes ? 700 : 400 }}>
+              {hasPertes ? `-${fmt(pnl.pertesStock)} Ar` : '0 Ar'}
+            </span>
           </div>
+
+          {showPertesDetails && pertesList.length > 0 && (
+            <div style={{ background: THEME.bg.soft, padding: '8px 24px 10px 42px', borderBottom: `1px solid ${THEME.border.base}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: THEME.text.muted, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Détail des pertes constatées sur la période :
+              </div>
+              {pertesList.map((item, idx) => (
+                <div key={item.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, padding: '3px 0', borderBottom: idx < pertesList.length - 1 ? `1px dashed ${THEME.border.base}` : 'none' }}>
+                  <div>
+                    <strong style={{ color: THEME.text.primary }}>{item.productNom}</strong>
+                    <span style={{ color: THEME.text.muted, marginLeft: 6 }}>({item.motif})</span>
+                    {item.date && (
+                      <span style={{ color: THEME.text.muted, fontSize: 10.5, marginLeft: 6 }}>
+                        · {new Date(item.date).toLocaleDateString('fr-FR')}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontWeight: 600, color: THEME.accent.danger }}>
+                    {item.delta} pc ({fmt(item.valTotale)} Ar)
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {(pnl.gainsInventaire || 0) > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 24px', fontSize: 12.5, borderBottom: `1px solid ${THEME.border.base}`, color: THEME.accent.green }}>
               <span>Surplus / Écarts positifs d'inventaire constatés</span>
