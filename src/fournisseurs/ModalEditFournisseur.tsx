@@ -1,11 +1,12 @@
 import React from 'react';
-import { TrendingUp, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { TrendingUp, ShieldCheck, AlertTriangle, Package } from 'lucide-react';
 import { Modal, Field, inputStyle, selectStyle, primaryBtn, ghostBtn } from '../ui';
 import { SOURCES } from '../constants';
 import { getQCBadgeInfo } from '../qcUtils';
 import { calculerHistoriquePrixFournisseur } from '../paymentUtils';
 import TarifFretForm, { TarifFret, sanitizeTarifs } from './TarifFretForm';
 import HistoriquePrixFournisseur from './HistoriquePrixFournisseur';
+import DetailTransitaireArticles from './DetailTransitaireArticles';
 
 interface ModalEditFournisseurProps {
   editing: any;
@@ -206,6 +207,21 @@ export default function ModalEditFournisseur({
             onChange={tarifs => setEditing((prev: any) => ({ ...prev, tarifs }))}
             prixFretFallback={editing.prixFret}
           />
+        )}
+
+        {/* Section Suivi Articles & Délais Réels vs Théoriques */}
+        {(editing.plateforme === 'Transitaire / Fret' || (editing.tarifs && editing.tarifs.length > 0)) && (
+          <div style={{ background: '#FAF7F2', padding: 12, borderRadius: 8, border: '1px solid #EAE2D4' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#2C5E43', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Package size={16} />
+              <span>Articles acheminés & Délais réels vs théoriques</span>
+            </div>
+            <DetailTransitaireArticles
+              transitaire={editing}
+              commandes={commandes}
+              products={products}
+            />
+          </div>
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>

@@ -2,6 +2,7 @@ import { useMemo, useCallback } from 'react';
 import { STATUTS_LOGISTIQUE } from '../constants';
 import { calculerSoldeRMB, getRestePayeVente, getRestePayeMarchandise, getRestePayeFret } from '../paymentUtils';
 import { computeStock } from '../stock/stockUtils';
+import { calculerSoldesComptes, calculerSoldeTotalMga } from '../Tresorerie/tresorerieUtils';
 
 export interface DashboardMetricsProps {
   products: any[];
@@ -11,6 +12,8 @@ export interface DashboardMetricsProps {
   changes?: any[];
   paiements?: any[];
   devises?: any;
+  fournisseurs?: any[];
+  comptes?: string[];
 }
 
 export function useDashboardMetrics({
@@ -21,6 +24,8 @@ export function useDashboardMetrics({
   changes = [],
   paiements = [],
   devises = { rmb: 680, usd: 4600 },
+  fournisseurs = [],
+  comptes = [],
 }: DashboardMetricsProps) {
   // O(1) Map des produits par ID
   const productMap = useMemo(() => {
@@ -58,8 +63,8 @@ export function useDashboardMetrics({
         let totalQty = 0;
         productCmds.forEach((c: any) => {
           const qty = Math.max(1, Number(c.qty) || 1);
-          const pu = Number(c.pu) || 0;
-          const fraisChine = Number(c.fraisLivraisonChine || c.fraisLivraison) || 0;
+          const pu = Number(c.pu) || (c.puDevise ? Number(c.puDevise) * (Number(c.tauxRmb) || 680) : 0);
+          const fraisChine = Number(c.fraisLivraisonChine || c.fraisLivraison) || (c.fraisLivraisonChineDevise ? Number(c.fraisLivraisonChineDevise) * (Number(c.tauxRmb) || 680) : 0);
           const totalMarchandise = (c.total !== undefined && c.total !== null && Number(c.total) > 0)
             ? Number(c.total)
             : ((pu * qty) + fraisChine);
@@ -190,12 +195,22 @@ export function useDashboardMetrics({
   const tauxRecuperation = baseInvestissement > 0 ? Math.min(100, Math.max(0, (caTotal / baseInvestissement) * 100)) : 0;
   const resteARecuperer = Math.max(0, baseInvestissement - caTotal);
 
-  // 7. Trésorerie Disponible
+  // 7. Trésorerie Disponible (Calcul unifié synchronisé avec le journal de trésorerie)
+  const soldesParCompte = useMemo(() => {
+    return calculerSoldesComptes({
+      ventes,
+      commandes,
+      mouvements,
+      paiements,
+      products,
+      fournisseurs,
+      comptes,
+    });
+  }, [ventes, commandes, mouvements, paiements, products, fournisseurs, comptes]);
+
   const tresorerieDispo = useMemo(() => {
-    const entrees = mouvements.filter((m: any) => m.type === 'entrée' && !m.isTransfert).reduce((s: number, m: any) => s + (Number(m.montant) || 0), 0);
-    const sorties = mouvements.filter((m: any) => m.type === 'sortie' && !m.isTransfert).reduce((s: number, m: any) => s + (Number(m.montant) || 0), 0);
-    return entrees - sorties;
-  }, [mouvements]);
+    return calculerSoldeTotalMga(soldesParCompte);
+  }, [soldesParCompte]);
 
   // 8. Solde RMB
   const soldeRmbInfo = useMemo(() => {
@@ -385,6 +400,7 @@ export function useDashboardMetrics({
     tauxRecuperation,
     resteARecuperer,
     tresorerieDispo,
+    soldesParCompte,
     soldeRmbInfo,
     creancesClients,
     dettesFournisseurs,

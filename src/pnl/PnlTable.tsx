@@ -234,7 +234,7 @@ export default function PnlTable({
         </div>
 
         {renderRow({
-          title: "Coût d'achat des marchandises vendues (Prix achat d'origine)",
+          title: "Coût d'achat des marchandises vendues (Articles & transport en Chine)",
           currentVal: pnl.costMarchandises,
           prevVal: pnlPrevious?.costMarchandises,
           prefix: '-',
@@ -243,10 +243,30 @@ export default function PnlTable({
           indent: true,
         })}
 
+        {((pnl.fraisTransportChineMarchandises > 0) || ((pnlPrevious?.fraisTransportChineMarchandises || 0) > 0)) && renderRow({
+          title: "↳ dont Frais transport frns Chine vers entrepôt Chine",
+          currentVal: pnl.fraisTransportChineMarchandises,
+          prevVal: pnlPrevious?.fraisTransportChineMarchandises,
+          prefix: '-',
+          isCharge: true,
+          customColor: THEME.text.muted,
+          indent: true,
+        })}
+
         {renderRow({
-          title: "Fret & logistique d'acheminement des marchandises vendues",
+          title: "Fret & logistique d'acheminement international (Chine → Madagascar)",
           currentVal: pnl.fretMarchandises,
           prevVal: pnlPrevious?.fretMarchandises,
+          prefix: '-',
+          isCharge: true,
+          customColor: THEME.accent.orange,
+          indent: true,
+        })}
+
+        {((pnl.transportLocalMarchandises || 0) > 0 || (pnlPrevious?.transportLocalMarchandises || 0) > 0) && renderRow({
+          title: "Transport & logistique locale à Madagascar",
+          currentVal: pnl.transportLocalMarchandises || 0,
+          prevVal: pnlPrevious?.transportLocalMarchandises || 0,
           prefix: '-',
           isCharge: true,
           customColor: THEME.accent.orange,

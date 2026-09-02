@@ -28,6 +28,7 @@ import { DashboardKpisConfig } from './dashboardConfig';
 
 interface DashboardKpiGridProps {
   kpisConfig: DashboardKpisConfig;
+  onNavigateTab?: (tab: string) => void;
   metrics: {
     caTotal: number;
     ventesCount: number;
@@ -38,6 +39,7 @@ interface DashboardKpiGridProps {
     baseInvestissement: number;
     capitalInvesti: number;
     tresorerieDispo: number;
+    soldesParCompte?: Record<string, number>;
     soldeRmbInfo: { soldeRmbDispo: number; totalRmbAchete: number };
     creancesClients: number;
     dettesFournisseurs: number;
@@ -56,6 +58,7 @@ interface DashboardKpiGridProps {
 const DashboardKpiGrid = memo(function DashboardKpiGrid({
   kpisConfig: k,
   metrics,
+  onNavigateTab,
 }: DashboardKpiGridProps) {
   const margeRatio = metrics.caTotal > 0 ? (metrics.margeTotale / metrics.caTotal) * 100 : 0;
   const soldeNetTiers = metrics.creancesClients - metrics.dettesFournisseurs;
@@ -244,29 +247,59 @@ const DashboardKpiGrid = memo(function DashboardKpiGrid({
               {/* Bloc Liquidités : Ariary + Yuan RMB */}
               <div style={{ display: 'grid', gridTemplateColumns: (k.tresorerie && k.reserve_rmb) ? '1.1fr 1fr' : '1fr', gap: 10 }}>
                 {k.tresorerie && (
-                  <div style={{ background: THEME.bg.surface, padding: '12px 14px', borderRadius: RADIUS.item, border: `1px solid ${THEME.border.base}` }}>
-                    <div style={{ fontSize: 11.5, color: THEME.text.secondary, fontWeight: 500 }}>
-                      Trésorerie Dispo (Ar)
+                  <div
+                    onClick={() => onNavigateTab && onNavigateTab('tresorerie')}
+                    style={{
+                      background: THEME.bg.surface,
+                      padding: '12px 14px',
+                      borderRadius: RADIUS.item,
+                      border: `1px solid ${THEME.border.base}`,
+                      cursor: onNavigateTab ? 'pointer' : 'default',
+                      transition: 'border-color 0.15s ease',
+                    }}
+                    title={onNavigateTab ? 'Cliquer pour ouvrir le journal de Trésorerie' : undefined}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ fontSize: 11.5, color: THEME.text.secondary, fontWeight: 500 }}>
+                        Trésorerie Dispo (Ar)
+                      </div>
+                      <Wallet size={13} style={{ color: metrics.tresorerieDispo >= 0 ? THEME.brand.emerald : THEME.accent.danger }} />
                     </div>
                     <div style={{ fontFamily: FONTS.display, fontSize: 20, fontWeight: 800, color: metrics.tresorerieDispo >= 0 ? THEME.brand.emerald : THEME.accent.danger, marginTop: 3, letterSpacing: '-0.02em' }}>
                       {metrics.tresorerieDispo.toLocaleString('fr-FR')} <span style={{ fontSize: 12, fontWeight: 600 }}>Ar</span>
                     </div>
-                    <div style={{ fontSize: 11, color: THEME.text.muted, marginTop: 3 }}>
-                      Caisse & banques
+                    <div style={{ fontSize: 11, color: THEME.text.muted, marginTop: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span>Caisse & banques (MGA)</span>
+                      {onNavigateTab && <span style={{ fontSize: 10, color: THEME.brand.blue, fontWeight: 600 }}>Gérer →</span>}
                     </div>
                   </div>
                 )}
 
                 {k.reserve_rmb && (
-                  <div style={{ background: THEME.bg.surface, padding: '12px 14px', borderRadius: RADIUS.item, border: `1px solid ${THEME.border.base}` }}>
-                    <div style={{ fontSize: 11.5, color: THEME.text.secondary, fontWeight: 500 }}>
-                      Réserve Chine (¥)
+                  <div
+                    onClick={() => onNavigateTab && onNavigateTab('change')}
+                    style={{
+                      background: THEME.bg.surface,
+                      padding: '12px 14px',
+                      borderRadius: RADIUS.item,
+                      border: `1px solid ${THEME.border.base}`,
+                      cursor: onNavigateTab ? 'pointer' : 'default',
+                      transition: 'border-color 0.15s ease',
+                    }}
+                    title={onNavigateTab ? 'Cliquer pour ouvrir le module Change RMB' : undefined}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ fontSize: 11.5, color: THEME.text.secondary, fontWeight: 500 }}>
+                        Réserve Chine (¥)
+                      </div>
+                      <Coins size={13} style={{ color: THEME.brand.amber }} />
                     </div>
                     <div style={{ fontFamily: FONTS.display, fontSize: 20, fontWeight: 800, color: THEME.brand.amber, marginTop: 3, letterSpacing: '-0.02em' }}>
                       {metrics.soldeRmbInfo.soldeRmbDispo.toLocaleString('fr-FR')} <span style={{ fontSize: 12, fontWeight: 600 }}>¥</span>
                     </div>
-                    <div style={{ fontSize: 11, color: THEME.text.muted, marginTop: 3 }}>
-                      Achats : {metrics.soldeRmbInfo.totalRmbAchete.toFixed(0)} ¥
+                    <div style={{ fontSize: 11, color: THEME.text.muted, marginTop: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span>Achats : {metrics.soldeRmbInfo.totalRmbAchete.toFixed(0)} ¥</span>
+                      {onNavigateTab && <span style={{ fontSize: 10, color: THEME.brand.amber, fontWeight: 600 }}>Change →</span>}
                     </div>
                   </div>
                 )}

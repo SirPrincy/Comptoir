@@ -55,6 +55,8 @@ const Dashboard = memo(function Dashboard({
   changes = [],
   paiements = [],
   devises = { rmb: 680, usd: 4600 },
+  fournisseurs = [],
+  comptes = [],
   onNavigateTab,
 }: DashboardProps) {
   const [customizerOpen, setCustomizerOpen] = useState(false);
@@ -122,6 +124,8 @@ const Dashboard = memo(function Dashboard({
     changes,
     paiements,
     devises,
+    fournisseurs,
+    comptes,
   });
 
   const hasAnyData = ventes.length > 0 || commandes.length > 0 || mouvements.length > 0 || products.length > 0;
@@ -505,6 +509,7 @@ const Dashboard = memo(function Dashboard({
       {activeKpisCount > 0 && (
         <DashboardKpiGrid
           kpisConfig={k}
+          onNavigateTab={onNavigateTab}
           metrics={{
             caTotal: metrics.caTotal,
             ventesCount: ventes.length,
@@ -515,6 +520,7 @@ const Dashboard = memo(function Dashboard({
             baseInvestissement: metrics.baseInvestissement,
             capitalInvesti: metrics.capitalInvesti,
             tresorerieDispo: metrics.tresorerieDispo,
+            soldesParCompte: metrics.soldesParCompte,
             soldeRmbInfo: metrics.soldeRmbInfo,
             creancesClients: metrics.creancesClients,
             dettesFournisseurs: metrics.dettesFournisseurs,

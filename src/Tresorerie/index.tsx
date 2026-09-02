@@ -11,7 +11,7 @@ import ModalTransfertComptes from './ModalTransfertComptes';
 import JournalTransactions from './JournalTransactions';
 import ModalDetailTransaction from './ModalDetailTransaction';
 
-import { buildToutesTransactions, supprimerTransaction } from './tresorerieUtils';
+import { buildToutesTransactions, supprimerTransaction, calculerSoldeTotalMga } from './tresorerieUtils';
 import { useTresorerieForms } from './useTresorerieForms';
 
 interface TresorerieProps {
@@ -183,7 +183,7 @@ export default function Tresorerie({
   }, [toutesTransactions, activeComptes]);
 
   const soldeGlobal = useMemo(() => {
-    return Object.values(soldesParCompte).reduce((s: number, v: number) => s + v, 0);
+    return calculerSoldeTotalMga(soldesParCompte);
   }, [soldesParCompte]);
 
   const tagsDisponibles = useMemo(() => {

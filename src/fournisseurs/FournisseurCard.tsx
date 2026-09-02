@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, Edit2, Truck, Clock } from 'lucide-react';
+import { Trash2, Edit2, Truck, Clock, Package } from 'lucide-react';
 import { rowCard, iconBtn } from '../ui';
 import { TarifFret } from './TarifFretForm';
 import { calculerScoreFournisseur, getQCBadgeInfo } from '../qcUtils';
@@ -21,6 +21,7 @@ interface FournisseurCardProps {
   globalTotalDepenses: number;
   onEdit: (f: any) => void;
   onDelete: (f: any, e: React.MouseEvent) => void;
+  onOpenDetailArticles?: (f: any) => void;
 }
 
 export default function FournisseurCard({
@@ -32,6 +33,7 @@ export default function FournisseurCard({
   globalTotalDepenses,
   onEdit,
   onDelete,
+  onOpenDetailArticles,
 }: FournisseurCardProps) {
   const isTransitaire = f.plateforme === 'Transitaire / Fret';
   const hasTarifs = f.tarifs && f.tarifs.length > 0;
@@ -136,7 +138,7 @@ export default function FournisseurCard({
               )}
 
               {hasPerf && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 2, alignItems: 'center' }}>
                   {perfAir.nbColisAnalyses > 0 && (
                     <span style={{ fontSize: 10.5, fontWeight: 600, background: '#EBF4EC', color: '#3F7A5C', padding: '2px 6px', borderRadius: 4, border: '1px solid #C2E0D1' }}>
                       ✈️ Fiabilité : {perfAir.fiabiliteLabel}
@@ -147,6 +149,35 @@ export default function FournisseurCard({
                       🚢 Fiabilité : {perfSea.fiabiliteLabel}
                     </span>
                   )}
+                </div>
+              )}
+
+              {onOpenDetailArticles && (
+                <div style={{ marginTop: 4 }}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenDetailArticles(f);
+                    }}
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: '#2C5E43',
+                      background: '#F0F7F3',
+                      border: '1px solid #C2E0D1',
+                      borderRadius: 5,
+                      padding: '3px 8px',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                    title="Voir les articles acheminés et le temps réel vs théorique par article"
+                  >
+                    <Package size={12} />
+                    <span>Articles & Délais Réels vs Théoriques ({nbCmds(f.id)})</span>
+                  </button>
                 </div>
               )}
             </div>

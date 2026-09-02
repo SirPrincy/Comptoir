@@ -1,13 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import { Truck, ChevronDown, ChevronUp, Award, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Truck, ChevronDown, ChevronUp, Award, Clock, AlertTriangle, CheckCircle2, Package, Maximize2 } from 'lucide-react';
 import { TarifFret } from './TarifFretForm';
 import { TYPES_ENVOI_AERIEN, TYPES_ENVOI_MARITIME } from '../constants';
 import { calculerPerformanceTransitaire } from '../logistique/logistiqueUtils';
+import DetailTransitaireArticles from './DetailTransitaireArticles';
+import ModalDetailTransitaireArticles from './ModalDetailTransitaireArticles';
 
 interface ComparateurFretProps {
   fournisseurs: any[];
   commandes?: any[];
+  products?: any[];
   onSelectTransitaire?: (transitaire: any) => void;
+  onNavigateToLogistique?: (commandeId?: string) => void;
 }
 
 export function parseTarifValue(prixStr?: string): { val: number; unite: string } | null {
@@ -33,11 +37,15 @@ export function parseTarifValue(prixStr?: string): { val: number; unite: string 
 export default function ComparateurFret({
   fournisseurs = [],
   commandes = [],
+  products = [],
   onSelectTransitaire,
+  onNavigateToLogistique,
 }: ComparateurFretProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [selectedMode, setSelectedMode] = useState<'Aérien' | 'Maritime'>('Aérien');
   const [selectedType, setSelectedType] = useState<string>('all');
+  const [expandedTransitaireId, setExpandedTransitaireId] = useState<string | null>(null);
+  const [modalTransitaire, setModalTransitaire] = useState<any | null>(null);
 
   const transitaires = useMemo(() => {
     return (fournisseurs || []).filter(
@@ -282,10 +290,10 @@ export default function ComparateurFret({
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, textAlign: 'left' }}>
               <thead>
                 <tr style={{ background: '#FAF7F2', borderBottom: '1px solid #EAE2D4' }}>
-                  <th style={{ padding: '8px 10px', color: '#5E584E', fontWeight: 700, minWidth: 130 }}>
+                  <th style={{ padding: '8px 10px', color: '#5E584E', fontWeight: 700, minWidth: 140 }}>
                     Transitaire
                   </th>
-                  <th style={{ padding: '8px 10px', color: '#1B4D33', fontWeight: 700, minWidth: 150, borderLeft: '1px solid #EAE2D4', background: '#F2F8F4' }}>
+                  <th style={{ padding: '8px 10px', color: '#1B4D33', fontWeight: 700, minWidth: 160, borderLeft: '1px solid #EAE2D4', background: '#F2F8F4' }}>
                     ⏱️ Réel vs Théorique
                   </th>
                   {comparisonData.typesToShow.map(t => (
@@ -293,79 +301,291 @@ export default function ComparateurFret({
                       {t}
                     </th>
                   ))}
+                  <th style={{ padding: '8px 10px', color: '#5E584E', fontWeight: 700, minWidth: 130, borderLeft: '1px solid #EAE2D4', textAlign: 'center' }}>
+                    Détails & Articles
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {transitaires.map((tr: any, idx: number) => {
                   const perf = comparisonData.perfsByTransitaireId[tr.id];
                   const hasRealData = perf && perf.source === 'historique' && perf.nbColisAnalyses > 0;
+                  const isExpanded = expandedTransitaireId === tr.id;
+
+                  // Calcul du nombre de colis / articles confiés à ce transitaire
+                  const matchedCmds = (commandes || []).filter(
+                    (c: any) => c.transitaireId === tr.id || (c.fournisseurId === tr.id && tr.plateforme === 'Transitaire / Fret')
+                  );
+                  const nbArticles = matchedCmds.length;
+
+                  const totalColumns = comparisonData.typesToShow.length + 3;
 
                   return (
-                    <tr
-                      key={tr.id}
-                      onClick={() => onSelectTransitaire && onSelectTransitaire(tr)}
-                      style={{
-                        borderBottom: idx === transitaires.length - 1 ? 'none' : '1px solid #F0ECE1',
-                        background: idx % 2 === 0 ? '#FFFFFF' : '#FDFAF5',
-                        cursor: onSelectTransitaire ? 'pointer' : 'default',
-                      }}
-                    >
-                      {/* Transitaire */}
-                      <td style={{ padding: '8px 10px', fontWeight: 600, color: '#26333D' }}>
-                        <div>{tr.nom}</div>
-                        {tr.contact && <div style={{ fontSize: 10.5, color: '#8A8375', fontWeight: 400 }}>{tr.contact}</div>}
-                      </td>
-
-                      {/* Performance RÉELLE vs Théorique */}
-                      <td style={{ padding: '8px 10px', borderLeft: '1px solid #F0ECE1', background: '#F8FAF9' }}>
-                        {hasRealData ? (
-                          <div>
-                            <div style={{ fontWeight: 700, color: perf.retardMoyenJours > 2 ? '#B5532A' : '#1B6A3E', fontSize: 11.5 }}>
-                              {perf.delaiMoyenJours} jours réels
+                    <React.Fragment key={tr.id}>
+                      <tr
+                        style={{
+                          borderBottom: isExpanded ? 'none' : idx === transitaires.length - 1 ? 'none' : '1px solid #F0ECE1',
+                          background: isExpanded ? '#FAF6F0' : idx % 2 === 0 ? '#FFFFFF' : '#FDFAF5',
+                          transition: 'background 0.15s ease',
+                        }}
+                      >
+                        {/* Transitaire */}
+                        <td style={{ padding: '8px 10px', fontWeight: 600, color: '#26333D' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                            <div>
+                              <div style={{ fontSize: 12.5, fontWeight: 700 }}>{tr.nom}</div>
+                              {tr.contact && <div style={{ fontSize: 10.5, color: '#8A8375', fontWeight: 400 }}>{tr.contact}</div>}
                             </div>
-                            <div style={{ fontSize: 10, color: '#736B5E' }}>
-                              sur {perf.nbColisAnalyses} colis ({perf.retardMoyenJours > 0 ? `+${perf.retardMoyenJours}j retard` : 'ponctuel'})
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedTransitaireId(isExpanded ? null : tr.id);
+                              }}
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 600,
+                                padding: '2px 6px',
+                                borderRadius: 10,
+                                border: '1px solid #D8CFC0',
+                                background: isExpanded ? '#2C5E43' : '#F4EFE6',
+                                color: isExpanded ? '#FFFFFF' : '#5E584E',
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap',
+                              }}
+                              title="Déplier l'analyse détaillée des articles"
+                            >
+                              📦 {nbArticles} colis
+                            </button>
+                          </div>
+                        </td>
+
+                        {/* Performance RÉELLE vs Théorique */}
+                        <td style={{ padding: '8px 10px', borderLeft: '1px solid #F0ECE1', background: '#F8FAF9' }}>
+                          {hasRealData ? (
+                            <div>
+                              <div style={{ fontWeight: 700, color: perf.retardMoyenJours > 2 ? '#B5532A' : '#1B6A3E', fontSize: 11.5 }}>
+                                {perf.delaiMoyenJours} jours réels
+                              </div>
+                              <div style={{ fontSize: 10, color: '#736B5E' }}>
+                                sur {perf.nbColisAnalyses} colis ({perf.retardMoyenJours > 0 ? `+${perf.retardMoyenJours}j retard` : 'ponctuel'})
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedTransitaireId(isExpanded ? null : tr.id);
+                                }}
+                                style={{
+                                  border: 'none',
+                                  background: 'transparent',
+                                  color: '#2C5E43',
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  padding: 0,
+                                  marginTop: 2,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 2,
+                                }}
+                              >
+                                {isExpanded ? '▲ Masquer' : '🔍 Détail articles ▾'}
+                              </button>
                             </div>
-                          </div>
-                        ) : (
-                          <div style={{ fontSize: 10.5, color: '#8A8375', fontStyle: 'italic' }}>
-                            {perf?.fiabiliteLabel || (selectedMode === 'Aérien' ? '~15j standard' : '~60j standard')}
-                          </div>
-                        )}
-                      </td>
+                          ) : (
+                            <div>
+                              <div style={{ fontSize: 10.5, color: '#8A8375', fontStyle: 'italic' }}>
+                                {perf?.fiabiliteLabel || (selectedMode === 'Aérien' ? '~15j standard' : '~60j standard')}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedTransitaireId(isExpanded ? null : tr.id);
+                                }}
+                                style={{
+                                  border: 'none',
+                                  background: 'transparent',
+                                  color: '#3D5A6C',
+                                  fontSize: 10,
+                                  fontWeight: 600,
+                                  padding: 0,
+                                  marginTop: 2,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                {isExpanded ? '▲ Masquer' : '📦 Voir articles'}
+                              </button>
+                            </div>
+                          )}
+                        </td>
 
-                      {/* Colonnes par type d'envoi */}
-                      {comparisonData.typesToShow.map(type => {
-                        const tarif = resolveTarif(tr, selectedMode, type);
+                        {/* Colonnes par type d'envoi */}
+                        {comparisonData.typesToShow.map(type => {
+                          const tarif = resolveTarif(tr, selectedMode, type);
 
-                        if (!tarif) {
+                          if (!tarif) {
+                            return (
+                              <td key={type} style={{ padding: '8px 10px', color: '#B0A898', fontStyle: 'italic', borderLeft: '1px solid #F0ECE1' }}>
+                                —
+                              </td>
+                            );
+                          }
+
+                          const parsed = parseTarifValue(tarif.prix);
+                          const minInfo = comparisonData.minPricesByType[type];
+                          const isBest = parsed && minInfo && parsed.val === minInfo.minVal && minInfo.minVal > 0;
+
                           return (
-                            <td key={type} style={{ padding: '8px 10px', color: '#B0A898', fontStyle: 'italic', borderLeft: '1px solid #F0ECE1' }}>
-                              —
+                            <td key={type} style={{ padding: '8px 10px', borderLeft: '1px solid #F0ECE1', background: isBest ? '#F2FAF5' : 'transparent' }}>
+                              <div style={{ fontWeight: isBest ? 700 : 600, color: isBest ? '#1B6A3E' : '#26333D' }}>
+                                {tarif.prix} {isBest && <span style={{ fontSize: 9.5, background: '#D9F2E2', color: '#1B6A3E', padding: '1px 3px', borderRadius: 3 }}>★ Top</span>}
+                              </div>
+                              {tarif.delai && <div style={{ fontSize: 10, color: '#8A8375' }}>Théo: {tarif.delai}</div>}
                             </td>
                           );
-                        }
+                        })}
 
-                        const parsed = parseTarifValue(tarif.prix);
-                        const minInfo = comparisonData.minPricesByType[type];
-                        const isBest = parsed && minInfo && parsed.val === minInfo.minVal && minInfo.minVal > 0;
+                        {/* Colonne Actions & Détails */}
+                        <td style={{ padding: '8px 10px', borderLeft: '1px solid #F0ECE1', textAlign: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedTransitaireId(isExpanded ? null : tr.id);
+                              }}
+                              style={{
+                                border: `1px solid ${isExpanded ? '#2C5E43' : '#D8CFC0'}`,
+                                background: isExpanded ? '#2C5E43' : '#FFFFFF',
+                                color: isExpanded ? '#FFFFFF' : '#2C5E43',
+                                borderRadius: 6,
+                                padding: '4px 8px',
+                                fontSize: 11,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                              }}
+                              title="Déplier l'historique détaillé des articles et délais réels vs théoriques"
+                            >
+                              <Package size={12} />
+                              <span>{isExpanded ? 'Fermer' : 'Articles'}</span>
+                              {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                            </button>
 
-                        return (
-                          <td key={type} style={{ padding: '8px 10px', borderLeft: '1px solid #F0ECE1', background: isBest ? '#F2FAF5' : 'transparent' }}>
-                            <div style={{ fontWeight: isBest ? 700 : 600, color: isBest ? '#1B6A3E' : '#26333D' }}>
-                              {tarif.prix} {isBest && <span style={{ fontSize: 9.5, background: '#D9F2E2', color: '#1B6A3E', padding: '1px 3px', borderRadius: 3 }}>★ Top</span>}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setModalTransitaire(tr);
+                              }}
+                              style={{
+                                border: '1px solid #E0D8CA',
+                                background: '#FFFFFF',
+                                color: '#5E584E',
+                                borderRadius: 6,
+                                padding: '4px 6px',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                              }}
+                              title="Ouvrir les détails et articles en plein écran"
+                            >
+                              <Maximize2 size={12} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* Ligne dépliée avec le composant d'analyse par article */}
+                      {isExpanded && (
+                        <tr key={`${tr.id}-articles-expanded`}>
+                          <td
+                            colSpan={totalColumns}
+                            style={{
+                              padding: '14px 16px',
+                              background: '#FDFBF7',
+                              borderBottom: '2px solid #D8CFC0',
+                              boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.03)',
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                              <div style={{ fontSize: 13.5, fontWeight: 700, color: '#26333D', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Package size={16} color="#2C5E43" />
+                                <span>Articles acheminés par « {tr.nom} » & Comparatif Délais Réels vs Théoriques</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <button
+                                  type="button"
+                                  onClick={() => setModalTransitaire(tr)}
+                                  style={{
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    color: '#3D5A6C',
+                                    background: '#FFFFFF',
+                                    border: '1px solid #D1D5DB',
+                                    borderRadius: 5,
+                                    padding: '3px 8px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 4,
+                                  }}
+                                >
+                                  <Maximize2 size={12} />
+                                  <span>Plein écran</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedTransitaireId(null)}
+                                  style={{
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    color: '#8A8375',
+                                    background: '#F4EFE6',
+                                    border: '1px solid #EAE2D4',
+                                    borderRadius: 5,
+                                    padding: '3px 8px',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  Fermer ✕
+                                </button>
+                              </div>
                             </div>
-                            {tarif.delai && <div style={{ fontSize: 10, color: '#8A8375' }}>Théo: {tarif.delai}</div>}
+
+                            <DetailTransitaireArticles
+                              transitaire={tr}
+                              commandes={commandes}
+                              products={products}
+                              initialMode={selectedMode}
+                              onNavigateToLogistique={onNavigateToLogistique}
+                            />
                           </td>
-                        );
-                      })}
-                    </tr>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>
             </table>
           </div>
         </div>
+      )}
+
+      {/* Modal plein écran pour les détails et articles du transitaire */}
+      {modalTransitaire && (
+        <ModalDetailTransitaireArticles
+          transitaire={modalTransitaire}
+          commandes={commandes}
+          products={products}
+          initialMode={selectedMode}
+          onClose={() => setModalTransitaire(null)}
+          onNavigateToLogistique={onNavigateToLogistique}
+        />
       )}
     </div>
   );

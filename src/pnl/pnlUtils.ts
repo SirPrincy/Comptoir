@@ -7,36 +7,114 @@ import { NoteDeFrais } from '../frais/NotesDeFrais';
 import { Immobilisation } from '../immobilisations/types';
 import { calculerPlanAmortissementMensuel } from '../immobilisations/immoUtils';
 
-// Calcul du coût de revient d'un produit (Achat unitaire moyen + Fret moyen)
+// Calcul du coût de revient d'un produit (Achat unitaire moyen + Transport Chine + Fret moyen)
 export function getProductCostBreakdown(
   productId: string,
   products: Product[] = [],
-  commandes: Commande[] = []
-): { basePu: number; fretPu: number; coutRevient: number } {
+  commandes: Commande[] = [],
+  devises: { rmb: number; usd: number } = { rmb: 680, usd: 4600 }
+): {
+  basePu: number;
+  articlesPu: number;
+  fraisChinePu: number;
+  fretPu: number;
+  transportLocalPu: number;
+  coutRevient: number;
+} {
   const productCmds = commandes.filter((c) => c.productId === productId && c.statut !== 'À explorer');
 
   let basePu = 0;
+  let articlesPu = 0;
+  let fraisChinePu = 0;
   let fretPu = 0;
+  let transportLocalPu = 0;
+  let coutRevient = 0;
 
   if (productCmds.length > 0) {
-    let totalValue = 0;
+    let totalArticles = 0;
+    let totalFraisChine = 0;
+    let totalMarchandise = 0;
     let totalQty = 0;
     let totalFret = 0;
-    productCmds.forEach((c) => {
-      const qty = Number(c.qty) || 1;
-      const total = c.pu ? Number(c.pu) * qty : Number(c.total) || 0;
-      totalValue += total;
+    let totalTransportLocal = 0;
+
+    productCmds.forEach((c: any) => {
+      const qty = Math.max(1, Number(c.qty) || 1);
+      const taux = Number(c.tauxRmb) || (devises?.rmb) || 680;
+
+      // 1. Prix unitaire des articles en Ariary
+      let puAr = 0;
+      if (c.pu !== undefined && c.pu !== null && !isNaN(Number(c.pu)) && Number(c.pu) > 0) {
+        puAr = Number(c.pu);
+      } else if (c.puDevise !== undefined && c.puDevise !== null && !isNaN(Number(c.puDevise)) && Number(c.puDevise) > 0) {
+        puAr = Math.round(Number(c.puDevise) * taux);
+      } else if (c.puRmb !== undefined && c.puRmb !== null && !isNaN(Number(c.puRmb)) && Number(c.puRmb) > 0) {
+        puAr = Math.round(Number(c.puRmb) * taux);
+      }
+
+      // 2. Frais transport fournisseur Chine vers entrepôt Chine (livraison locale interne Chine)
+      let fraisChine = 0;
+      if (c.fraisLivraisonChine !== undefined && c.fraisLivraisonChine !== null && !isNaN(Number(c.fraisLivraisonChine)) && Number(c.fraisLivraisonChine) > 0) {
+        fraisChine = Number(c.fraisLivraisonChine);
+      } else if (c.fraisLivraisonChineDevise !== undefined && c.fraisLivraisonChineDevise !== null && !isNaN(Number(c.fraisLivraisonChineDevise)) && Number(c.fraisLivraisonChineDevise) > 0) {
+        fraisChine = Math.round(Number(c.fraisLivraisonChineDevise) * taux);
+      } else if (c.fraisLivraison !== undefined && c.fraisLivraison !== null && !isNaN(Number(c.fraisLivraison)) && Number(c.fraisLivraison) > 0) {
+        fraisChine = Number(c.fraisLivraison);
+      }
+
+      // 3. Montant total payé au fournisseur pour la marchandise (articles + transport interne Chine)
+      let cmdTotalMarchandise = 0;
+      if (c.total !== undefined && c.total !== null && !isNaN(Number(c.total)) && Number(c.total) > 0) {
+        cmdTotalMarchandise = Number(c.total);
+      } else {
+        cmdTotalMarchandise = (puAr * qty) + fraisChine;
+      }
+
+      // Si le total renseigné dépasse les articles purs et que fraisChine n'était pas séparé
+      if (fraisChine === 0 && cmdTotalMarchandise > (puAr * qty) && (puAr * qty) > 0) {
+        fraisChine = cmdTotalMarchandise - (puAr * qty);
+      }
+      const cmdArticles = Math.max(0, cmdTotalMarchandise - fraisChine);
+
+      const fret = Number(c.fraisTransport || c.fretEstimeAr) || 0;
+      const transportLocal = Number(c.fraisTransportLocal) || 0;
+
+      totalArticles += cmdArticles;
+      totalFraisChine += fraisChine;
+      totalMarchandise += cmdTotalMarchandise;
       totalQty += qty;
-      totalFret += Number(c.fraisTransport) || 0;
+      totalFret += fret;
+      totalTransportLocal += transportLocal;
     });
-    basePu = totalQty > 0 ? totalValue / totalQty : 0;
+
+    articlesPu = totalQty > 0 ? totalArticles / totalQty : 0;
+    fraisChinePu = totalQty > 0 ? totalFraisChine / totalQty : 0;
+    basePu = totalQty > 0 ? totalMarchandise / totalQty : 0;
     fretPu = totalQty > 0 ? totalFret / totalQty : 0;
+    transportLocalPu = totalQty > 0 ? totalTransportLocal / totalQty : 0;
+    coutRevient = basePu + fretPu + transportLocalPu;
   } else {
     const p = products.find((pr) => pr.id === productId);
-    basePu = Number(p?.prixAchatAr) || Number(p?.coutTotalRenduAr) || Number(p?.prixAchat) || (Number(p?.puRmb || 0) * 680) || 0;
+    const prixAchat = Number(p?.prixAchatAr) || Number(p?.prixAchat) || (Number(p?.puRmb || 0) * (devises?.rmb || 680)) || 0;
+    const coutRendu = Number(p?.coutTotalRenduAr) || 0;
+    const fretEstime = coutRendu > prixAchat ? coutRendu - prixAchat : 0;
+
+    articlesPu = prixAchat;
+    fraisChinePu = 0;
+    basePu = prixAchat;
+    fretPu = fretEstime;
+    transportLocalPu = 0;
+    coutRevient = coutRendu > 0 ? coutRendu : prixAchat;
   }
 
-  return { basePu, fretPu, coutRevient: basePu + fretPu };
+  return {
+    basePu,
+    articlesPu,
+    fraisChinePu,
+    fretPu,
+    transportLocalPu,
+    coutRevient,
+  };
 }
 
 const MOIS_NOMS = [
@@ -296,23 +374,40 @@ export function calculerCA(ventes: Vente[] = []): number {
 export function calculerCogs(
   ventes: Vente[] = [],
   products: Product[] = [],
-  commandes: Commande[] = []
-): { costMarchandises: number; fretMarchandises: number; cogs: number } {
+  commandes: Commande[] = [],
+  devises: { rmb: number; usd: number } = { rmb: 680, usd: 4600 }
+): {
+  costMarchandises: number;
+  costArticlesSeuls: number;
+  fraisTransportChineMarchandises: number;
+  fretMarchandises: number;
+  transportLocalMarchandises: number;
+  cogs: number;
+} {
   let costMarchandises = 0;
+  let costArticlesSeuls = 0;
+  let fraisTransportChineMarchandises = 0;
   let fretMarchandises = 0;
+  let transportLocalMarchandises = 0;
 
   (ventes || []).forEach((v) => {
     if (!v) return;
-    const { basePu, fretPu } = getProductCostBreakdown(v.productId, products, commandes);
+    const { basePu, articlesPu, fraisChinePu, fretPu, transportLocalPu } = getProductCostBreakdown(v.productId, products, commandes, devises);
     const qty = Number(v.qty) || 1;
     costMarchandises += basePu * qty;
+    costArticlesSeuls += articlesPu * qty;
+    fraisTransportChineMarchandises += fraisChinePu * qty;
     fretMarchandises += fretPu * qty;
+    transportLocalMarchandises += transportLocalPu * qty;
   });
 
   return {
     costMarchandises,
+    costArticlesSeuls,
+    fraisTransportChineMarchandises,
     fretMarchandises,
-    cogs: costMarchandises + fretMarchandises,
+    transportLocalMarchandises,
+    cogs: costMarchandises + fretMarchandises + transportLocalMarchandises,
   };
 }
 
@@ -320,7 +415,8 @@ export function calculerCogs(
 export function calculerPertesEtGains(
   mouvements: Mouvement[] = [],
   products: Product[] = [],
-  commandes: Commande[] = []
+  commandes: Commande[] = [],
+  devises: { rmb: number; usd: number } = { rmb: 680, usd: 4600 }
 ): {
   pertesStock: number;
   gainsInventaire: number;
@@ -354,7 +450,7 @@ export function calculerPertesEtGains(
     if (isAjustement || isDeltaMvt) {
       const delta = Number(m.delta) || 0;
       if (delta === 0) return;
-      const { coutRevient } = getProductCostBreakdown(m.productId, products, commandes);
+      const { coutRevient } = getProductCostBreakdown(m.productId, products, commandes, devises);
       const valTotale = m.valeurTotaleAr !== undefined && m.valeurTotaleAr !== null && !isNaN(Number(m.valeurTotaleAr))
         ? Number(m.valeurTotaleAr)
         : (m.valeurUnitaireAr !== undefined && m.valeurUnitaireAr !== null && !isNaN(Number(m.valeurUnitaireAr)))
@@ -531,14 +627,21 @@ export function computePnlWithBounds(
   const chiffreAffaires = calculerCA(vts);
 
   // 2. Coût des marchandises vendues (COGS)
-  const { costMarchandises, fretMarchandises, cogs } = calculerCogs(vts, products, commandes);
+  const {
+    costMarchandises,
+    costArticlesSeuls,
+    fraisTransportChineMarchandises,
+    fretMarchandises,
+    transportLocalMarchandises,
+    cogs,
+  } = calculerCogs(vts, products, commandes, devises);
 
   // 3. Marge Brute
   const margeBrute = chiffreAffaires - cogs;
   const margeBrutePct = chiffreAffaires > 0 ? (margeBrute / chiffreAffaires) * 100 : 0;
 
   // 4. Pertes & Gains de stock
-  const { pertesStock, gainsInventaire, quantitePertesStock, detailsPertes } = calculerPertesEtGains(mvts, products, commandes);
+  const { pertesStock, gainsInventaire, quantitePertesStock, detailsPertes } = calculerPertesEtGains(mvts, products, commandes, devises);
 
   // 5. Charges d'Exploitation (OPEX)
   const { loyerEtCharges, marketingEtPub, fretEtLogistique, fraisGenerauxNotes, autresSorties } = calculerOpex(frs, mvts);
@@ -562,7 +665,10 @@ export function computePnlWithBounds(
   return {
     chiffreAffaires,
     costMarchandises,
+    costArticlesSeuls,
+    fraisTransportChineMarchandises,
     fretMarchandises,
+    transportLocalMarchandises,
     cogs,
     margeBrute,
     margeBrutePct,

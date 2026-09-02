@@ -24,7 +24,10 @@ export interface ProfitLossProps {
 export interface PnlData {
   chiffreAffaires: number;
   costMarchandises: number;
+  costArticlesSeuls: number;
+  fraisTransportChineMarchandises: number;
   fretMarchandises: number;
+  transportLocalMarchandises?: number;
   cogs: number;
   margeBrute: number;
   margeBrutePct: number;

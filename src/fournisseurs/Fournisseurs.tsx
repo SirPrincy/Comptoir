@@ -12,6 +12,7 @@ import FournisseurCard from './FournisseurCard';
 import FournisseurSummaryKpis from './FournisseurSummaryKpis';
 import ComparateurFret from './ComparateurFret';
 import ComparateurFournisseursProduit from './ComparateurFournisseursProduit';
+import ModalDetailTransitaireArticles from './ModalDetailTransitaireArticles';
 
 export type { TarifFret };
 
@@ -22,6 +23,7 @@ const Fournisseurs = memo(function Fournisseurs({ fournisseurs, commandes, produ
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [fournisseurASupprimer, setFournisseurASupprimer] = useState<any>(null);
+  const [modalTransitaireArticles, setModalTransitaireArticles] = useState<any>(null);
 
   // Filtres & Tri pour l'annuaire
   const [searchQuery, setSearchQuery] = useState(initialSearch);
@@ -270,6 +272,7 @@ const Fournisseurs = memo(function Fournisseurs({ fournisseurs, commandes, produ
         <ComparateurFret
           fournisseurs={fournisseurs}
           commandes={commandes}
+          products={products}
           onSelectTransitaire={(transitaire) => setEditing({ ...transitaire })}
         />
       )}
@@ -518,6 +521,7 @@ const Fournisseurs = memo(function Fournisseurs({ fournisseurs, commandes, produ
                   globalTotalDepenses={globalSummary.totalDepenses}
                   onEdit={(item) => setEditing({ ...item })}
                   onDelete={ouvrirModalSuppression}
+                  onOpenDetailArticles={(tr) => setModalTransitaireArticles(tr)}
                 />
               ))}
             </div>
@@ -533,6 +537,16 @@ const Fournisseurs = memo(function Fournisseurs({ fournisseurs, commandes, produ
         onClose={() => setFournisseurASupprimer(null)}
         onConfirm={confirmerSuppression}
       />
+
+      {/* Modale d'analyse détaillée des articles et temps réels vs théoriques du transitaire */}
+      {modalTransitaireArticles && (
+        <ModalDetailTransitaireArticles
+          transitaire={modalTransitaireArticles}
+          commandes={commandes}
+          products={products}
+          onClose={() => setModalTransitaireArticles(null)}
+        />
+      )}
     </div>
   );
 });

@@ -163,11 +163,14 @@ export function buildToutesTransactions({
         const sourceLabel = c.source ? `[${c.source}]` : '';
         const statutLabel = c.statut ? ` • ${c.statut}` : '';
 
+        const isReserveRmb = (c.modeReglement === 'reserve_rmb' || String(c.comptePayeur || '').toLowerCase().includes('rmb') || String(c.comptePayeur || '').toLowerCase().includes('yuan')) && !c.payeEnMgaDirect;
+        const comptePayeur = isReserveRmb ? 'Réserve RMB (¥)' : (c.comptePayeur || 'MVola');
+
         items.push({
           id: 'achat-' + (c.id || Math.random()),
           type: 'sortie',
           categorie: 'achat',
-          compte: c.comptePayeur || 'MVola',
+          compte: comptePayeur,
           tag: '#stock-chine',
           reference: sourceLabel,
           montant: payeMarchandise,
@@ -469,4 +472,19 @@ export function calculerSoldesComptes({
   });
 
   return res;
+}
+
+/**
+ * Calcule le total de la trésorerie disponible en Ariary (MGA)
+ * en sommant tous les comptes locaux (Caisse, Mobile Money, Banques)
+ * et en excluant les comptes libellés en devises (ex: Réserve RMB / Yuan)
+ */
+export function calculerSoldeTotalMga(soldesParCompte: Record<string, number>): number {
+  if (!soldesParCompte || typeof soldesParCompte !== 'object') return 0;
+  return Object.entries(soldesParCompte)
+    .filter(([compte]) => {
+      const c = (compte || '').toLowerCase();
+      return !c.includes('rmb') && !c.includes('yuan');
+    })
+    .reduce((sum, [, val]) => sum + (Number(val) || 0), 0);
 }

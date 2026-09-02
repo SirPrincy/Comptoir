@@ -1,6 +1,7 @@
 import { computeStock } from '../stock/stockUtils';
 import { getRestePayeVente, getRestePayeMarchandise, getRestePayeFret } from '../paymentUtils';
 import { calculerPlanAmortissementMensuel } from '../immobilisations/immoUtils';
+import { getProductCostBreakdown } from '../pnl/pnlUtils';
 import { BilanData } from './types';
 
 export function computeBilanData(
@@ -141,28 +142,9 @@ export function computeBilanData(
   const caHistorique = ventes.reduce((sum: number, v: any) => sum + (Number(v.total) || 0), 0);
 
   const cogsHistorique = ventes.reduce((sum: number, v: any) => {
-    const productCmds = commandes.filter((c: any) => c.productId === v.productId && c.statut !== 'À explorer');
-    let basePu = 0;
-    let fretPu = 0;
-    if (productCmds.length > 0) {
-      let totalVal = 0;
-      let totalQ = 0;
-      let totalFrt = 0;
-      productCmds.forEach((c: any) => {
-        const q = Number(c.qty) || 1;
-        const tot = c.pu ? Number(c.pu) * q : Number(c.total) || 0;
-        totalVal += tot;
-        totalQ += q;
-        totalFrt += Number(c.fraisTransport) || 0;
-      });
-      basePu = totalQ > 0 ? totalVal / totalQ : 0;
-      fretPu = totalQ > 0 ? totalFrt / totalQ : 0;
-    } else {
-      const p = products.find((pr: any) => pr.id === v.productId);
-      basePu = Number(p?.prixAchatAr) || Number(p?.coutTotalRenduAr) || Number(p?.prixAchat) || (Number(p?.puRmb || 0) * (devises?.rmb || 680)) || 0;
-    }
+    const { coutRevient } = getProductCostBreakdown(v.productId, products, commandes, devises);
     const qty = Number(v.qty) || 1;
-    return sum + ((basePu + fretPu) * qty);
+    return sum + (coutRevient * qty);
   }, 0);
 
   const margeBruteHist = Math.max(0, caHistorique - cogsHistorique);
