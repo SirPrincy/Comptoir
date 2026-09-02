@@ -16,6 +16,8 @@ export default function AchatFormModal({
   soldeRmbInfo,
   sourcing,
   updateAll,
+  updateData,
+  paiements = [],
   today,
   onNavigateTab,
 }: any) {
@@ -199,7 +201,34 @@ export default function AchatFormModal({
       dateAchat: isoDateAchat,
     };
 
-    updateAll(safeProducts, safeVentes, [...safeCommandes, c]);
+    const prod = safeProducts.find((p: any) => p.id === cmdForm.productId);
+
+    if (montantPayeInitial > 0 && typeof updateData === 'function') {
+      const nouveauPaiement = {
+        id: uid(),
+        date: isoDateAchat,
+        nature: 'marchandise',
+        compte: 'Caisse / Espèces',
+        montantTotal: montantPayeInitial,
+        beneficiaire: cmdForm.source || 'Fournisseur Chine',
+        description: `Acompte Achat — ${prod ? prod.nom : 'Article'} (x${qtyVal})${cmdForm.devise === 'RMB' ? ` [≈ ${(montantPayeInitial / userTauxRmb).toFixed(2)} ¥ @ ${userTauxRmb} Ar/¥]` : ''}`,
+        reference: cmdForm.source || '',
+        lignes: [
+          {
+            cibleType: 'marchandise',
+            cibleId: c.id,
+            montantAlloue: montantPayeInitial,
+          }
+        ],
+      };
+
+      updateData({
+        commandes: [...safeCommandes, c],
+        paiements: [...paiements, nouveauPaiement],
+      });
+    } else {
+      updateAll(safeProducts, safeVentes, [...safeCommandes, c]);
+    }
     setCmdForm({
       productId: '',
       source: SOURCES[0],

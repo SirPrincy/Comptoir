@@ -114,7 +114,7 @@ export default function TresorerieEtFrais({
     setShowPaiementFactureModal(true);
   };
 
-  const soldeRmbInfo = calculerSoldeRMB(changes, mouvements, [], devises, paiements);
+  const soldeRmbInfo = calculerSoldeRMB(changes, mouvements, commandes, devises, paiements);
 
   const TABS = [
     { id: 'tresorerie', label: 'Trésorerie & Mouvements', icon: Wallet },

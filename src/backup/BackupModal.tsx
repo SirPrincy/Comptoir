@@ -28,6 +28,7 @@ interface BackupModalProps {
     frais?: any[];
     chargesFixes?: any[];
     comptes?: string[];
+    paiements?: any[];
   };
   onRestore: (newData: any) => void;
 }

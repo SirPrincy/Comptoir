@@ -17,7 +17,7 @@ export type { TarifFret };
 
 type FournisseurSortOption = 'depense_desc' | 'du_desc' | 'commandes_desc' | 'score_desc' | 'nom_asc';
 
-const Fournisseurs = memo(function Fournisseurs({ fournisseurs, commandes, products = [], updateData, initialSearch = '' }: any) {
+const Fournisseurs = memo(function Fournisseurs({ fournisseurs, commandes, products = [], updateData, initialSearch = '', paiements = [] }: any) {
   const [activeSubView, setActiveSubView] = useState<'annuaire' | 'comparateur_produits' | 'comparateur_fret'>('annuaire');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -48,10 +48,10 @@ const Fournisseurs = memo(function Fournisseurs({ fournisseurs, commandes, produ
   const statsParFournisseur = useMemo(() => {
     const stats: Record<string, ReturnType<typeof calculerStatsFournisseur>> = {};
     fournisseurs.forEach((f: any) => {
-      stats[f.id] = calculerStatsFournisseur(f.id, commandes);
+      stats[f.id] = calculerStatsFournisseur(f.id, commandes, paiements);
     });
     return stats;
-  }, [fournisseurs, commandes]);
+  }, [fournisseurs, commandes, paiements]);
 
   // Synthèse globale du portefeuille Fournisseurs
   const globalSummary = useMemo(() => {

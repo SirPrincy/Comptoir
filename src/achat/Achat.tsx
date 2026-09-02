@@ -140,6 +140,8 @@ const Achat = memo(function Achat({
         soldeRmbInfo={soldeRmbInfo}
         sourcing={safeSourcing}
         updateAll={updateAll}
+        updateData={updateData}
+        paiements={safePaiements}
         today={today}
         onNavigateTab={onNavigateTab}
       />

@@ -15,6 +15,7 @@ interface ClientsProps {
   products?: any[];
   updateData: (data: any) => void;
   initialSearch?: string;
+  paiements?: any[];
 }
 
 const Clients = memo(function Clients({
@@ -23,6 +24,7 @@ const Clients = memo(function Clients({
   products = [],
   updateData,
   initialSearch = '',
+  paiements = [],
 }: ClientsProps) {
   const [showForm, setShowForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
@@ -52,8 +54,8 @@ const Clients = memo(function Clients({
           stats[v.clientId] = { total: 0, paye: 0, du: 0, count: 0 };
         }
         const totalVente = Number(v.total) || (Number(v.pu || 0) * Number(v.qty || 1)) || 0;
-        const payeVente = getMontantPayeVente(v);
-        const resteVente = getRestePayeVente(v);
+        const payeVente = getMontantPayeVente(v, paiements);
+        const resteVente = getRestePayeVente(v, paiements);
 
         stats[v.clientId].total += totalVente;
         stats[v.clientId].paye += payeVente;

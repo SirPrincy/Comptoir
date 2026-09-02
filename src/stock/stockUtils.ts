@@ -14,7 +14,11 @@ export function computeStock(
   commandes.forEach((c: any) => {
     if (c.statut === 'Arrivé' || c.qualityCheck?.isCompleted) {
       if (stockMap[c.productId] !== undefined) {
-        stockMap[c.productId] += Number(c.qty) || 0;
+        if (c.qualityCheck?.isCompleted && c.qualityCheck.qtyConforme !== undefined) {
+          stockMap[c.productId] += Number(c.qualityCheck.qtyConforme) || 0;
+        } else {
+          stockMap[c.productId] += Number(c.qty) || 0;
+        }
       }
     }
   });

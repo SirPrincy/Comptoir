@@ -14,6 +14,7 @@ interface PartenairesProps {
   updateData: (patch: any) => void;
   initialSubTab?: 'fournisseurs' | 'clients';
   initialSearch?: string;
+  paiements?: any[];
 }
 
 export default function Partenaires({
@@ -25,6 +26,7 @@ export default function Partenaires({
   updateData,
   initialSubTab = 'fournisseurs',
   initialSearch = '',
+  paiements = [],
 }: PartenairesProps) {
   const [subTab, setSubTab] = useState<'fournisseurs' | 'clients'>(
     initialSubTab === 'clients' ? 'clients' : 'fournisseurs'
@@ -130,6 +132,7 @@ export default function Partenaires({
           products={products}
           updateData={updateData}
           initialSearch={initialSearch}
+          paiements={paiements}
         />
       )}
 
@@ -140,6 +143,7 @@ export default function Partenaires({
           products={products}
           updateData={updateData}
           initialSearch={initialSearch}
+          paiements={paiements}
         />
       )}
     </div>

@@ -532,7 +532,7 @@ export function computePnlWithBounds(
   const { costMarchandises, fretMarchandises, cogs } = calculerCogs(vts, products, commandes);
 
   // 3. Marge Brute
-  const margeBrute = Math.max(0, chiffreAffaires - cogs);
+  const margeBrute = chiffreAffaires - cogs;
   const margeBrutePct = chiffreAffaires > 0 ? (margeBrute / chiffreAffaires) * 100 : 0;
 
   // 4. Pertes & Gains de stock

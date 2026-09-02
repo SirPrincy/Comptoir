@@ -7,6 +7,7 @@ export interface BilanProps {
   emprunts?: any[];
   comptes?: string[];
   devises?: { rmb: number; usd: number };
+  paiements?: any[];
 }
 
 export interface BilanData {

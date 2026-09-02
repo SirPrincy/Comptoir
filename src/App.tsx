@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useEffect, useMemo, memo, useCallback, useRef } from 'react';
-import { Zap, Package, LayoutDashboard, Plus, Trash2, TrendingUp, Ship, ShoppingCart, Truck, Wallet, Factory, Users, Compass, ArrowDownCircle, ArrowUpCircle, Menu, X, ChevronRight, ArrowRightLeft, HardDrive, ExternalLink, Coins, Sun, Moon, Settings, Activity, FileSpreadsheet } from 'lucide-react';
+import { Zap, Package, LayoutDashboard, Plus, Trash2, TrendingUp, Ship, ShoppingCart, Truck, Wallet, Factory, Users, Compass, ArrowDownCircle, ArrowUpCircle, Menu, X, ChevronRight, ArrowRightLeft, HardDrive, ExternalLink, Coins, Sun, Moon, Settings, Activity, FileSpreadsheet, Wifi, WifiOff, Terminal, Grid } from 'lucide-react';
+import { ApiTesterModal } from './components/ApiTesterModal';
 import { THEME, CHART_COLORS as COLORS } from './colors';
 import { FONTS, TYPOGRAPHY } from './fonts';
 import {
@@ -32,6 +33,7 @@ import Sourcing from './sourcing/Sourcing';
 import Dashboard from './dashboard/Dashboard';
 import FinancesStructurelles from './finances/FinancesStructurelles';
 import EtatsFinanciers from './finances/EtatsFinanciers';
+import SystemeOutils from './systeme/SystemeOutils';
 import { getStatutVenteLabel } from './paymentUtils';
 import { calculerScoreFournisseur, getQCBadgeInfo } from './qcUtils';
 import BackupModal from './backup/BackupModal';
@@ -45,8 +47,9 @@ import { Sparkles } from 'lucide-react';
 import { persistDouble, loadWithFallback } from './backup/indexedDbStore';
 import { verifierAutoBackupQuotidien, verifierAutoBackupApresVente, migrateDataSchema } from './backup/backupUtils';
 
+
 export default function App() {
-  const [tab, setTab] = useState('dashboard');
+  const [tab, setTab] = useState('vente');
   const [searchPreset, setSearchPreset] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [backupOpen, setBackupOpen] = useState(false);
@@ -54,6 +57,7 @@ export default function App() {
   const [devisesOpen, setDevisesOpen] = useState(false);
   const [exportCsvOpen, setExportCsvOpen] = useState(false);
   const [setupWizardOpen, setSetupWizardOpen] = useState(false);
+  const [apiTesterOpen, setApiTesterOpen] = useState(false);
   const [products, setProducts] = useState([]);
   const [ventes, setVentes] = useState([]);
   const [commandes, setCommandes] = useState([]);
@@ -71,6 +75,18 @@ export default function App() {
   const [comptes, setComptes] = useState<string[]>(COMPTES_FINANCIERS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const [darkMode, setDarkMode] = useState(() => {
     try {
@@ -241,13 +257,14 @@ export default function App() {
     }}>
       <Header
         saving={saving}
+        isOnline={isOnline}
         onOpenDrawer={() => setDrawerOpen(true)}
         onOpenBackup={() => setBackupOpen(true)}
         onOpenDevises={() => setDevisesOpen(true)}
         devises={devises}
         currentSection={currentSection}
         darkMode={darkMode}
-        onToggleDarkMode={() => setDarkMode(prev => !prev)}
+        onToggleDarkMode={() => setDarkMode((prev: boolean) => !prev)}
         products={products}
         commandes={commandes}
         clients={clients}
@@ -273,29 +290,6 @@ export default function App() {
           setDrawerOpen(false);
         }}
         counts={memoizedCounts}
-        onOpenBackup={() => {
-          setDrawerOpen(false);
-          setBackupOpen(true);
-        }}
-        onOpenDiagnostic={() => {
-          setDrawerOpen(false);
-          setDiagnosticOpen(true);
-        }}
-        onOpenDevises={() => {
-          setDrawerOpen(false);
-          setDevisesOpen(true);
-        }}
-        onOpenExportCsv={() => {
-          setDrawerOpen(false);
-          setExportCsvOpen(true);
-        }}
-        onOpenSetupWizard={() => {
-          setDrawerOpen(false);
-          setSetupWizardOpen(true);
-        }}
-        devises={devises}
-        darkMode={darkMode}
-        onToggleDarkMode={() => setDarkMode((prev: boolean) => !prev)}
         saving={saving}
       />
 
@@ -382,6 +376,7 @@ export default function App() {
             updateData={updateData}
             initialSubTab={tab === 'clients' ? 'clients' : 'fournisseurs'}
             initialSearch={searchPreset}
+            paiements={paiements}
           />
         )}
         {tab === 'sourcing' && (
@@ -406,12 +401,49 @@ export default function App() {
             onNavigateTab={(targetTab) => setTab(targetTab)}
           />
         )}
+        {(tab === 'systeme' || tab === 'parametres' || tab === 'devises' || tab === 'backup' || tab === 'diagnostic' || tab === 'export-csv' || tab === 'comptes' || tab === 'api') && (
+          <SystemeOutils
+            products={products}
+            ventes={ventes}
+            commandes={commandes}
+            fournisseurs={fournisseurs}
+            clients={clients}
+            sourcing={sourcing}
+            mouvements={mouvements}
+            changes={changes}
+            immobilisations={immobilisations}
+            emprunts={emprunts}
+            frais={frais}
+            chargesFixes={chargesFixes}
+            paiements={paiements}
+            devises={devises}
+            comptes={comptes}
+            darkMode={darkMode}
+            isOnline={isOnline}
+            saving={saving}
+            initialSubTab={
+              tab === 'devises' ? 'devises' :
+              tab === 'backup' ? 'backup' :
+              tab === 'diagnostic' ? 'diagnostic' :
+              tab === 'export-csv' ? 'export-csv' :
+              tab === 'comptes' ? 'comptes' :
+              tab === 'api' ? 'api' :
+              tab === 'parametres' ? 'general' :
+              'apercu'
+            }
+            updateData={updateData}
+            save={save}
+            onToggleDarkMode={() => setDarkMode((prev: boolean) => !prev)}
+            onOpenSetupWizard={() => setSetupWizardOpen(true)}
+            onNavigateTab={(targetTab: string) => setTab(targetTab)}
+          />
+        )}
       </div>
 
       <BackupModal
         open={backupOpen}
         onClose={() => setBackupOpen(false)}
-        data={{ products, ventes, commandes, fournisseurs, clients, sourcing, mouvements, changes, devises, immobilisations, emprunts, comptes }}
+        data={{ products, ventes, commandes, fournisseurs, clients, sourcing, mouvements, changes, devises, immobilisations, emprunts, comptes, chargesFixes, frais, paiements }}
         onRestore={(newData) => save(newData)}
       />
 
@@ -487,30 +519,35 @@ export default function App() {
         currentDevises={devises}
         currentComptes={comptes}
       />
+
+      {apiTesterOpen && (
+        <ApiTesterModal onClose={() => setApiTesterOpen(false)} />
+      )}
     </div>
   );
 }
 
-const Header = memo(function Header({ saving, onOpenDrawer, onOpenBackup, onOpenDevises, devises, currentSection, darkMode, onToggleDarkMode, products, commandes, clients, fournisseurs, onNavigate }: any) {
+const Header = memo(function Header({ saving, isOnline = true, onOpenDrawer, onOpenBackup, onOpenDevises, devises, currentSection, darkMode, onToggleDarkMode, products, commandes, clients, fournisseurs, onNavigate }: any) {
   const Icon = currentSection.icon;
+
   return (
     <div style={{
-      padding: '10px 20px',
+      padding: '12px 24px',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       borderBottom: '1px solid ' + THEME.border.base,
       background: THEME.bg.base,
       position: 'sticky', top: 0, zIndex: 30,
       gap: 16,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flexShrink: 0 }}>
         <button
           onClick={onOpenDrawer}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 36, height: 36, borderRadius: 8,
-            border: '1px solid ' + THEME.border.base, background: THEME.bg.card,
+            width: 36, height: 36, borderRadius: 4,
+            border: '1px solid ' + THEME.border.strong, background: THEME.bg.card,
             color: THEME.text.primary, cursor: 'pointer',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
             flexShrink: 0,
           }}
           title="Ouvrir le menu des sections"
@@ -518,30 +555,56 @@ const Header = memo(function Header({ saving, onOpenDrawer, onOpenBackup, onOpen
           <Menu size={18} />
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+        <div
+          onClick={() => onNavigate('dashboard')}
+          style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, cursor: 'pointer' }}
+        >
           <div style={{
-            width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #6B4226 0%, #3D2312 100%)',
+            width: 34, height: 34, borderRadius: 4, background: THEME.text.primary,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
-            boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
             border: '1px solid ' + THEME.border.strong,
           }}>
-            <Package size={17} color="#F5ECE4" />
+            <Package size={17} color={THEME.bg.base} />
           </div>
-          <div style={{ minWidth: 0 }} className="hidden md:block">
-            <div style={{ fontWeight: 700, fontSize: 15, letterSpacing: '-0.01em', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: THEME.text.primary }}>
-              Comptoir du Bois
+          <div style={{ minWidth: 0 }}>
+            <div style={{
+              fontFamily: FONTS.display,
+              fontWeight: 600,
+              fontSize: 17,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              lineHeight: 1.05,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              color: THEME.text.primary
+            }}>
+              Comptoir Central
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: THEME.text.muted, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              <Icon size={11} color={THEME.accent.orange} style={{ flexShrink: 0 }} />
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              fontFamily: FONTS.mono,
+              fontSize: 10,
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              color: THEME.text.muted,
+              marginTop: 2,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
+              <Icon size={10} color={THEME.accent.primary} style={{ flexShrink: 0 }} />
               <span style={{ fontWeight: 600, color: THEME.accent.primary, overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentSection.label}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* BARRE DE RECHERCHE GLOBALE */}
-      <div style={{ flex: '1 1 320px', maxWidth: 440, display: 'flex', justifyContent: 'center' }}>
+      {/* BARRE DE RECHERCHE GLOBALE ARCHITECTURALE */}
+      <div style={{ flex: '1 1 320px', maxWidth: 460, display: 'flex', justifyContent: 'center' }}>
         <GlobalSearchBar
           products={products}
           commandes={commandes}
@@ -551,30 +614,42 @@ const Header = memo(function Header({ saving, onOpenDrawer, onOpenBackup, onOpen
         />
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <button
           onClick={onOpenDrawer}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
-            padding: '6px 12px', borderRadius: 8,
-            border: '1px solid ' + THEME.border.base, background: THEME.bg.card,
-            fontSize: 12.5, fontWeight: 600, color: THEME.accent.primary,
+            padding: '7px 14px', borderRadius: 4,
+            border: '1px solid ' + THEME.border.strong, background: THEME.bg.card,
+            fontFamily: FONTS.mono, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
+            color: THEME.text.primary,
             cursor: 'pointer',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
           }}
         >
-          <Menu size={15} style={{ flexShrink: 0 }} />
+          <Menu size={14} style={{ flexShrink: 0 }} />
           <span>Menu</span>
         </button>
-        <div style={{ fontSize: 11, color: saving ? THEME.accent.orange : THEME.accent.green, fontWeight: 600, whiteSpace: 'nowrap' }} className="hidden sm:block">
-          {saving ? 'Sauvegarde…' : '● Synchronisé'}
+
+        {/* STATUS META VARIATION 7 */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
+          fontFamily: FONTS.mono, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em',
+          lineHeight: 1.25,
+          color: THEME.text.secondary
+        }} className="hidden md:flex">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: !isOnline ? THEME.accent.orange : (saving ? THEME.accent.primary : THEME.accent.green), fontWeight: 600 }}>
+            <span>●</span>
+            <span>{!isOnline ? 'STATUS: OFFLINE' : saving ? 'SYNC: SAVING...' : 'STATUS: ONLINE'}</span>
+          </div>
+          <div style={{ color: THEME.text.muted, fontSize: 9 }}>[ERP 4.3.3]</div>
         </div>
       </div>
     </div>
   );
 });
 
-const NavDrawer = memo(function NavDrawer({ open, onClose, tab, setTab, counts, onOpenBackup, onOpenDiagnostic, onOpenDevises, onOpenExportCsv, onOpenSetupWizard, devises, darkMode, onToggleDarkMode, saving }: any) {
+const NavDrawer = memo(function NavDrawer({ open, onClose, tab, setTab, counts, saving }: any) {
   if (!open) return null;
 
   const groups = Array.from(new Set(SECTIONS.map(s => s.group)));
@@ -595,8 +670,8 @@ const NavDrawer = memo(function NavDrawer({ open, onClose, tab, setTab, counts, 
         onClick={onClose}
         style={{
           position: 'absolute', inset: 0,
-          background: 'rgba(18, 24, 31, 0.5)',
-          backdropFilter: 'blur(2px)',
+          background: 'rgba(29, 26, 22, 0.55)',
+          backdropFilter: 'blur(3px)',
           animation: 'fadeIn 0.15s ease-out',
         }}
       />
@@ -604,52 +679,66 @@ const NavDrawer = memo(function NavDrawer({ open, onClose, tab, setTab, counts, 
       {/* Drawer content */}
       <div style={{
         position: 'relative',
-        width: '100%', maxWidth: 'min(310px, 88vw)',
+        width: '100%', maxWidth: 'min(320px, 88vw)',
         height: '100%',
         background: THEME.bg.card,
-        borderRight: '1px solid ' + THEME.border.base,
-        boxShadow: '4px 0 24px rgba(0,0,0,0.15)',
+        borderRight: '1px solid ' + THEME.border.strong,
+        boxShadow: '4px 0 24px rgba(29, 26, 22, 0.15)',
         display: 'flex', flexDirection: 'column',
         zIndex: 101,
       }}>
         {/* Drawer Header */}
         <div style={{
-          padding: '18px 18px 14px',
+          padding: '18px 20px 16px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           borderBottom: '1px solid ' + THEME.border.base,
           background: THEME.bg.base,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
-              width: 32, height: 32, borderRadius: 8, background: THEME.accent.primary,
+              width: 34, height: 34, borderRadius: 4, background: THEME.text.primary,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <Ship size={17} color={THEME.bg.base} />
             </div>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 16, color: THEME.text.primary }}>Comptoir ERP</div>
-              <div style={{ fontSize: 11, color: THEME.text.muted }}>Navigation & Paramètres</div>
+              <div style={{ fontFamily: FONTS.display, fontWeight: 600, fontSize: 17, letterSpacing: '0.04em', textTransform: 'uppercase', color: THEME.text.primary, lineHeight: 1.1 }}>
+                Comptoir Central
+              </div>
+              <div style={{ fontFamily: FONTS.mono, fontSize: 9.5, textTransform: 'uppercase', letterSpacing: '0.12em', color: THEME.text.muted, marginTop: 2 }}>
+                SYSTEM NAV_
+              </div>
             </div>
           </div>
           <button
             onClick={onClose}
             style={{
-              width: 32, height: 32, borderRadius: 7, border: '1px solid ' + THEME.border.base,
+              width: 32, height: 32, borderRadius: 4, border: '1px solid ' + THEME.border.strong,
               background: THEME.bg.card, display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', color: THEME.text.muted,
+              fontFamily: FONTS.mono, fontSize: 16
             }}
           >
-            <X size={17} />
+            <X size={16} />
           </button>
         </div>
 
         {/* Drawer Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '14px 12px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 14px' }}>
           {groups.map((groupName, gIdx) => {
             const groupSections = SECTIONS.filter(s => s.group === groupName);
             return (
-              <div key={groupName} style={{ marginBottom: 18 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: THEME.text.muted, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '6px 10px 8px' }}>
+              <div key={groupName} style={{ marginBottom: 20 }}>
+                <div style={{
+                  fontFamily: FONTS.mono,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  color: THEME.text.muted,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.18em',
+                  padding: '4px 8px 8px',
+                  opacity: 0.75
+                }}>
                   {groupName}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -660,33 +749,40 @@ const NavDrawer = memo(function NavDrawer({ open, onClose, tab, setTab, counts, 
                     return (
                       <button
                         key={item.id}
-                        onClick={() => setTab(item.id)}
+                        onClick={() => {
+                          setTab(item.id);
+                          onClose();
+                        }}
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '10px 12px', borderRadius: 8,
-                          border: 'none', cursor: 'pointer', textAlign: 'left',
+                          padding: '9px 12px', borderRadius: 4,
+                          border: active ? `1px solid ${THEME.accent.primary}` : '1px solid transparent',
+                          cursor: 'pointer', textAlign: 'left',
                           background: active ? THEME.bg.surface : 'transparent',
-                          color: active ? THEME.text.primary : THEME.text.secondary,
-                          fontWeight: active ? 600 : 500, fontSize: 14,
-                          transition: 'background 0.1s ease',
+                          color: active ? THEME.accent.primary : THEME.text.primary,
+                          fontWeight: active ? 600 : 500, fontSize: 13.5,
+                          transition: 'all 0.1s ease',
                           width: '100%',
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
                           <div style={{
-                            width: 28, height: 28, borderRadius: 6,
-                            background: active ? THEME.accent.orange : THEME.bg.chip,
-                            color: active ? '#FFFFFF' : THEME.accent.primary,
+                            width: 26, height: 26, borderRadius: 4,
+                            background: active ? THEME.accent.primary : THEME.bg.chip,
+                            color: active ? THEME.bg.base : THEME.text.primary,
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                           }}>
-                            <Icon size={15} />
+                            <Icon size={14} />
                           </div>
-                          <span>{item.label}</span>
+                          <span style={{ fontFamily: FONTS.body }}>{item.label}</span>
                         </div>
                         {badge && (
                           <span style={{
-                            fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 12,
-                            background: active ? THEME.bg.card : THEME.border.base, color: THEME.accent.primary,
+                            fontFamily: FONTS.mono,
+                            fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 3,
+                            background: active ? THEME.accent.primary : THEME.bg.chip,
+                            color: active ? THEME.bg.base : THEME.text.secondary,
+                            letterSpacing: '0.04em'
                           }}>
                             {badge}
                           </span>
@@ -698,180 +794,24 @@ const NavDrawer = memo(function NavDrawer({ open, onClose, tab, setTab, counts, 
               </div>
             );
           })}
-
-          {/* Section PARAMÈTRES */}
-          <div style={{ marginTop: 8, paddingTop: 16, borderTop: '1px solid ' + THEME.border.base }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: THEME.text.muted, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 10px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Settings size={13} color={THEME.accent.orange} />
-              <span>PARAMÈTRES & CONFIGURATION</span>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {/* Assistant Setup Wizard */}
-              {onOpenSetupWizard && (
-                <button
-                  onClick={onOpenSetupWizard}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '9px 12px', borderRadius: 8,
-                    border: '1px solid ' + THEME.border.base, background: THEME.bg.base,
-                    color: THEME.text.primary, fontWeight: 500, fontSize: 13.5, cursor: 'pointer',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-                    width: '100%',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 6, background: THEME.bg.chip, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Sparkles size={15} color={THEME.accent.primary} />
-                    </div>
-                    <span>Assistant Configuration</span>
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: THEME.accent.primary, background: THEME.bg.card, padding: '2px 8px', borderRadius: 10, border: '1px solid ' + THEME.border.base }}>
-                    10 Étapes
-                  </span>
-                </button>
-              )}
-
-              {/* Thème */}
-              {onToggleDarkMode && (
-                <button
-                  onClick={onToggleDarkMode}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '9px 12px', borderRadius: 8,
-                    border: '1px solid ' + THEME.border.base, background: THEME.bg.base,
-                    color: THEME.text.primary, fontWeight: 500, fontSize: 13.5, cursor: 'pointer',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-                    width: '100%',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 6, background: THEME.bg.chip, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {darkMode ? <Sun size={15} color={THEME.accent.orange} /> : <Moon size={15} color={THEME.accent.primary} />}
-                    </div>
-                    <span>Thème {darkMode ? 'Clair' : 'Sombre'}</span>
-                  </div>
-                  <span style={{ fontSize: 11, color: THEME.text.muted, fontWeight: 600, background: THEME.bg.card, padding: '2px 8px', borderRadius: 10, border: '1px solid ' + THEME.border.base }}>
-                    {darkMode ? 'Sombre' : 'Clair'}
-                  </span>
-                </button>
-              )}
-
-              {/* Taux de devises */}
-              {onOpenDevises && (
-                <button
-                  onClick={onOpenDevises}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '9px 12px', borderRadius: 8,
-                    border: '1px solid ' + THEME.border.base, background: THEME.bg.base,
-                    color: THEME.text.primary, fontWeight: 500, fontSize: 13.5, cursor: 'pointer',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-                    width: '100%',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 6, background: THEME.bg.chip, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Coins size={15} color={THEME.accent.orange} />
-                    </div>
-                    <span>Taux de devises</span>
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: THEME.accent.orange, background: THEME.bg.card, padding: '2px 8px', borderRadius: 10, border: '1px solid ' + THEME.border.base }}>
-                    ¥ {devises?.rmb || 680} · $ {devises?.usd || 4600}
-                  </span>
-                </button>
-              )}
-
-              {/* Diagnostic d'intégrité */}
-              {onOpenDiagnostic && (
-                <button
-                  onClick={onOpenDiagnostic}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '9px 12px', borderRadius: 8,
-                    border: '1px solid ' + THEME.border.base, background: THEME.bg.base,
-                    color: THEME.text.primary, fontWeight: 500, fontSize: 13.5, cursor: 'pointer',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-                    width: '100%',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 6, background: THEME.bg.chip, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Activity size={15} color={THEME.accent.orange} />
-                    </div>
-                    <span>Diagnostic d'intégrité</span>
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: THEME.accent.orange, background: THEME.bg.card, padding: '2px 8px', borderRadius: 10, border: '1px solid ' + THEME.border.base }}>
-                    Anomalies & Audit
-                  </span>
-                </button>
-              )}
-
-              {/* Export CSV */}
-              {onOpenExportCsv && (
-                <button
-                  onClick={onOpenExportCsv}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '9px 12px', borderRadius: 8,
-                    border: '1px solid ' + THEME.border.base, background: THEME.bg.base,
-                    color: THEME.text.primary, fontWeight: 500, fontSize: 13.5, cursor: 'pointer',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-                    width: '100%',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 6, background: THEME.bg.chip, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <FileSpreadsheet size={15} color={THEME.accent.green} />
-                    </div>
-                    <span>Exportation CSV (Excel)</span>
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: THEME.accent.green, background: THEME.bg.card, padding: '2px 8px', borderRadius: 10, border: '1px solid ' + THEME.border.base }}>
-                    .CSV
-                  </span>
-                </button>
-              )}
-
-              {/* Sauvegardes */}
-              {onOpenBackup && (
-                <button
-                  onClick={onOpenBackup}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '9px 12px', borderRadius: 8,
-                    border: '1px solid ' + THEME.border.base, background: THEME.bg.base,
-                    color: THEME.text.primary, fontWeight: 500, fontSize: 13.5, cursor: 'pointer',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-                    width: '100%',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 6, background: THEME.bg.chip, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <HardDrive size={15} color={THEME.accent.green} />
-                    </div>
-                    <span>Sauvegarde & Export</span>
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: THEME.accent.green, background: THEME.bg.card, padding: '2px 8px', borderRadius: 10, border: '1px solid ' + THEME.border.base }}>
-                    JSON
-                  </span>
-                </button>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Drawer Footer */}
         <div style={{
-          padding: '12px 16px',
+          padding: '14px 18px',
           borderTop: '1px solid ' + THEME.border.base,
           background: THEME.bg.base,
-          fontSize: 11.5, color: THEME.text.muted,
+          fontFamily: FONTS.mono,
+          fontSize: 10,
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em',
+          color: THEME.text.muted,
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
-          <span>Stock & Comptoir ERP</span>
+          <span>COMPTOIR CENTRAL</span>
           <span style={{ color: saving ? THEME.accent.orange : THEME.accent.green, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: saving ? THEME.accent.orange : THEME.accent.green }} />
-            {saving ? 'Sauvegarde…' : 'Stockage local OK'}
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: saving ? THEME.accent.orange : THEME.accent.green }} />
+            {saving ? 'SAVING…' : 'LOCAL DB OK'}
           </span>
         </div>
       </div>

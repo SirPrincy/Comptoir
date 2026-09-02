@@ -146,6 +146,7 @@ export default function EtatsFinanciers({
           emprunts={emprunts}
           comptes={comptes}
           devises={devises}
+          paiements={paiements}
         />
       )}
 

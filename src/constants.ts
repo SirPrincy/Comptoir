@@ -2,7 +2,7 @@
  * Constantes métiers et référentiels de Comptoir ERP
  */
 
-import { Zap, Package, LayoutDashboard, ShoppingCart, Truck, Wallet, Factory, Users, Compass, ArrowLeftRight, Calculator, Landmark, TrendingUp, Scale, FileText, Target, Building2, FileSpreadsheet } from 'lucide-react';
+import { Zap, Package, LayoutDashboard, ShoppingCart, Truck, Wallet, Factory, Users, Compass, ArrowLeftRight, Calculator, Landmark, TrendingUp, Scale, FileText, Target, Building2, FileSpreadsheet, Grid, Settings } from 'lucide-react';
 
 export const CATEGORIES_FRAIS = [
   'Déplacements & Transport',
@@ -69,6 +69,9 @@ export const SECTIONS = [
   // Groupe 3 : Sourcing & Partenaires
   { id: 'partenaires', label: 'Fournisseurs & Clients', group: 'Sourcing & Partenaires', icon: Users },
   { id: 'sourcing', label: 'Sourcing produits', group: 'Sourcing & Partenaires', icon: Compass },
+
+  // Groupe 4 : Système & Configuration
+  { id: 'systeme', label: 'Système & Outils', group: 'Système & Configuration', icon: Settings },
 ];
 
 export const uid = () => Math.random().toString(36).slice(2, 10);

@@ -17,6 +17,7 @@ export default function Bilan({
   emprunts = [],
   comptes = [],
   devises = { rmb: 680, usd: 4600 },
+  paiements = [],
 }: BilanProps) {
   const bilanData = useMemo(() => {
     return computeBilanData(
@@ -27,9 +28,10 @@ export default function Bilan({
       immobilisations,
       emprunts,
       comptes,
-      devises
+      devises,
+      paiements
     );
-  }, [products, ventes, commandes, mouvements, immobilisations, emprunts, comptes, devises]);
+  }, [products, ventes, commandes, mouvements, immobilisations, emprunts, comptes, devises, paiements]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

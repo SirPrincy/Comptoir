@@ -11,7 +11,8 @@ export function computeBilanData(
   immobilisations: any[] = [],
   emprunts: any[] = [],
   comptes: string[] = [],
-  devises: { rmb: number; usd: number } = { rmb: 680, usd: 4600 }
+  devises: { rmb: number; usd: number } = { rmb: 680, usd: 4600 },
+  paiements: any[] = []
 ): BilanData {
   // --- ACTIF ---
 
@@ -78,7 +79,7 @@ export function computeBilanData(
   // B. Créances clients (Reste dû des ventes non soldées)
   let totalCreancesClients = 0;
   ventes.forEach((v: any) => {
-    const reste = getRestePayeVente(v);
+    const reste = getRestePayeVente(v, paiements);
     totalCreancesClients += reste;
   });
 
@@ -129,8 +130,8 @@ export function computeBilanData(
   let totalDettesFournisseurs = 0;
   commandes.forEach((c: any) => {
     if (c.statut === 'Annulé') return;
-    const resteMarchandise = getRestePayeMarchandise(c);
-    const resteFret = getRestePayeFret(c);
+    const resteMarchandise = getRestePayeMarchandise(c, paiements);
+    const resteFret = getRestePayeFret(c, paiements);
     totalDettesFournisseurs += (resteMarchandise + resteFret);
   });
 

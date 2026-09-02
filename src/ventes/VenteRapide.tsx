@@ -54,7 +54,7 @@ const VenteRapide = memo(function VenteRapide({
   const [filterDateDebut, setFilterDateDebut] = useState('');
   const [filterDateFin, setFilterDateFin] = useState('');
 
-  const stockByProduct = useMemo(() => computeStock(products, commandes, ventes), [products, commandes, ventes]);
+  const stockByProduct = useMemo(() => computeStock(products, commandes, ventes, mouvements), [products, commandes, ventes, mouvements]);
   const selected = products.find((p: any) => p.id === productId);
   const stockSelected = selected ? (stockByProduct[selected.id] || 0) : 0;
   const depasseStock = selected && Number(qty) > stockSelected;

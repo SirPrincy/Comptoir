@@ -1,6 +1,6 @@
 {
-  "name": "Comptoir du Bois",
-  "description": "Système de gestion et de négoce aux accents chêne & bois noble pour l'import, la logistique et la comptabilité.",
+  "name": "Comptoir Central",
+  "description": "Système central de gestion et de négoce pour l'importation, la logistique conteneurs, le stock et la comptabilité.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

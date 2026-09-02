@@ -1,6 +1,7 @@
 import { useMemo, useCallback } from 'react';
 import { STATUTS_LOGISTIQUE } from '../constants';
-import { calculerSoldeRMB } from '../paymentUtils';
+import { calculerSoldeRMB, getRestePayeVente, getRestePayeMarchandise, getRestePayeFret } from '../paymentUtils';
+import { computeStock } from '../stock/stockUtils';
 
 export interface DashboardMetricsProps {
   products: any[];
@@ -204,23 +205,22 @@ export function useDashboardMetrics({
   // 9. Créances & Dettes
   const creancesClients = useMemo(() => {
     return ventes.reduce((s: number, v: any) => {
-      const tot = Number(v.total) || (Number(v.pu || 0) * Number(v.qty || 1)) || 0;
-      const paye = Number(v.paye !== undefined ? v.paye : (v.statutPaiement === 'Payé' ? tot : (v.statutPaiement === 'Partiel' ? (v.montantPaye || 0) : 0)));
-      return s + Math.max(0, tot - paye);
+      return s + getRestePayeVente(v, paiements);
     }, 0);
-  }, [ventes]);
+  }, [ventes, paiements]);
 
   const dettesFournisseurs = useMemo(() => {
     return commandes.reduce((s: number, c: any) => {
-      const tot = Number(c.total) || ((Number(c.pu) || 0) * (Number(c.qty) || 1) + (Number(c.fraisLivraisonChine || c.fraisLivraison) || 0));
-      const paye = Number(c.montantPayeMarchandise || (c.statutPaiementMarchandise === 'Payé' ? tot : 0));
-      const fretTot = Number(c.fraisTransport || c.fretEstimeAr || 0);
-      const fretPaye = Number(c.montantPayeTransport || (c.statutPaiementTransport === 'Payé' ? fretTot : 0));
-      return s + Math.max(0, tot - paye) + Math.max(0, fretTot - fretPaye);
+      if (c.statut === 'Annulé') return s;
+      return s + getRestePayeMarchandise(c, paiements) + getRestePayeFret(c, paiements);
     }, 0);
-  }, [commandes]);
+  }, [commandes, paiements]);
 
   // 10. Logistique & Stocks
+  const stockByProduct = useMemo(() => {
+    return computeStock(products, commandes, ventes, mouvements);
+  }, [products, commandes, ventes, mouvements]);
+
   const enTransit = useMemo(() => {
     return commandes.filter(
       (c: any) => STATUTS_LOGISTIQUE.includes(c.statut) && c.statut !== 'Arrivé'
@@ -233,20 +233,20 @@ export function useDashboardMetrics({
 
   const valeurStockLocal = useMemo(() => {
     return products.reduce((s: number, p: any) => {
-      const stock = Number(p.stock) || 0;
+      const stock = stockByProduct[p.id] !== undefined ? stockByProduct[p.id] : (Number(p.stock) || 0);
       if (stock <= 0) return s;
       const coutRevient = costMapByProduct.get(p.id) ?? (Number(p.prixAchat) || 0);
       return s + (stock * coutRevient);
     }, 0);
-  }, [products, costMapByProduct]);
+  }, [products, stockByProduct, costMapByProduct]);
 
   const stockAlertesList = useMemo(() => {
     return products.filter((p: any) => {
-      const stock = Number(p.stock) || 0;
-      const seuil = Number(p.seuilAlerte) || 2;
+      const stock = stockByProduct[p.id] !== undefined ? stockByProduct[p.id] : (Number(p.stock) || 0);
+      const seuil = Number(p.seuilAlerte) || Number(p.seuilMin) || 2;
       return stock <= seuil;
     });
-  }, [products]);
+  }, [products, stockByProduct]);
 
   const articlesVendusTotal = useMemo(() => {
     return ventes.reduce((s: number, v: any) => s + (Number(v.qty) || 1), 0);

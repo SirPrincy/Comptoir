@@ -7,14 +7,19 @@ import React, { useState, memo } from 'react';
 import {
   TrendingUp,
   SlidersHorizontal,
+  MoveUp,
+  MoveDown,
+  EyeOff,
+  GripVertical,
 } from 'lucide-react';
 import { THEME } from '../colors';
-import { Empty, primaryBtn } from '../ui';
+import { Empty, primaryBtn, ghostBtn } from '../ui';
 import {
   DashboardWidgetConfig,
   loadDashboardConfig,
   saveDashboardConfig,
   PRESET_CONFIGS,
+  WIDGET_DEFINITIONS,
 } from './dashboardConfig';
 import DashboardCustomizerModal from './DashboardCustomizerModal';
 import { useDashboardMetrics } from './useDashboardMetrics';
@@ -53,6 +58,7 @@ const Dashboard = memo(function Dashboard({
   onNavigateTab,
 }: DashboardProps) {
   const [customizerOpen, setCustomizerOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Configuration des widgets et indicateurs persistée dans le navigateur
   const [config, setConfig] = useState<DashboardWidgetConfig>(() => loadDashboardConfig());
@@ -66,11 +72,45 @@ const Dashboard = memo(function Dashboard({
     const preset = PRESET_CONFIGS[presetKey];
     const newConfig: DashboardWidgetConfig = {
       preset: presetKey,
+      widgetOrder: [...preset.widgetOrder],
       kpis: { ...preset.kpis },
       widgets: { ...preset.widgets },
     };
     setConfig(newConfig);
     saveDashboardConfig(newConfig);
+  };
+
+  const moveWidgetOnDashboard = (widgetId: string, direction: 'up' | 'down') => {
+    const currentOrder = [...(config.widgetOrder || WIDGET_DEFINITIONS.map(w => w.id))];
+    const index = currentOrder.indexOf(widgetId);
+    if (index === -1) return;
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= currentOrder.length) return;
+
+    const [moved] = currentOrder.splice(index, 1);
+    currentOrder.splice(targetIndex, 0, moved);
+
+    const updatedConfig: DashboardWidgetConfig = {
+      ...config,
+      preset: 'custom',
+      widgetOrder: currentOrder,
+    };
+    setConfig(updatedConfig);
+    saveDashboardConfig(updatedConfig);
+  };
+
+  const hideWidgetOnDashboard = (widgetId: keyof DashboardWidgetConfig['widgets']) => {
+    const updatedConfig: DashboardWidgetConfig = {
+      ...config,
+      preset: 'custom',
+      widgets: {
+        ...config.widgets,
+        [widgetId]: false,
+      },
+    };
+    setConfig(updatedConfig);
+    saveDashboardConfig(updatedConfig);
   };
 
   // Calculs unifiés des métriques
@@ -93,6 +133,7 @@ const Dashboard = memo(function Dashboard({
   const k = config.kpis;
   const w = config.widgets;
   const activeKpisCount = Object.values(k).filter(Boolean).length;
+  const activeWidgetsCount = Object.values(w).filter(Boolean).length;
 
   const presetLabels: Record<string, string> = {
     all: '🌟 Vue Complète',
@@ -102,6 +143,200 @@ const Dashboard = memo(function Dashboard({
     custom: '⚙️ Affichage Personnalisé',
   };
 
+  // Ordre actuel des widgets
+  const widgetOrderList = config.widgetOrder || WIDGET_DEFINITIONS.map(w => w.id);
+
+  const renderWidgetContent = (widgetId: string, index: number, totalActive: number) => {
+    if (!w[widgetId as keyof typeof w]) return null;
+
+    const meta = WIDGET_DEFINITIONS.find((item) => item.id === widgetId);
+    if (!meta) return null;
+
+    let content: React.ReactNode = null;
+
+    switch (widgetId) {
+      case 'investment_roi':
+        content = (
+          <InvestmentRoiWidget
+            baseInvestissement={metrics.baseInvestissement}
+            capitalInvesti={metrics.capitalInvesti}
+            beneficeNet={metrics.beneficeNet}
+            tauxRoi={metrics.tauxRoi}
+            tauxRecuperation={metrics.tauxRecuperation}
+            caTotal={metrics.caTotal}
+            resteARecuperer={metrics.resteARecuperer}
+          />
+        );
+        break;
+
+      case 'alertes_urgentes':
+        content = (
+          <LogistiqueAlertsWidget
+            stockAlertesList={metrics.stockAlertesList}
+            commandesEnTransitList={metrics.commandesEnTransitList}
+            statsPertes={metrics.statsPertes}
+            products={products}
+            getProductCostBreakdown={metrics.getProductCostBreakdown}
+            onNavigateTab={onNavigateTab}
+          />
+        );
+        break;
+
+      case 'rentabilite_produits':
+        content = (
+          <ProductProfitabilityTable
+            rentabiliteParProduit={metrics.rentabiliteParProduit}
+          />
+        );
+        break;
+
+      case 'flux_finances':
+      case 'sourcing_costs':
+      case 'logistics_transit':
+      case 'top_produits':
+      case 'repartition_categories':
+        content = (
+          <DashboardCharts
+            widgetsConfig={{
+              investment_roi: false,
+              flux_finances: widgetId === 'flux_finances',
+              alertes_urgentes: false,
+              sourcing_costs: widgetId === 'sourcing_costs',
+              rentabilite_produits: false,
+              top_produits: widgetId === 'top_produits',
+              repartition_categories: widgetId === 'repartition_categories',
+              logistics_transit: widgetId === 'logistics_transit',
+            }}
+            parProduit={metrics.parProduit}
+            parCategorie={metrics.parCategorie}
+            financialSummary={{
+              caTotal: metrics.caTotal,
+              totalAchatsChine: metrics.totalAchatsChine,
+              totalFret: metrics.totalFret,
+              chargesOperationnelles: metrics.chargesOperationnelles,
+              beneficeNet: metrics.beneficeNet,
+            }}
+            rentabiliteParProduit={metrics.rentabiliteParProduit}
+            commandesEnTransitList={metrics.commandesEnTransitList}
+          />
+        );
+        break;
+
+      default:
+        content = null;
+    }
+
+    if (!content) return null;
+
+    return (
+      <div
+        key={widgetId}
+        style={{
+          position: 'relative',
+          borderRadius: 12,
+          border: isEditMode ? `2px dashed ${THEME.accent.orange}` : 'none',
+          padding: isEditMode ? 8 : 0,
+          background: isEditMode ? THEME.bg.soft : 'transparent',
+          transition: 'all 0.2s ease',
+        }}
+      >
+        {/* BARRE DE RÉRORGANISATION EN MODE ÉDITION SUR DASHBOARD */}
+        {isEditMode && (
+          <div
+            style={{
+              display: 'flex',
+              justify: 'space-between',
+              alignItems: 'center',
+              padding: '6px 12px',
+              background: THEME.bg.card,
+              border: `1px solid ${THEME.border.strong}`,
+              borderRadius: '8px 8px 0 0',
+              marginBottom: 6,
+              fontSize: 11.5,
+              fontWeight: 700,
+              color: THEME.text.primary,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <GripVertical size={14} color={THEME.accent.orange} />
+              <span>Position {index + 1} : {meta.label}</span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button
+                type="button"
+                disabled={index === 0}
+                onClick={() => moveWidgetOnDashboard(widgetId, 'up')}
+                style={{
+                  padding: '3px 8px',
+                  borderRadius: 4,
+                  border: `1px solid ${THEME.border.base}`,
+                  background: THEME.bg.surface,
+                  color: index === 0 ? THEME.text.muted : THEME.text.primary,
+                  cursor: index === 0 ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 11,
+                }}
+              >
+                <MoveUp size={12} />
+                <span>Monter</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={index === totalActive - 1}
+                onClick={() => moveWidgetOnDashboard(widgetId, 'down')}
+                style={{
+                  padding: '3px 8px',
+                  borderRadius: 4,
+                  border: `1px solid ${THEME.border.base}`,
+                  background: THEME.bg.surface,
+                  color: index === totalActive - 1 ? THEME.text.muted : THEME.text.primary,
+                  cursor: index === totalActive - 1 ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 11,
+                }}
+              >
+                <MoveDown size={12} />
+                <span>Descendre</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => hideWidgetOnDashboard(widgetId as keyof DashboardWidgetConfig['widgets'])}
+                style={{
+                  padding: '3px 8px',
+                  borderRadius: 4,
+                  border: `1px solid ${THEME.border.base}`,
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  color: '#EF4444',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 11,
+                  fontWeight: 600,
+                }}
+                title="Masquer ce widget du tableau de bord"
+              >
+                <EyeOff size={12} />
+                <span>Masquer</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {content}
+      </div>
+    );
+  };
+
+  const activeWidgetIds = widgetOrderList.filter((id) => !!w[id as keyof typeof w]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* BARRE DE CONTRÔLE ET PERSONNALISATION DES WIDGETS */}
@@ -109,7 +344,7 @@ const Dashboard = memo(function Dashboard({
         style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justify: 'space-between',
           flexWrap: 'wrap',
           gap: 10,
           background: THEME.bg.card,
@@ -218,27 +453,52 @@ const Dashboard = memo(function Dashboard({
           </div>
         </div>
 
-        {/* Bouton pour ouvrir la personnalisation */}
-        <button
-          type="button"
-          onClick={() => setCustomizerOpen(true)}
-          style={{
-            ...primaryBtn,
-            padding: '7px 14px',
-            fontSize: 12.5,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 7,
-            background: THEME.bg.surface,
-            color: THEME.text.primary,
-            border: `1px solid ${THEME.border.strong}`,
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-          }}
-          title="Choisir les widgets et indicateurs affichés en priorité"
-        >
-          <SlidersHorizontal size={14} color={THEME.accent.orange} />
-          <span>Personnaliser l'affichage ({activeKpisCount} KPIs)</span>
-        </button>
+        {/* Boutons d'édition directe et de personnalisation */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={() => setIsEditMode(!isEditMode)}
+            style={{
+              padding: '6px 12px',
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+              border: `1px solid ${isEditMode ? THEME.accent.orange : THEME.border.base}`,
+              background: isEditMode ? THEME.bg.soft : THEME.bg.card,
+              color: isEditMode ? THEME.accent.orange : THEME.text.secondary,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              transition: 'all 0.15s ease',
+            }}
+            title="Activer le mode de réorganisation directe sur le tableau de bord"
+          >
+            <GripVertical size={14} />
+            <span>{isEditMode ? "Terminer la Réorganisation" : "Réorganiser Directement"}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCustomizerOpen(true)}
+            style={{
+              ...primaryBtn,
+              padding: '7px 14px',
+              fontSize: 12.5,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 7,
+              background: THEME.bg.surface,
+              color: THEME.text.primary,
+              border: `1px solid ${THEME.border.strong}`,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            }}
+            title="Choisir les widgets et indicateurs affichés en priorité"
+          >
+            <SlidersHorizontal size={14} color={THEME.accent.orange} />
+            <span>Personnaliser ({activeKpisCount} KPIs · {activeWidgetsCount} Widgets)</span>
+          </button>
+        </div>
       </div>
 
       {/* GRILLE DES CHIFFRES CLÉS PERSONNALISABLES */}
@@ -271,44 +531,12 @@ const Dashboard = memo(function Dashboard({
         />
       )}
 
-      {/* MODULE WIDGET 1 : ANALYSE D'INVESTISSEMENT & ROI */}
-      {w.investment_roi && (
-        <InvestmentRoiWidget
-          baseInvestissement={metrics.baseInvestissement}
-          capitalInvesti={metrics.capitalInvesti}
-          beneficeNet={metrics.beneficeNet}
-          tauxRoi={metrics.tauxRoi}
-          tauxRecuperation={metrics.tauxRecuperation}
-          caTotal={metrics.caTotal}
-          resteARecuperer={metrics.resteARecuperer}
-        />
-      )}
-
-      {/* MODULE WIDGET 2 : ALERTES & PRIORITÉS LOGISTIQUES */}
-      {w.alertes_urgentes && (
-        <LogistiqueAlertsWidget
-          stockAlertesList={metrics.stockAlertesList}
-          commandesEnTransitList={metrics.commandesEnTransitList}
-          statsPertes={metrics.statsPertes}
-          products={products}
-          getProductCostBreakdown={metrics.getProductCostBreakdown}
-          onNavigateTab={onNavigateTab}
-        />
-      )}
-
-      {/* MODULE WIDGET 3 : ANALYSE DE RENTABILITÉ PAR PRODUIT */}
-      {w.rentabilite_produits && (
-        <ProductProfitabilityTable
-          rentabiliteParProduit={metrics.rentabiliteParProduit}
-        />
-      )}
-
-      {/* MODULE WIDGETS GRAPHIQUES (TOP PRODUITS & RÉPARTITION CATÉGORIES) */}
-      <DashboardCharts
-        widgetsConfig={w}
-        parProduit={metrics.parProduit}
-        parCategorie={metrics.parCategorie}
-      />
+      {/* AFFICHAGE DES WIDGETS DYNAMIQUES SELON WIDGETORDER */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {activeWidgetIds.map((widgetId, index) =>
+          renderWidgetContent(widgetId, index, activeWidgetIds.length)
+        )}
+      </div>
 
       {/* MODAL DE PERSONNALISATION DES WIDGETS */}
       {customizerOpen && (
@@ -323,3 +551,4 @@ const Dashboard = memo(function Dashboard({
 });
 
 export default Dashboard;
+

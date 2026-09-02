@@ -124,13 +124,13 @@ export default function GlobalSearchBar({
         alignItems: 'center',
         gap: 8,
         background: THEME.bg.card,
-        border: `1px solid ${isOpen ? THEME.accent.orange : THEME.border.base}`,
-        borderRadius: 8,
-        padding: '5px 10px',
-        boxShadow: isOpen ? `0 0 0 2px ${THEME.accent.orange}22` : '0 1px 2px rgba(0,0,0,0.04)',
+        border: `1px solid ${isOpen ? THEME.accent.primary : THEME.border.strong}`,
+        borderRadius: 6,
+        padding: '5px 12px',
+        boxShadow: isOpen ? `0 0 0 2px rgba(166, 124, 82, 0.2)` : '0 1px 2px rgba(0,0,0,0.03)',
         transition: 'all 0.15s ease',
       }}>
-        <Search size={15} color={isOpen ? THEME.accent.orange : THEME.text.muted} style={{ flexShrink: 0 }} />
+        <Search size={14} color={isOpen ? THEME.accent.primary : THEME.text.muted} style={{ flexShrink: 0 }} />
 
         <input
           ref={inputRef}
@@ -142,15 +142,17 @@ export default function GlobalSearchBar({
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDownInput}
-          placeholder="Rechercher produit, commande, client..."
+          placeholder="SEARCH SYSTEM_ [CTRL+K]"
           style={{
             border: 'none',
             background: 'transparent',
             outline: 'none',
             color: THEME.text.primary,
-            fontSize: 12.5,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 12,
             width: '100%',
             fontWeight: 500,
+            letterSpacing: '0.04em',
           }}
         />
 
