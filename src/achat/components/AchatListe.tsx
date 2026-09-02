@@ -1,8 +1,26 @@
 import React, { useMemo } from 'react';
-import { Package, Trash2, CheckCircle2, Clock, Edit3 } from 'lucide-react';
+import { Package, Trash2, CheckCircle2, Clock, Edit3, Calendar } from 'lucide-react';
 import { THEME } from '../../colors';
 import { Empty, ghostBtn, iconBtn } from '../../ui';
 import { getMontantPayeMarchandise, getRestePayeMarchandise, getStatutMarchandiseLabel } from '../../paymentUtils';
+
+export function formatDateJMA(dateString?: string) {
+  if (!dateString) return '—';
+  try {
+    if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString.trim())) {
+      const [year, month, day] = dateString.trim().split('-').map(Number);
+      return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+    }
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return '—';
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  } catch {
+    return '—';
+  }
+}
 
 export default function AchatListe({ 
   commandes, 
@@ -60,6 +78,24 @@ export default function AchatListe({
                   </span>
                   <span style={{ fontSize: 11, background: THEME.bg.soft, color: THEME.text.secondary, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>
                     {c.qty} pcs
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 10.5,
+                      fontWeight: 600,
+                      padding: '2px 6px',
+                      borderRadius: 4,
+                      background: '#F8F6F0',
+                      color: '#5E584E',
+                      border: '1px solid #EAE2D4',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <Calendar size={11} style={{ color: '#8A8375' }} />
+                    {formatDateJMA(c.dateAchat || c.date)}
                   </span>
                   {(c.payeEnMgaDirect || c.modeReglement === 'mga_direct') && (
                     <span style={{ fontSize: 10.5, background: '#FEF3C7', color: '#92400E', padding: '2px 6px', borderRadius: 4, fontWeight: 700, border: '1px solid #FDE68A' }}>

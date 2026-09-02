@@ -1,8 +1,9 @@
 import React from 'react';
-import { ArrowRight, Edit3 } from 'lucide-react';
+import { ArrowRight, Edit3, Calendar } from 'lucide-react';
 import { primaryBtn, ghostBtn } from '../ui';
 import { WIZARD_STEPS, getActiveStep } from './logistiqueUtils';
 import { getStatutMarchandiseLabel, getStatutFretLabel } from '../paymentUtils';
+import { formatDateJMA } from '../achat/components/AchatListe';
 
 interface ColisRowProps {
   key?: any;
@@ -26,6 +27,11 @@ export default function ColisRow({ commande: c, product: p, transitaire, onOuvri
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <span style={{ fontWeight: 700, fontSize: 14.5, color: '#26333D' }}>
             {p ? p.nom : 'Article commandé'} {p?.couleur ? `· ${p.couleur}` : ''}
+          </span>
+
+          <span style={{ fontSize: 10.5, fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: '#F8F6F0', color: '#5E584E', border: '1px solid #EAE2D4', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <Calendar size={11} style={{ color: '#8A8375' }} />
+            {formatDateJMA(c.dateAchat || c.datePaiement || c.date)}
           </span>
 
           {c.tracking && (
@@ -84,11 +90,17 @@ export default function ColisRow({ commande: c, product: p, transitaire, onOuvri
               <span>Livr. Entrepôt : <strong>{Number(c.fraisTransportLocal).toLocaleString('fr-FR')} Ar</strong></span>
             </>
           )}
+          {c.dateEnEntrepot && (
+            <>
+              <span>•</span>
+              <span>Entrepôt Chine : <strong>{formatDateJMA(c.dateEnEntrepot)}</strong></span>
+            </>
+          )}
           {c.dateEtaArrivee && c.statut !== 'Arrivé' && (
             <>
               <span>•</span>
               <span style={{ color: '#E8985E', fontWeight: 600 }}>
-                ETA : {new Date(c.dateEtaArrivee).toLocaleDateString('fr-FR')}
+                ETA : {formatDateJMA(c.dateEtaArrivee)}
               </span>
             </>
           )}

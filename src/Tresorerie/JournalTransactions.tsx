@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Trash2, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Search, Trash2, ChevronRight, AlertTriangle, Calendar } from 'lucide-react';
 import { Empty, inputStyle, selectStyle, ghostBtn, iconBtn, rowCard, Modal, primaryBtn } from '../ui';
 import { COMPTES_FINANCIERS } from '../constants';
 import { getAccountIcon } from './ComptesFinanciers';
@@ -24,7 +24,17 @@ interface JournalTransactionsProps {
 }
 
 export function formatDateDisplay(dateString: string) {
+  if (!dateString) return '—';
   try {
+    if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString.trim())) {
+      const [year, month, day] = dateString.trim().split('-').map(Number);
+      const d = new Date(year, month - 1, day);
+      return d.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+    }
     const d = new Date(dateString);
     if (isNaN(d.getTime())) return '—';
     return d.toLocaleDateString('fr-FR', {
@@ -228,6 +238,25 @@ export default function JournalTransactions({
                       }}
                     >
                       {badge.label}
+                    </span>
+
+                    <span
+                      style={{
+                        fontSize: 10.5,
+                        fontWeight: 600,
+                        padding: '2px 6px',
+                        borderRadius: 4,
+                        background: '#F8F6F0',
+                        color: '#5E584E',
+                        border: '1px solid #EAE2D4',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Calendar size={11} style={{ color: '#8A8375' }} />
+                      {formatDateDisplay(item.date)}
                     </span>
 
                     {isRegroupe && (

@@ -8,6 +8,7 @@ interface Step2Props {
   commande: any;
   fournisseurs: any[];
   tauxUsd: number;
+  today?: string;
   setField: (key: string, value: any) => void;
   handleModeChange: (mode: string) => void;
   handleTauxUsdChange?: (val: any) => void;
@@ -17,7 +18,7 @@ interface Step2Props {
 }
 
 export default function Step2Entrepot({
-  commande, fournisseurs, tauxUsd, setField, handleModeChange, handleTauxUsdChange, handleFraisUSDChange, handleFraisArChange, isLocked,
+  commande, fournisseurs, tauxUsd, today, setField, handleModeChange, handleTauxUsdChange, handleFraisUSDChange, handleFraisArChange, isLocked,
 }: Step2Props) {
   const mode = commande.modeExpedition || 'Maritime';
   const typesDisponibles = mode === 'Aérien' ? TYPES_ENVOI_AERIEN : TYPES_ENVOI_MARITIME;
@@ -43,7 +44,7 @@ export default function Step2Entrepot({
         Sélectionnez le transitaire qui prend en charge le colis, choisissez le mode (Maritime ou Aérien) et renseignez les dimensions.
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
         <Field label="🚛 Transitaire / Compagnie de Fret">
           <select value={commande.transitaireId || ''} onChange={e => setField('transitaireId', e.target.value)} style={selectStyle as any}>
             <option value="">— Sélectionner un transitaire —</option>
@@ -66,6 +67,24 @@ export default function Step2Entrepot({
           <select value={commande.typeEnvoi || typesDisponibles[0]} onChange={e => setField('typeEnvoi', e.target.value)} style={selectStyle as any}>
             {typesDisponibles.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
+        </Field>
+
+        <Field label="📅 Date d'arrivée entrepôt Chine">
+          <input
+            type="date"
+            value={commande.dateEnEntrepot ? commande.dateEnEntrepot.slice(0, 10) : (today || '')}
+            onChange={e => {
+              const val = e.target.value;
+              if (!val) {
+                setField('dateEnEntrepot', undefined);
+                return;
+              }
+              const d = new Date(val);
+              if (isNaN(d.getTime())) return;
+              setField('dateEnEntrepot', d.toISOString());
+            }}
+            style={inputStyle as any}
+          />
         </Field>
       </div>
 

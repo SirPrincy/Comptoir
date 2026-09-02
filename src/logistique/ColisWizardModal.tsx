@@ -286,7 +286,7 @@ export default function ColisWizardModal({
           {currentStep === 1 && <Step1Livraison commande={commande} today={today} setField={setField} isLocked={isLocked} />}
           {currentStep === 2 && (
             <Step2Entrepot
-              commande={commande} fournisseurs={fournisseurs} tauxUsd={tauxUsd}
+              commande={commande} fournisseurs={fournisseurs} tauxUsd={tauxUsd} today={today}
               setField={setField} handleModeChange={handleModeChange}
               handleTauxUsdChange={handleTauxUsdChange}
               handleFraisUSDChange={handleFraisUSDChange} handleFraisArChange={handleFraisArChange}
