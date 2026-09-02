@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Compass, Coins, AlertCircle } from 'lucide-react';
 import { SOURCES, uid } from '../../constants';
-import { Field, Modal, inputStyle, selectStyle, primaryBtn, ghostBtn } from '../../ui';
+import { Field, Modal, inputStyle, selectStyle, primaryBtn, ghostBtn, safeDateIso } from '../../ui';
 import { calculerScoreFournisseur, getQCBadgeInfo } from '../../qcUtils';
 import RecommandationTransitaire from '../RecommandationTransitaire';
 
@@ -174,7 +174,7 @@ export default function AchatFormModal({
       ? 'Partiel'
       : 'Non payé';
 
-    const isoDateAchat = new Date(cmdForm.dateAchat).toISOString();
+    const isoDateAchat = safeDateIso(cmdForm.dateAchat);
 
     const c = {
       id: uid(),

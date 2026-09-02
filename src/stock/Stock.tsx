@@ -385,7 +385,9 @@ const Stock = memo(function Stock({
                         ({m.delta < 0 ? '-' : '+'}{val.toLocaleString('fr-FR')} Ar)
                       </span>
                     )}
-                    <div style={{ fontSize: 11, color: '#8A8375' }}>{new Date(m.date).toLocaleString('fr-FR')}</div>
+                    <div style={{ fontSize: 11, color: '#8A8375' }}>
+                      {m.date && !isNaN(new Date(m.date).getTime()) ? new Date(m.date).toLocaleString('fr-FR') : '—'}
+                    </div>
                   </div>
                   <div style={{ fontWeight: 700, color: m.delta < 0 ? '#C24A3F' : '#3F7A5C' }}>
                     {m.delta > 0 ? `+${m.delta}` : m.delta} unité{Math.abs(m.delta) > 1 ? 's' : ''}

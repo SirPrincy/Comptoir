@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { uid } from '../constants';
+import { safeDateIso } from '../ui';
 import {
   getMontantPayeMarchandise,
   getRestePayeMarchandise,
@@ -248,7 +249,7 @@ export function useTresorerieForms({
 
     const result = repartirPaiement(montantGlobal, itemsPayables);
 
-    const dateIso = factureForm.date ? new Date(factureForm.date).toISOString() : new Date().toISOString();
+    const dateIso = safeDateIso(factureForm.date);
 
     const fraisNum = Number(factureForm.frais) || 0;
 
@@ -532,7 +533,7 @@ export function useTresorerieForms({
       tag: finalTag,
       reference: form.reference.trim(),
       description: form.description.trim(),
-      date: form.date ? new Date(form.date).toISOString() : new Date().toISOString(),
+      date: safeDateIso(form.date),
     };
 
     const nextMvs = [m];
@@ -548,7 +549,7 @@ export function useTresorerieForms({
         tag: '#frais-bancaires',
         reference: form.reference.trim() ? `Frais ${form.reference.trim()}` : '',
         description: `Frais de transaction : ${form.description.trim()}`,
-        date: form.date ? new Date(form.date).toISOString() : new Date().toISOString(),
+        date: safeDateIso(form.date),
       };
       nextMvs.push(mfrais);
     }
@@ -571,7 +572,7 @@ export function useTresorerieForms({
     const montantNum = Number(transfertForm.montant);
     if (!montantNum || montantNum <= 0 || transfertForm.source === transfertForm.destination) return;
 
-    const dateIso = transfertForm.date ? new Date(transfertForm.date).toISOString() : new Date().toISOString();
+    const dateIso = safeDateIso(transfertForm.date);
     const refCode = 'TRF-' + Math.random().toString(36).slice(2, 6).toUpperCase();
 
     const sortie = {

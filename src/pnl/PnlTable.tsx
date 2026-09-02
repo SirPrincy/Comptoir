@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, AlertCircle, TrendingUp, TrendingDown, Minus
 import { THEME } from '../colors';
 import { PnlData } from './types';
 import { calcEvolution, calcPointsEvolution } from './pnlUtils';
+import { safeDateDisplay } from '../ui';
 
 interface PnlTableProps {
   pnl: PnlData;
@@ -330,7 +331,7 @@ export default function PnlTable({
                   <span style={{ color: THEME.text.muted, marginLeft: 6 }}>({item.motif})</span>
                   {item.date && (
                     <span style={{ color: THEME.text.muted, fontSize: 10.5, marginLeft: 6 }}>
-                      · {new Date(item.date).toLocaleDateString('fr-FR')}
+                      · {safeDateDisplay(item.date)}
                     </span>
                   )}
                 </div>

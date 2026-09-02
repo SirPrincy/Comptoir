@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Package, Truck, Coins, Edit3, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 import { THEME } from '../../colors';
 import { SOURCES, STATUTS, uid } from '../../constants';
-import { Field, Modal, inputStyle, selectStyle, primaryBtn, ghostBtn } from '../../ui';
+import { Field, Modal, inputStyle, selectStyle, primaryBtn, ghostBtn, safeDateIso } from '../../ui';
 import { calculerScoreFournisseur, getQCBadgeInfo } from '../../qcUtils';
 import { getMontantPayeMarchandise, getRestePayeMarchandise } from '../../paymentUtils';
 import RecommandationTransitaire from '../RecommandationTransitaire';
@@ -170,7 +170,7 @@ export default function AchatEditModal({
   const handleSave = () => {
     if (!form.productId || !form.qty || !form.dateAchat) return;
 
-    const isoDateAchat = new Date(form.dateAchat).toISOString();
+    const isoDateAchat = safeDateIso(form.dateAchat);
 
     const montantPayeMarchandise = commande.montantPayeMarchandise !== undefined
       ? Math.min(totalCalcule, Number(commande.montantPayeMarchandise))

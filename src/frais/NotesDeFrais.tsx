@@ -3,7 +3,7 @@ import { Plus, Search, FileText, CheckCircle2, Clock, Trash2, Edit2, Wallet, Arr
 import { THEME } from '../colors';
 import { TYPOGRAPHY } from '../fonts';
 import { CATEGORIES_FRAIS, COMPTES_FINANCIERS, uid } from '../constants';
-import { Card, Field, Label, Modal, Stat, inputStyle, selectStyle, primaryBtn, ghostBtn, iconBtn, rowCard, Empty } from '../ui';
+import { Card, Field, Label, Modal, Stat, inputStyle, selectStyle, primaryBtn, ghostBtn, iconBtn, rowCard, Empty, safeDateDisplay } from '../ui';
 
 export interface NoteDeFrais {
   id: string;
@@ -459,7 +459,7 @@ export default function NotesDeFrais({
                       {item.categorie}
                     </span>
                     <span style={{ fontSize: 12, color: THEME.text.muted }}>
-                      {item.date ? new Date(item.date).toLocaleDateString('fr-FR') : '-'}
+                      {safeDateDisplay(item.date)}
                     </span>
                   </div>
 

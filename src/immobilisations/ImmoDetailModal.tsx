@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { THEME } from '../colors';
-import { Modal, primaryBtn, ghostBtn } from '../ui';
+import { Modal, primaryBtn, ghostBtn, safeDateDisplay } from '../ui';
 import { Immobilisation } from './types';
 import { calculerAmortissementLineaire, calculerPlanAmortissementMensuel, MOIS_FR } from './immoUtils';
 
@@ -45,7 +45,7 @@ export default function ImmoDetailModal({
           </div>
           <div>
             <span style={{ color: THEME.text.muted, display: 'block' }}>Date d'acquisition :</span>
-            <strong>{new Date(immo.dateAchat).toLocaleDateString('fr-FR')}</strong>
+            <strong>{safeDateDisplay(immo.dateAchat)}</strong>
           </div>
           <div>
             <span style={{ color: THEME.text.muted, display: 'block' }}>Durée & Dotation :</span>

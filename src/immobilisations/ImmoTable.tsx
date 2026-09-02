@@ -1,7 +1,7 @@
 import React from 'react';
 import { FileText, Trash2, CheckCircle2, Zap } from 'lucide-react';
 import { THEME } from '../colors';
-import { Empty, ghostBtn, iconBtn } from '../ui';
+import { Empty, ghostBtn, iconBtn, safeDateDisplay } from '../ui';
 import { ImmoCalculatedDetail, Immobilisation } from './types';
 import { MOIS_FR } from './immoUtils';
 
@@ -77,7 +77,7 @@ export default function ImmoTable({
                   </td>
                   <td style={{ padding: '12px 14px', color: THEME.text.secondary }}>{immo.categorie}</td>
                   <td style={{ padding: '12px 14px' }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 500, color: THEME.text.primary }}>{new Date(immo.dateAchat).toLocaleDateString('fr-FR')}</div>
+                    <div style={{ fontSize: 12.5, fontWeight: 500, color: THEME.text.primary }}>{safeDateDisplay(immo.dateAchat)}</div>
                     <div style={{ fontSize: 11, color: THEME.text.muted }}>
                       {immo.dureeAmortissement} ans ({immo.totalMois} mois)
                     </div>

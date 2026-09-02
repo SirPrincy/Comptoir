@@ -10,7 +10,7 @@ interface ColisRowProps {
   commande: any;
   product?: any;
   transitaire?: any;
-  onOuvrir: (id: string) => void;
+  onOuvrir: (id: string, step?: number) => void;
   onEdit?: (commande: any) => void;
   onNavigateTab?: (tab: string) => void;
 }
@@ -106,7 +106,11 @@ export default function ColisRow({ commande: c, product: p, transitaire, onOuvri
           )}
         </div>
 
-        <MicroStepper activeStepNumber={activeStepNumber} isCompletedQC={isCompletedQC} />
+        <MicroStepper
+          activeStepNumber={activeStepNumber}
+          isCompletedQC={isCompletedQC}
+          onStepClick={(step) => onOuvrir(c.id, step)}
+        />
       </div>
 
       <div className="w-full sm:w-auto flex items-center justify-end gap-2 shrink-0">
@@ -154,8 +158,9 @@ export default function ColisRow({ commande: c, product: p, transitaire, onOuvri
           onClick={() => onOuvrir(c.id)}
           className="w-full sm:w-auto justify-center"
           style={{ ...primaryBtn, height: 34, fontSize: 12.5, padding: '0 12px', display: 'flex', alignItems: 'center', gap: 6 } as any}
+          title="Consulter ou modifier les étapes logistiques de ce colis"
         >
-          <span>Ouvrir l'assistant</span>
+          <span>Étapes logistiques</span>
           <ArrowRight size={13} />
         </button>
       </div>
@@ -163,7 +168,15 @@ export default function ColisRow({ commande: c, product: p, transitaire, onOuvri
   );
 }
 
-function MicroStepper({ activeStepNumber, isCompletedQC }: { activeStepNumber: number; isCompletedQC?: boolean }) {
+function MicroStepper({
+  activeStepNumber,
+  isCompletedQC,
+  onStepClick,
+}: {
+  activeStepNumber: number;
+  isCompletedQC?: boolean;
+  onStepClick?: (step: number) => void;
+}) {
   return (
     <div className="flex items-center gap-1 sm:gap-1.5 mt-2 flex-wrap">
       {WIZARD_STEPS.map((ws, i) => {
@@ -172,18 +185,38 @@ function MicroStepper({ activeStepNumber, isCompletedQC }: { activeStepNumber: n
         return (
           <React.Fragment key={ws.step}>
             {i > 0 && <div style={{ width: 10, height: 2, background: isDone || isCurrent ? '#3D5A6C' : '#EAE2D4' }} />}
-            <div
+            <button
+              type="button"
+              onClick={() => onStepClick?.(ws.step)}
+              title={`Étape ${ws.step} : ${ws.label} (Cliquer pour ouvrir et modifier)`}
               style={{
-                width: 18, height: 18, borderRadius: '50%',
-                background: isDone ? '#3F7A5C' : isCurrent ? '#3D5A6C' : '#FAF7F2',
-                border: `1.5px solid ${isDone ? '#3F7A5C' : isCurrent ? '#3D5A6C' : '#D9CFC1'}`,
-                color: isDone || isCurrent ? '#FFFFFF' : '#8A8375',
-                fontSize: 9.5, fontWeight: 700,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+                borderRadius: '50%',
               }}
             >
-              {isDone ? '✓' : ws.step}
-            </div>
+              <div
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: '50%',
+                  background: isDone ? '#3F7A5C' : isCurrent ? '#3D5A6C' : '#FAF7F2',
+                  border: `1.5px solid ${isDone ? '#3F7A5C' : isCurrent ? '#3D5A6C' : '#D9CFC1'}`,
+                  color: isDone || isCurrent ? '#FFFFFF' : '#8A8375',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: isCurrent ? '0 0 0 2px rgba(61,90,108,0.2)' : 'none',
+                  transition: 'transform 0.1s ease',
+                }}
+              >
+                {isDone ? '✓' : ws.step}
+              </div>
+            </button>
           </React.Fragment>
         );
       })}

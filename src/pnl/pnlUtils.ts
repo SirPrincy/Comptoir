@@ -63,8 +63,10 @@ export function getPeriodeLabel(
   }
   if (periode === 'custom') {
     if (dateDebut && dateFin) {
-      const d1 = new Date(dateDebut).toLocaleDateString('fr-FR');
-      const d2 = new Date(dateFin).toLocaleDateString('fr-FR');
+      const parsed1 = new Date(dateDebut);
+      const parsed2 = new Date(dateFin);
+      const d1 = !isNaN(parsed1.getTime()) ? parsed1.toLocaleDateString('fr-FR') : dateDebut;
+      const d2 = !isNaN(parsed2.getTime()) ? parsed2.toLocaleDateString('fr-FR') : dateFin;
       return `${d1} au ${d2}`;
     }
     return 'Période personnalisée';

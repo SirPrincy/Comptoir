@@ -1,7 +1,7 @@
 import React, {  useState, useMemo , memo } from 'react';
 import { Trash2, CheckCircle2, Clock, Search, Filter, Calendar, User, X } from 'lucide-react';
 import { COMPTES_FINANCIERS, uid } from '../constants';
-import { SectionHeader, Modal, Field, Empty, inputStyle, selectStyle, primaryBtn, ghostBtn, iconBtn, RADIUS, SHADOWS } from '../ui';
+import { SectionHeader, Modal, Field, Empty, inputStyle, selectStyle, primaryBtn, ghostBtn, iconBtn, RADIUS, SHADOWS, safeDateIso, safeDateDisplay } from '../ui';
 import { THEME } from '../colors';
 import { computeStock } from '../stock/stockUtils';
 import { getStatutVenteLabel, getMontantPayeVente, getRestePayeVente } from '../paymentUtils';
@@ -103,8 +103,8 @@ const VenteRapide = memo(function VenteRapide({
       modePaiement,
       statutPaiement: statutFinal,
       montantPaye: payeFinal,
-      date: new Date(dateVente).toISOString(),
-      dateEncaissement: statutFinal === 'Payé' ? new Date(dateVente).toISOString() : undefined,
+      date: safeDateIso(dateVente),
+      dateEncaissement: statutFinal === 'Payé' ? safeDateIso(dateVente) : undefined,
       total,
     };
 
@@ -112,7 +112,7 @@ const VenteRapide = memo(function VenteRapide({
       const cl = clients.find((c: any) => c.id === clientId);
       const nouveauPaiement = {
         id: uid(),
-        date: new Date(dateVente).toISOString(),
+        date: safeDateIso(dateVente),
         nature: 'vente',
         compte: modePaiement,
         montantTotal: payeFinal,
@@ -691,7 +691,7 @@ const VenteRapide = memo(function VenteRapide({
                       </span>
                     </div>
                     <div style={{ fontSize: 12, color: THEME.text.muted, wordBreak: 'break-word', marginTop: 2 }}>
-                      {new Date(v.date).toLocaleDateString('fr-FR')} · qté {v.qty} · PU {Number(puAffiche).toLocaleString('fr-FR')} Ar
+                      {safeDateDisplay(v.date)} · qté {v.qty} · PU {Number(puAffiche).toLocaleString('fr-FR')} Ar
                       {Number(v.fraisLivraison) > 0 ? ` · 🚚 Livr: ${Number(v.fraisLivraison).toLocaleString('fr-FR')} Ar` : ''}
                       {cl ? ` · Client: ${cl.nom}` : ''}
                       {v.modePaiement ? ` · ${v.modePaiement}` : ''}

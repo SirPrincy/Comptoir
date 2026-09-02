@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertTriangle, PackageCheck } from 'lucide-react';
-import { Modal, primaryBtn, ghostBtn } from '../ui';
+import { Modal, primaryBtn, ghostBtn, safeDateDisplay } from '../ui';
 
 interface ModalDeleteVenteProps {
   vente: any | null;
@@ -44,7 +44,7 @@ export default function ModalDeleteVente({
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
             <span style={{ color: '#5E584E' }}>Date & Quantité :</span>
             <strong style={{ color: '#26333D' }}>
-              {new Date(vente.date).toLocaleDateString('fr-FR')} · {qty} pièce{qty > 1 ? 's' : ''}
+              {safeDateDisplay(vente.date)} · {qty} pièce{qty > 1 ? 's' : ''}
             </strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>

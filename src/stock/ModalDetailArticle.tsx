@@ -473,7 +473,7 @@ export default function ModalDetailArticle({
                         {item.details && <span> · {item.details}</span>}
                       </div>
                       <div style={{ fontSize: 10.5, color: '#A0988A', marginTop: 1 }}>
-                        {item.date ? new Date(item.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Date non spécifiée'}
+                        {item.date && !isNaN(new Date(item.date).getTime()) ? new Date(item.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Date non spécifiée'}
                       </div>
                     </div>
                   </div>

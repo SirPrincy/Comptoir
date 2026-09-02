@@ -9,9 +9,10 @@ interface Step5Props {
   today: string;
   setField: (key: string, value: any) => void;
   isLocked?: boolean;
+  onResetQC?: () => void;
 }
 
-export default function Step5QualityCheck({ commande, product: p, today, setField, isLocked }: Step5Props) {
+export default function Step5QualityCheck({ commande, product: p, today, setField, isLocked, onResetQC }: Step5Props) {
   const qc = commande.qualityCheck || {};
   const setQc = (patch: Record<string, any>) => setField('qualityCheck', { ...qc, ...patch });
 
@@ -79,8 +80,30 @@ export default function Step5QualityCheck({ commande, product: p, today, setFiel
         />
       </Field>
 
-      <div style={{ padding: '10px 12px', background: THEME.bg.surface, borderRadius: 8, border: `1px solid ${THEME.border.base}`, fontSize: 12, color: THEME.text.primary }}>
-        📦 <strong>{qc.qtyConforme ?? commande.qty} pièces conformes</strong> sont en stock prêt à la vente du produit <strong>« {p?.nom} »</strong>.
+      <div style={{ padding: '10px 12px', background: THEME.bg.surface, borderRadius: 8, border: `1px solid ${THEME.border.base}`, fontSize: 12, color: THEME.text.primary, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+        <div>
+          📦 <strong>{qc.qtyConforme ?? commande.qty} pièces conformes</strong> sont en stock prêt à la vente du produit <strong>« {p?.nom} »</strong>.
+        </div>
+
+        {commande.qualityCheck?.isCompleted && onResetQC && !isLocked && (
+          <button
+            type="button"
+            onClick={onResetQC}
+            style={{
+              padding: '4px 10px',
+              fontSize: 11.5,
+              fontWeight: 600,
+              borderRadius: 6,
+              border: '1px solid #DC2626',
+              background: '#FEF2F2',
+              color: '#DC2626',
+              cursor: 'pointer',
+            }}
+            title="Annule la clôture QC et retire temporairement les pièces du stock disponible de vente"
+          >
+            Annuler la clôture QC (remettre en attente)
+          </button>
+        )}
       </div>
     </fieldset>
   );

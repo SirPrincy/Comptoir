@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Coins, CheckCircle2, ArrowRightLeft, CreditCard } from 'lucide-react';
-import { Field, Modal, inputStyle, selectStyle, primaryBtn, ghostBtn } from '../../ui';
+import { Field, Modal, inputStyle, selectStyle, primaryBtn, ghostBtn, safeDateIso } from '../../ui';
 import { COMPTES_FINANCIERS, uid } from '../../constants';
 import { getMontantPayeMarchandise, getRestePayeMarchandise } from '../../paymentUtils';
 import { calculerSoldesComptes } from '../../Tresorerie/tresorerieUtils';
@@ -75,7 +75,7 @@ export default function AchatPaiementModal({
     if (!paiementCommande || !datePaiementChoisie || montantPayerAr <= 0) return;
     if (isRmbInsuffisant) return;
 
-    const iso = new Date(datePaiementChoisie).toISOString();
+    const iso = safeDateIso(datePaiementChoisie);
     const montantAjouteAr = montantPayerAr;
     let nouveauPaye = itemTotal;
     if (typePaiement === 'acompte') {

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Landmark, Plus, Trash2, Calendar, DollarSign, Percent, User, ClipboardList, CheckCircle2, AlertCircle, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { THEME } from '../colors';
 import { TYPOGRAPHY } from '../fonts';
-import { Card, cardTitle, Label, Field, Empty, Modal, inputStyle, selectStyle, primaryBtn, ghostBtn, iconBtn } from '../ui';
+import { Card, cardTitle, Label, Field, Empty, Modal, inputStyle, selectStyle, primaryBtn, ghostBtn, iconBtn, safeDateIso, safeDateDisplay } from '../ui';
 import { COMPTES_FINANCIERS } from '../constants';
 
 interface Emprunt {
@@ -123,7 +123,7 @@ export default function Emprunts({
         tag: '#investissement',
         reference: `Emprunt ${nouvelEmprunt.nomPreteur}`,
         description: `Obtention emprunt ${nouvelEmprunt.type === 'personnel' ? 'personnel' : 'institutionnel'} auprès de ${nouvelEmprunt.nomPreteur}`,
-        date: new Date(form.dateSignature).toISOString(),
+        date: safeDateIso(form.dateSignature),
       };
       patch.mouvements = [m, ...mouvements];
     }
@@ -206,7 +206,7 @@ export default function Emprunts({
         tag: '#remboursement',
         reference: `Remb. Emprunt ${selectedEmprunt.nomPreteur}`,
         description: `Remboursement capital emprunté chez ${selectedEmprunt.nomPreteur}`,
-        date: new Date(repayForm.date).toISOString(),
+        date: safeDateIso(repayForm.date),
       });
     }
 
@@ -220,7 +220,7 @@ export default function Emprunts({
         tag: '#frais-bancaires',
         reference: `Intérêts Emprunt ${selectedEmprunt.nomPreteur}`,
         description: `Intérêts payés sur emprunt chez ${selectedEmprunt.nomPreteur}`,
-        date: new Date(repayForm.date).toISOString(),
+        date: safeDateIso(repayForm.date),
       });
     }
 
@@ -395,7 +395,7 @@ export default function Emprunts({
                           </span>
                         </td>
                         <td style={{ padding: '12px 14px' }}>
-                          <div style={{ fontWeight: 500 }}>{new Date(emp.dateSignature).toLocaleDateString('fr-FR')}</div>
+                          <div style={{ fontWeight: 500 }}>{safeDateDisplay(emp.dateSignature)}</div>
                           <div style={{ fontSize: 11, color: THEME.text.muted }}>Durée : {emp.dureeMois} mois</div>
                         </td>
                         <td style={{ padding: '12px 14px', textAlign: 'right', color: emp.tauxInteretAnnuel > 0 ? THEME.accent.orange : THEME.text.muted, fontWeight: 600 }}>
@@ -508,7 +508,7 @@ export default function Emprunts({
                     <tbody>
                       {selectedEmprunt.remboursements.map(r => (
                         <tr key={r.id} style={{ borderBottom: `1px solid ${THEME.border.base}` }}>
-                          <td style={{ padding: '8px 10px' }}>{new Date(r.date).toLocaleDateString('fr-FR')}</td>
+                          <td style={{ padding: '8px 10px' }}>{safeDateDisplay(r.date)}</td>
                           <td style={{ padding: '8px 10px', color: THEME.text.secondary }}>{r.compteSource}</td>
                           <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600, color: THEME.accent.primary }}>{r.capital.toLocaleString()}</td>
                           <td style={{ padding: '8px 10px', textAlign: 'right', color: THEME.accent.orange }}>{r.interet.toLocaleString()}</td>

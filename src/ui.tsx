@@ -396,6 +396,37 @@ export const tooltipStyle = {
   boxShadow: SHADOWS.floating,
 };
 
+export function safeDateIso(dateInput?: any, fallbackDateIso?: string): string {
+  if (!dateInput) return fallbackDateIso || new Date().toISOString();
+  try {
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return fallbackDateIso || new Date().toISOString();
+    return d.toISOString();
+  } catch {
+    return fallbackDateIso || new Date().toISOString();
+  }
+}
+
+export function safeDateDisplay(dateInput?: any, fallback = '—'): string {
+  if (!dateInput) return fallback;
+  try {
+    if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput.trim())) {
+      const [year, month, day] = dateInput.trim().split('-').map(Number);
+      return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+    }
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return fallback;
+    return d.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  } catch {
+    return fallback;
+  }
+}
+
+
 
 
 

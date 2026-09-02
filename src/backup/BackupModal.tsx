@@ -59,7 +59,8 @@ export default function BackupModal({ open, onClose, data, onRestore }: BackupMo
     if (!autoSnapshot?.data) return;
     const cleanData = migrateDataSchema(autoSnapshot.data);
     onRestore(cleanData);
-    const timeFormatted = new Date(autoSnapshot.timestamp).toLocaleString();
+    const parsedTs = autoSnapshot.timestamp ? new Date(autoSnapshot.timestamp) : null;
+    const timeFormatted = parsedTs && !isNaN(parsedTs.getTime()) ? parsedTs.toLocaleString('fr-FR') : '—';
     setSuccessMsg(`Restauration réussie depuis le snapshot auto du ${timeFormatted} !`);
     setErrorMsg(null);
   };
@@ -183,7 +184,7 @@ export default function BackupModal({ open, onClose, data, onRestore }: BackupMo
                 <span>Dernier snapshot auto local :</span>
               </div>
               <div style={{ fontSize: 11.5, marginTop: 2, color: '#8C7868' }}>
-                {new Date(autoSnapshot.timestamp).toLocaleString()} (v{autoSnapshot.schemaVersion || 1.0})
+                {autoSnapshot.timestamp && !isNaN(new Date(autoSnapshot.timestamp).getTime()) ? new Date(autoSnapshot.timestamp).toLocaleString('fr-FR') : '—'} (v{autoSnapshot.schemaVersion || 1.0})
               </div>
             </div>
             <button

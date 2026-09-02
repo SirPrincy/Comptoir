@@ -85,7 +85,16 @@ export default function Step3Fret({
             <input
               type="date"
               value={commande.dateEtaArrivee ? commande.dateEtaArrivee.slice(0, 10) : ''}
-              onChange={e => setField('dateEtaArrivee', new Date(e.target.value).toISOString())}
+              onChange={e => {
+                const val = e.target.value;
+                if (!val) {
+                  setField('dateEtaArrivee', undefined);
+                  return;
+                }
+                const d = new Date(val);
+                if (isNaN(d.getTime())) return;
+                setField('dateEtaArrivee', d.toISOString());
+              }}
               style={{ ...inputStyle, flex: 1 } as any}
             />
             <button

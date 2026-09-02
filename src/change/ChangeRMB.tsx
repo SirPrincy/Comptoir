@@ -2,6 +2,7 @@ import React, {  useState, useMemo , memo } from 'react';
 import { Coins, Star } from 'lucide-react';
 import { INTERMEDIAIRES_HABITUELS, CANAUX_RMB, VITESSE_OPTIONS, OperationChange } from './types';
 import { uid } from '../constants';
+import { safeDateIso } from '../ui';
 import { calculerSoldeRMB } from '../paymentUtils';
 
 import ChangeHeaderKPI from './ChangeHeaderKPI';
@@ -227,7 +228,7 @@ const ChangeRMB = memo(function ChangeRMB({
     const opId = editingId || uid();
     const mvtId = editingId ? (changes.find(c => c.id === editingId)?.mouvementId || uid()) : uid();
 
-    const dateIso = form.date ? new Date(form.date).toISOString() : new Date().toISOString();
+    const dateIso = safeDateIso(form.date);
 
     const provider = form.fournisseur?.trim() || 'Non spécifié';
     const channel = form.canal || CANAUX_RMB[0];

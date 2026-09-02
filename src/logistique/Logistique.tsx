@@ -33,6 +33,7 @@ const Logistique = memo(function Logistique({
   devises = { rmb: 680, usd: 4600 }, updateAll, updateData, paiements = [], onNavigateTab,
 }: LogistiqueProps) {
   const [selectedCommandeId, setSelectedCommandeId] = useState<string | null>(null);
+  const [selectedStep, setSelectedStep] = useState<number | undefined>(undefined);
   const [editingCommande, setEditingCommande] = useState<any | null>(null);
   const [recherche, setRecherche] = useState('');
   const [filtreStatut, setFiltreStatut] = useState<string>('all');
@@ -42,6 +43,16 @@ const Logistique = memo(function Logistique({
 
   const updateCommandeField = (id: string, fields: Record<string, any>) => {
     updateAll(products, ventes, commandes.map((c: any) => (c.id === id ? { ...c, ...fields } : c)));
+  };
+
+  const handleOuvrir = (id: string, step?: number) => {
+    setSelectedCommandeId(id);
+    setSelectedStep(step);
+  };
+
+  const handleCloseWizard = () => {
+    setSelectedCommandeId(null);
+    setSelectedStep(undefined);
   };
 
   const commandesLogistique = useMemo(() => {
@@ -149,7 +160,7 @@ const Logistique = memo(function Logistique({
               commande={c}
               product={products.find((pr: any) => pr.id === c.productId)}
               transitaire={fournisseurs.find((f: any) => f.id === c.transitaireId)}
-              onOuvrir={setSelectedCommandeId}
+              onOuvrir={handleOuvrir}
               onEdit={setEditingCommande}
               onNavigateTab={onNavigateTab}
             />
@@ -182,7 +193,8 @@ const Logistique = memo(function Logistique({
           fournisseurs={fournisseurs}
           tauxUsd={tauxUsd}
           today={today}
-          onClose={() => setSelectedCommandeId(null)}
+          initialStep={selectedStep}
+          onClose={handleCloseWizard}
           updateCommandeField={updateCommandeField}
           onNavigateTab={onNavigateTab}
         />
