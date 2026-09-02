@@ -4,7 +4,6 @@ import { primaryBtn } from '../ui';
 import { COMPTES_FINANCIERS, TAGS_TRANSACTION } from '../constants';
 import { getMontantPayeMarchandise, calculerSoldeRMB } from '../paymentUtils';
 
-import TresorerieStats from './TresorerieStats';
 import ComptesFinanciers from './ComptesFinanciers';
 import ModalPaiementFacture from './ModalPaiementFacture';
 import ModalMouvementManuel from './ModalMouvementManuel';
@@ -75,6 +74,7 @@ export default function Tresorerie({
     handleToggleSelectId,
     handleToggleSelectAll,
     enregistrerPaiementFacture,
+    imputerPaiementExistant,
     ajouterMouvement,
     executerTransfert,
   } = useTresorerieForms({
@@ -224,21 +224,10 @@ export default function Tresorerie({
 
   return (
     <div>
-      {/* KPI Stats */}
-      <TresorerieStats
-        soldeGlobal={soldeGlobal}
-        caBusiness={caBusiness}
-        depensesBusiness={depensesBusiness}
-        resultatBusiness={resultatBusiness}
-        apportsPerso={apportsPerso}
-        prelevementsPerso={prelevementsPerso}
-        soldeRmb={statsRmb.soldeRmbDispo}
-        valeurRmbAr={statsRmb.valeurRmbAr}
-      />
-
-      {/* Soldes par Compte */}
+      {/* Soldes par Compte & Synthèse Trésorerie */}
       <ComptesFinanciers
         soldesParCompte={soldesParCompte}
+        soldeGlobal={soldeGlobal}
         filtreCompte={filtreCompte}
         setFiltreCompte={setFiltreCompte}
         onOpenTransfert={() => setShowTransfertModal(true)}
@@ -362,6 +351,7 @@ export default function Tresorerie({
         fournisseurs={fournisseurs}
         paiements={paiements}
         supprimerMouvement={handleSupprimerTransaction}
+        imputerPaiementExistant={imputerPaiementExistant}
       />
     </div>
   );

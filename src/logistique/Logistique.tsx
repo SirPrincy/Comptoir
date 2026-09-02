@@ -14,6 +14,7 @@ import { STATUTS_LOGISTIQUE } from '../constants';
 import LogistiqueStats from './LogistiqueStats';
 import ColisRow from './ColisRow';
 import ColisWizardModal from './ColisWizardModal';
+import AchatEditModal from '../achat/components/AchatEditModal';
 
 interface LogistiqueProps {
   products: any[];
@@ -22,14 +23,17 @@ interface LogistiqueProps {
   fournisseurs?: any[];
   devises?: { rmb: number | string; usd: number | string };
   updateAll: (products: any[], ventes: any[], commandes: any[]) => void;
+  updateData?: (data: any) => void;
+  paiements?: any[];
   onNavigateTab?: (tab: string) => void;
 }
 
 const Logistique = memo(function Logistique({
   products = [], commandes = [], ventes = [], fournisseurs = [],
-  devises = { rmb: 680, usd: 4600 }, updateAll, onNavigateTab,
+  devises = { rmb: 680, usd: 4600 }, updateAll, updateData, paiements = [], onNavigateTab,
 }: LogistiqueProps) {
   const [selectedCommandeId, setSelectedCommandeId] = useState<string | null>(null);
+  const [editingCommande, setEditingCommande] = useState<any | null>(null);
   const [recherche, setRecherche] = useState('');
   const [filtreStatut, setFiltreStatut] = useState<string>('all');
 
@@ -146,10 +150,28 @@ const Logistique = memo(function Logistique({
               product={products.find((pr: any) => pr.id === c.productId)}
               transitaire={fournisseurs.find((f: any) => f.id === c.transitaireId)}
               onOuvrir={setSelectedCommandeId}
+              onEdit={setEditingCommande}
               onNavigateTab={onNavigateTab}
             />
           ))}
         </div>
+      )}
+
+      {editingCommande && (
+        <AchatEditModal
+          commande={editingCommande}
+          onClose={() => setEditingCommande(null)}
+          products={products}
+          fournisseurs={fournisseurs}
+          commandes={commandes}
+          ventes={ventes}
+          devises={devises as any}
+          updateAll={updateAll}
+          updateData={updateData}
+          paiements={paiements}
+          today={today}
+          onNavigateTab={onNavigateTab}
+        />
       )}
 
       {selectedCommande && (

@@ -1,84 +1,408 @@
 @import "tailwindcss";
 
 :root {
-  --font-display: 'Oswald', sans-serif;
-  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
 
-  /* Theme Refined Craft Linen & Espresso (Light) */
-  --bg: #F2EFE9;
-  --ink: #1D1A16;
-  --accent: #A67C52;
-  --ink-faint: rgba(29, 26, 22, 0.12);
+  /* Thème Apple Light - Canvas Épuré & Cartes Cristallines */
+  --bg: #F5F5F7;
+  --ink: #1D1D1F;
+  --accent: #0071E3;
+  --ink-faint: rgba(0, 0, 0, 0.04);
 
-  --color-bg-base: #F2EFE9;
+  --color-bg-base: #F5F5F7;
   --color-bg-card: #FFFFFF;
-  --color-bg-surface: #EAE6DF;
-  --color-bg-soft: #F7F5F0;
-  --color-bg-inputDisabled: #E4DFD7;
-  --color-bg-alert: #FDF2F0;
-  --color-bg-chip: #E8E3DB;
+  --color-bg-surface: #F2F2F7;
+  --color-bg-soft: #FBFBFC;
+  --color-bg-inputDisabled: #E5E5EA;
+  --color-bg-alert: #FFF5F5;
+  --color-bg-chip: #EBEBED;
 
-  --color-border-base: #E2DDD5;
-  --color-border-strong: #C8C1B4;
+  --color-border-base: rgba(0, 0, 0, 0.06);
+  --color-border-strong: rgba(0, 0, 0, 0.12);
 
-  --color-text-primary: #1D1A16;
-  --color-text-secondary: #4A443D;
-  --color-text-muted: #827A6E;
-  --color-text-light: #F2EFE9;
-
-  --color-accent-primary: #A67C52; /* Artisan Oak / Warm Leather Accent */
-  --color-accent-orange: #C4782A; /* Warm Amber */
-  --color-accent-green: #2E7D52; /* Forest Emerald */
-  --color-accent-greenLight: #C8E6D2;
-  --color-accent-danger: #C0392B; /* Crimson Terracotta */
-  --color-accent-dangerSoft: #FADBD8;
-  --color-accent-purple: #7D5A85; /* Slate Mauve */
-
-  --color-chart-0: #A67C52;
-  --color-chart-1: #2E7D52;
-  --color-chart-2: #C4782A;
-  --color-chart-3: #7D5A85;
-  --color-chart-4: #C0392B;
-}
-
-/* Theme Refined Craft Linen & Espresso (Dark Mode) */
-.dark {
-  --bg: #161412;
-  --ink: #F2EFE9;
-  --accent: #C49B72;
-  --ink-faint: rgba(242, 239, 233, 0.12);
-
-  --color-bg-base: #161412;
-  --color-bg-card: #201D19;
-  --color-bg-surface: #2A2621;
-  --color-bg-soft: #1E1A16;
-  --color-bg-inputDisabled: #2A2520;
-  --color-bg-alert: #3E1D1E;
-  --color-bg-chip: #2E2923;
-
-  --color-border-base: #332E27;
-  --color-border-strong: #4A4339;
-
-  --color-text-primary: #F5F2EC;
-  --color-text-secondary: #D4CDC2;
-  --color-text-muted: #9E9587;
+  --color-text-primary: #1D1D1F;
+  --color-text-secondary: #6E6E73;
+  --color-text-muted: #86868B;
   --color-text-light: #FFFFFF;
 
-  --color-accent-primary: #C49B72; /* Warm Luminous Camel */
-  --color-accent-orange: #E08E3B;
-  --color-accent-green: #48A873;
-  --color-accent-greenLight: #235438;
-  --color-accent-danger: #E74C3C;
-  --color-accent-dangerSoft: #611D17;
-  --color-accent-purple: #B08BB8;
+  /* Palette Apple HIG */
+  --color-accent-primary: #0071E3;   /* Apple Blue */
+  --color-accent-terracotta: #FF9500;/* Apple Orange / Ambre */
+  --color-accent-emerald: #34C759;   /* Apple Mint Green */
+  --color-accent-navy: #1E3A5F;      /* Space Navy */
+  --color-accent-amber: #FF9500;     /* Apple Amber */
+  --color-accent-orange: #FF9500;    /* Apple Orange */
+  --color-accent-green: #34C759;     /* Apple Green */
+  --color-accent-greenLight: #E8F8EE;
+  --color-accent-danger: #FF3B30;    /* Apple Red */
+  --color-accent-dangerSoft: #FEECEB;
+  --color-accent-purple: #5856D6;    /* Apple Indigo */
 
-  --color-chart-0: #C49B72;
-  --color-chart-1: #48A873;
-  --color-chart-2: #E08E3B;
-  --color-chart-3: #B08BB8;
-  --color-chart-4: #E74C3C;
+  --color-chart-0: #34C759; /* Apple Emerald */
+  --color-chart-1: #0071E3; /* Apple Blue */
+  --color-chart-2: #FF9500; /* Apple Orange */
+  --color-chart-3: #5856D6; /* Apple Indigo */
+  --color-chart-4: #AF52DE; /* Apple Purple */
+
+  /* Radii Scale - Style Apple Fluide (Squircles continus) */
+  --radius-micro: 6px;
+  --radius-tag: 8px;
+  --radius-control: 10px;
+  --radius-item: 12px;
+  --radius-card: 16px;
+  --radius-container: 18px;
+  --radius-modal: 22px;
+  --radius-drawer: 24px;
+  --radius-pill: 9999px;
+
+  /* Ombres Diffuses Apple */
+  --shadow-none: none;
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-card: 0 2px 12px -2px rgba(0, 0, 0, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+  --shadow-raised: 0 4px 16px -2px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03);
+  --shadow-floating: 0 12px 32px -4px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+  --shadow-modal: 0 24px 64px -12px rgba(0, 0, 0, 0.18), 0 8px 24px -4px rgba(0, 0, 0, 0.08);
+  --shadow-drawer: 12px 0 40px -4px rgba(0, 0, 0, 0.12);
 }
+
+/* Theme Apple Dark (OLED Black & Graphite) */
+.dark {
+  --bg: #000000;
+  --ink: #F5F5F7;
+  --accent: #0A84FF;
+  --ink-faint: rgba(255, 255, 255, 0.06);
+
+  --color-bg-base: #000000;
+  --color-bg-card: #1C1C1E;
+  --color-bg-surface: #2C2C2E;
+  --color-bg-soft: #141416;
+  --color-bg-inputDisabled: #2C2C2E;
+  --color-bg-alert: #2A1515;
+  --color-bg-chip: #2C2C2E;
+
+  --color-border-base: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+
+  --color-text-primary: #F5F5F7;
+  --color-text-secondary: #A1A1A6;
+  --color-text-muted: #6E6E73;
+  --color-text-light: #FFFFFF;
+
+  --color-accent-primary: #0A84FF;   /* Apple Dark Blue */
+  --color-accent-terracotta: #FF9F0A;/* Apple Dark Orange */
+  --color-accent-emerald: #30D158;   /* Apple Dark Mint */
+  --color-accent-navy: #4B7AB5;      /* Bleu Clair */
+  --color-accent-amber: #FF9F0A;
+  --color-accent-orange: #FF9F0A;
+  --color-accent-green: #30D158;
+  --color-accent-greenLight: #123820;
+  --color-accent-danger: #FF453A;    /* Apple Dark Red */
+  --color-accent-dangerSoft: #3E1616;
+  --color-accent-purple: #5E5CE6;
+
+  --color-chart-0: #30D158;
+  --color-chart-1: #0A84FF;
+  --color-chart-2: #FF9F0A;
+  --color-chart-3: #5E5CE6;
+  --color-chart-4: #BF5AF2;
+
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 2px 12px -2px rgba(0, 0, 0, 0.5), 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+  --shadow-raised: 0 4px 16px -2px rgba(0, 0, 0, 0.6), 0 1px 4px rgba(0, 0, 0, 0.35);
+  --shadow-floating: 0 12px 32px -4px rgba(0, 0, 0, 0.7), 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+  --shadow-modal: 0 24px 64px -12px rgba(0, 0, 0, 0.8), 0 8px 24px -4px rgba(0, 0, 0, 0.5);
+  --shadow-drawer: 12px 0 40px -4px rgba(0, 0, 0, 0.7);
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(0, 113, 227, 0.2);
+  color: var(--color-text-primary);
+}
+
+input, select, button, textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
+/* Minimalist Apple Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.hover-bg-row:hover {
+  background: var(--color-bg-soft);
+}
+
+/* ==========================================================================
+   APPLE GLASS & CLEAN CONTROLS
+   ========================================================================== */
+
+.glass-header {
+  background: rgba(255, 255, 255, 0.82) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+.dark .glass-header {
+  background: rgba(28, 28, 30, 0.82) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+.sidebar-label, .tech-label {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  letter-spacing: -0.01em;
+}
+
+.brand-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+/* Touch & tap targets */
+button, input, select, textarea, a {
+  touch-action: manipulation;
+}
+
+.overflow-x-auto {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Table styling style Apple (clean borders, soft zebra, rounded container) */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+th {
+  padding: 11px 16px;
+  text-align: left;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-surface);
+  border-bottom: 1px solid var(--color-border-base);
+  letter-spacing: -0.01em;
+}
+
+th:first-child {
+  border-top-left-radius: var(--radius-control);
+}
+
+th:last-child {
+  border-top-right-radius: var(--radius-control);
+}
+
+td {
+  padding: 12px 16px;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--color-border-base);
+  transition: background-color 0.15s ease;
+}
+
+tr {
+  position: relative;
+  transition: background-color 0.15s ease;
+}
+
+tbody tr:hover td {
+  background-color: var(--color-bg-surface);
+}
+
+/* Input Focus Rings - Apple Style */
+input:focus, select:focus, textarea:focus {
+  border-color: var(--color-accent-primary) !important;
+  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.16) !important;
+  outline: none;
+}
+
+.dark input:focus, .dark select:focus, .dark textarea:focus {
+  border-color: var(--color-accent-primary) !important;
+  box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.25) !important;
+  outline: none;
+}
+
+/* Smooth Apple Button Compression */
+button {
+  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.15s ease, 
+              background-color 0.15s ease, 
+              border-color 0.15s ease,
+              opacity 0.15s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+/* Brand Icon Smooth Pill */
+.brand-icon-box:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-subtle) !important;
+}
+
+/* Apple Squircle Monogram */
+.comptoir-monogram {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+
+.comptoir-monogram:hover {
+  transform: scale(1.04);
+  box-shadow: 0 6px 16px -2px rgba(0, 113, 227, 0.3) !important;
+}
+
+/* Apple Card Hover */
+.card-hover-tactile {
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.2s ease;
+}
+
+.card-hover-tactile:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-floating);
+}
+
+div:has(> table), .table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.tabs-scrollable {
+  margin-bottom: 16px;
+}
+
+/* Modal responsiveness */
+.modal-container {
+  max-width: calc(100vw - 24px) !important;
+  max-height: calc(100vh - 24px) !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Animations */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin-animation {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.9); }
+}
+
+.pulse-animation {
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+/* Global responsive utility classes */
+@media (max-width: 640px) {
+  .table-responsive, div:has(> table) {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .form-responsive-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .tabs-scrollable {
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    max-width: 100% !important;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .stat-card-compact {
+    padding: 12px 14px !important;
+  }
+
+  .hide-on-mobile {
+    display: none !important;
+  }
+
+  .show-on-mobile {
+    display: inline-block !important;
+  }
+
+  .modal-actions-responsive {
+    flex-direction: column-reverse !important;
+    width: 100% !important;
+  }
+
+  .modal-actions-responsive button {
+    width: 100% !important;
+  }
+
+  [style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 
 html, body, #root {
   height: 100%;
@@ -193,39 +517,86 @@ th {
 }
 
 th:first-child {
-  border-top-left-radius: 4px;
+  border-top-left-radius: var(--radius-control);
 }
 
 th:last-child {
-  border-top-right-radius: 4px;
+  border-top-right-radius: var(--radius-control);
 }
 
 td {
   padding: 12px 14px;
   font-size: 13px;
   border-bottom: 1px solid var(--color-border-base);
+  transition: background-color 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 tr {
-  transition: background-color 0.12s ease;
+  position: relative;
+  transition: background-color 0.12s cubic-bezier(0.16, 1, 0.3, 1), transform 0.12s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-tr:hover td {
+/* Effet registre comptable asymétrique au survol des lignes */
+tbody tr:hover td {
   background-color: var(--color-bg-soft);
 }
 
+tbody tr:hover td:first-child {
+  box-shadow: inset 3px 0 0 var(--color-accent-orange);
+}
+
 input:focus, select:focus, textarea:focus {
-  border-color: var(--color-accent-primary) !important;
-  box-shadow: 0 0 0 2px rgba(166, 124, 82, 0.2) !important;
+  border-color: var(--color-accent-orange) !important;
+  box-shadow: 0 0 0 3px rgba(196, 120, 42, 0.18), inset 0 1px 2px rgba(29, 26, 22, 0.06) !important;
   outline: none;
 }
 
+/* Micro-interactions asymétriques pour les boutons */
+button {
+  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.14s cubic-bezier(0.16, 1, 0.3, 1), 
+              background-color 0.18s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 button:hover {
-  filter: brightness(1.02);
+  transform: translateY(-1px);
 }
 
 button:active {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.99);
+  transition-duration: 0.05s;
+}
+
+/* Hover tactile sur les icônes de marque */
+.brand-icon-box:hover {
+  transform: translateY(-1.5px) rotate(1deg);
+  border-color: var(--color-accent-orange) !important;
+  box-shadow: 0 3px 8px -1px rgba(196, 120, 42, 0.2) !important;
+}
+
+/* Monogramme Comptoir micro-interaction */
+.comptoir-monogram:hover {
+  transform: translateY(-1.5px) scale(1.02);
+  box-shadow: 0 4px 12px -2px rgba(196, 120, 42, 0.35) !important;
+}
+
+.comptoir-logo-lockup:hover .comptoir-monogram {
+  transform: translateY(-1px) rotate(-1deg);
+}
+
+/* Cartes interactives & hover physique */
+.card-hover-tactile {
+  transition: transform 0.14s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.16s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover-tactile:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-floating);
 }
 
 div:has(> table), .table-responsive {

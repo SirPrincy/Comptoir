@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, X, Package, ShoppingCart, Users, ArrowRight, CornerDownLeft, Factory } from 'lucide-react';
 import { THEME } from '../colors';
+import { RADIUS, SHADOWS } from '../ui';
 
 interface GlobalSearchBarProps {
   products?: any[];
@@ -123,14 +124,14 @@ export default function GlobalSearchBar({
         display: 'flex',
         alignItems: 'center',
         gap: 8,
-        background: THEME.bg.card,
-        border: `1px solid ${isOpen ? THEME.accent.primary : THEME.border.strong}`,
-        borderRadius: 6,
-        padding: '5px 12px',
-        boxShadow: isOpen ? `0 0 0 2px rgba(166, 124, 82, 0.2)` : '0 1px 2px rgba(0,0,0,0.03)',
-        transition: 'all 0.15s ease',
+        background: THEME.bg.surface,
+        border: `1px solid ${isOpen ? THEME.brand.blue : THEME.border.base}`,
+        borderRadius: RADIUS.pill,
+        padding: '6px 14px',
+        boxShadow: isOpen ? `0 0 0 3px rgba(0, 113, 227, 0.15)` : 'none',
+        transition: 'all 0.18s ease',
       }}>
-        <Search size={14} color={isOpen ? THEME.accent.primary : THEME.text.muted} style={{ flexShrink: 0 }} />
+        <Search size={14} color={isOpen ? THEME.brand.blue : THEME.text.muted} style={{ flexShrink: 0 }} />
 
         <input
           ref={inputRef}
@@ -142,17 +143,16 @@ export default function GlobalSearchBar({
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDownInput}
-          placeholder="SEARCH SYSTEM_ [CTRL+K]"
+          placeholder="Rechercher partout… (⌘K)"
           style={{
             border: 'none',
             background: 'transparent',
             outline: 'none',
             color: THEME.text.primary,
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 12,
+            fontFamily: 'inherit',
+            fontSize: 13,
             width: '100%',
-            fontWeight: 500,
-            letterSpacing: '0.04em',
+            fontWeight: 400,
           }}
         />
 
@@ -177,15 +177,16 @@ export default function GlobalSearchBar({
           </button>
         ) : (
           <kbd style={{
-            fontSize: 10,
-            fontFamily: 'system-ui, sans-serif',
+            fontSize: 11,
+            fontFamily: 'inherit',
             color: THEME.text.muted,
-            background: THEME.bg.chip,
-            border: `1px solid ${THEME.border.base}`,
-            borderRadius: 4,
-            padding: '1px 5px',
+            background: THEME.bg.card,
+            border: `1px solid ${THEME.border.strong}`,
+            borderRadius: RADIUS.micro,
+            padding: '1px 6px',
             pointerEvents: 'none',
             whiteSpace: 'nowrap',
+            fontWeight: 500,
           }}>
             ⌘K
           </kbd>
@@ -203,8 +204,8 @@ export default function GlobalSearchBar({
           maxWidth: '92vw',
           background: THEME.bg.card,
           border: `1px solid ${THEME.border.base}`,
-          borderRadius: 10,
-          boxShadow: '0 10px 30px rgba(0,0,0,0.18)',
+          borderRadius: RADIUS.container,
+          boxShadow: SHADOWS.modal,
           zIndex: 1000,
           overflow: 'hidden',
           display: 'flex',
@@ -224,14 +225,14 @@ export default function GlobalSearchBar({
               onClick={() => setActiveCategory('all')}
               style={{
                 padding: '4px 8px',
-                borderRadius: 5,
+                borderRadius: RADIUS.tag,
                 fontSize: 11,
                 fontWeight: 600,
                 border: 'none',
                 cursor: 'pointer',
                 background: activeCategory === 'all' ? THEME.bg.card : 'transparent',
                 color: activeCategory === 'all' ? THEME.text.primary : THEME.text.muted,
-                boxShadow: activeCategory === 'all' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                boxShadow: activeCategory === 'all' ? SHADOWS.subtle : 'none',
               }}
             >
               Tous ({results.total})
@@ -242,14 +243,14 @@ export default function GlobalSearchBar({
                 onClick={() => setActiveCategory('products')}
                 style={{
                   padding: '4px 8px',
-                  borderRadius: 5,
+                  borderRadius: RADIUS.tag,
                   fontSize: 11,
                   fontWeight: 600,
                   border: 'none',
                   cursor: 'pointer',
                   background: activeCategory === 'products' ? THEME.bg.card : 'transparent',
                   color: activeCategory === 'products' ? THEME.accent.orange : THEME.text.muted,
-                  boxShadow: activeCategory === 'products' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                  boxShadow: activeCategory === 'products' ? SHADOWS.subtle : 'none',
                 }}
               >
                 Produits ({results.products.length})
@@ -261,14 +262,14 @@ export default function GlobalSearchBar({
                 onClick={() => setActiveCategory('commandes')}
                 style={{
                   padding: '4px 8px',
-                  borderRadius: 5,
+                  borderRadius: RADIUS.tag,
                   fontSize: 11,
                   fontWeight: 600,
                   border: 'none',
                   cursor: 'pointer',
                   background: activeCategory === 'commandes' ? THEME.bg.card : 'transparent',
                   color: activeCategory === 'commandes' ? THEME.accent.primary : THEME.text.muted,
-                  boxShadow: activeCategory === 'commandes' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                  boxShadow: activeCategory === 'commandes' ? SHADOWS.subtle : 'none',
                 }}
               >
                 Commandes ({results.commandes.length})
@@ -280,14 +281,14 @@ export default function GlobalSearchBar({
                 onClick={() => setActiveCategory('partenaires')}
                 style={{
                   padding: '4px 8px',
-                  borderRadius: 5,
+                  borderRadius: RADIUS.tag,
                   fontSize: 11,
                   fontWeight: 600,
                   border: 'none',
                   cursor: 'pointer',
                   background: activeCategory === 'partenaires' ? THEME.bg.card : 'transparent',
                   color: activeCategory === 'partenaires' ? THEME.accent.green : THEME.text.muted,
-                  boxShadow: activeCategory === 'partenaires' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                  boxShadow: activeCategory === 'partenaires' ? SHADOWS.subtle : 'none',
                 }}
               >
                 Clients ({results.clients.length + results.fournisseurs.length})
@@ -318,7 +319,7 @@ export default function GlobalSearchBar({
                         onClick={() => handleSelect('stock', p.nom)}
                         style={{
                           padding: '8px 10px',
-                          borderRadius: 6,
+                          borderRadius: RADIUS.control,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
@@ -329,7 +330,7 @@ export default function GlobalSearchBar({
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                          <div style={{ width: 28, height: 28, borderRadius: 6, background: `${THEME.accent.orange}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: RADIUS.control, background: `${THEME.accent.orange}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <Package size={14} color={THEME.accent.orange} />
                           </div>
                           <div style={{ minWidth: 0 }}>
@@ -371,7 +372,7 @@ export default function GlobalSearchBar({
                         onClick={() => handleSelect('achat', c.productName || c.numeroTracking || c.fournisseurName)}
                         style={{
                           padding: '8px 10px',
-                          borderRadius: 6,
+                          borderRadius: RADIUS.control,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
@@ -382,7 +383,7 @@ export default function GlobalSearchBar({
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                          <div style={{ width: 28, height: 28, borderRadius: 6, background: `${THEME.accent.primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: RADIUS.control, background: `${THEME.accent.primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <ShoppingCart size={14} color={THEME.accent.primary} />
                           </div>
                           <div style={{ minWidth: 0 }}>
@@ -401,7 +402,7 @@ export default function GlobalSearchBar({
                             fontSize: 10.5,
                             fontWeight: 600,
                             padding: '2px 6px',
-                            borderRadius: 4,
+                            borderRadius: RADIUS.tag,
                             background: THEME.bg.chip,
                             color: THEME.text.secondary,
                             border: `1px solid ${THEME.border.base}`,
@@ -431,7 +432,7 @@ export default function GlobalSearchBar({
                         onClick={() => handleSelect('partenaires', cl.nom)}
                         style={{
                           padding: '8px 10px',
-                          borderRadius: 6,
+                          borderRadius: RADIUS.control,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
@@ -442,7 +443,7 @@ export default function GlobalSearchBar({
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                          <div style={{ width: 28, height: 28, borderRadius: 6, background: `${THEME.accent.green}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: RADIUS.control, background: `${THEME.accent.green}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <Users size={14} color={THEME.accent.green} />
                           </div>
                           <div style={{ minWidth: 0 }}>
@@ -467,7 +468,7 @@ export default function GlobalSearchBar({
                         onClick={() => handleSelect('partenaires', f.nom)}
                         style={{
                           padding: '8px 10px',
-                          borderRadius: 6,
+                          borderRadius: RADIUS.control,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
@@ -478,7 +479,7 @@ export default function GlobalSearchBar({
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                          <div style={{ width: 28, height: 28, borderRadius: 6, background: `${THEME.accent.purple}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: RADIUS.control, background: `${THEME.accent.purple}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <Factory size={14} color={THEME.accent.purple} />
                           </div>
                           <div style={{ minWidth: 0 }}>

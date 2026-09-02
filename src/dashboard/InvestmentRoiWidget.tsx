@@ -1,7 +1,8 @@
 import React, { memo } from 'react';
-import { PiggyBank, CheckCircle2, AlertCircle } from 'lucide-react';
+import { PiggyBank, CheckCircle2, AlertCircle, TrendingUp, ShieldCheck } from 'lucide-react';
 import { THEME } from '../colors';
-import { Card } from '../ui';
+import { FONTS } from '../fonts';
+import { Card, RADIUS, SHADOWS } from '../ui';
 
 interface InvestmentRoiWidgetProps {
   baseInvestissement: number;
@@ -22,103 +23,113 @@ const InvestmentRoiWidget = memo(function InvestmentRoiWidget({
   caTotal,
   resteARecuperer,
 }: InvestmentRoiWidgetProps) {
+  const isBreakEven = tauxRecuperation >= 100;
+
   return (
     <Card>
+      {/* En-tête Dense Pro */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: THEME.accent.green, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFF' }}>
-            <PiggyBank size={18} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 26, height: 26, borderRadius: RADIUS.control, background: `${THEME.brand.emerald}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <PiggyBank size={15} color={THEME.brand.emerald} />
           </div>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 15, color: THEME.text.primary }}>Analyse d'Investissement & Rentabilité (ROI)</div>
-            <div style={{ fontSize: 12, color: THEME.text.muted }}>Suivi précis du rendement sur capital et du seuil de rentabilité</div>
+            <div style={{ fontWeight: 700, fontSize: 13.5, color: THEME.text.primary, fontFamily: FONTS.display }}>Analyse d'Investissement & Rentabilité (ROI)</div>
+            <div style={{ fontSize: 11, color: THEME.text.muted }}>Rendement sur capital engagé & suivi temps réel du point mort</div>
           </div>
         </div>
-        <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: THEME.bg.soft, color: THEME.accent.green }}>
-          Temps Réel
-        </span>
-      </div>
-
-      {/* 4 Blocs d'analyse financière */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginTop: 10 }}>
-        <div style={{ background: THEME.bg.card, padding: '12px 14px', borderRadius: 8, border: '1px solid ' + THEME.border.base }}>
-          <div style={{ fontSize: 11.5, color: THEME.text.muted, fontWeight: 600 }}>Capital de Base</div>
-          <div style={{ fontWeight: 800, fontSize: 16, color: THEME.text.primary, marginTop: 3 }}>
-            {baseInvestissement.toLocaleString('fr-FR')} Ar
-          </div>
-          <div style={{ fontSize: 11, color: THEME.text.muted, marginTop: 3 }}>
-            {capitalInvesti > 0 ? 'Apports déclarés' : 'Dépenses stock + fret'}
-          </div>
-        </div>
-
-        <div style={{ background: THEME.bg.card, padding: '12px 14px', borderRadius: 8, border: '1px solid ' + THEME.border.base }}>
-          <div style={{ fontSize: 11.5, color: THEME.text.muted, fontWeight: 600 }}>Bénéfice Net Réalisé</div>
-          <div style={{ fontWeight: 800, fontSize: 16, color: beneficeNet >= 0 ? THEME.accent.green : THEME.accent.danger, marginTop: 3 }}>
-            {beneficeNet >= 0 ? '+' : ''}{beneficeNet.toLocaleString('fr-FR')} Ar
-          </div>
-          <div style={{ fontSize: 11, color: THEME.text.muted, marginTop: 3 }}>
-            Marge réelle − charges − pertes stock
-          </div>
-        </div>
-
-        <div style={{ background: THEME.bg.card, padding: '12px 14px', borderRadius: 8, border: '1px solid ' + THEME.border.base }}>
-          <div style={{ fontSize: 11.5, color: THEME.text.muted, fontWeight: 600 }}>Taux de Rendement (ROI)</div>
-          <div style={{ fontWeight: 800, fontSize: 18, color: tauxRoi >= 0 ? THEME.accent.green : THEME.accent.danger, marginTop: 2 }}>
-            {tauxRoi >= 0 ? '+' : ''}{tauxRoi.toFixed(1)} %
-          </div>
-          <div style={{ fontSize: 11, color: THEME.text.muted, marginTop: 3 }}>
-            Gains nets / Capital investi
-          </div>
-        </div>
-
-        <div style={{ background: THEME.bg.card, padding: '12px 14px', borderRadius: 8, border: '1px solid ' + THEME.border.base }}>
-          <div style={{ fontSize: 11.5, color: THEME.text.muted, fontWeight: 600 }}>Récupération du Capital</div>
-          <div style={{ fontWeight: 800, fontSize: 16, color: THEME.accent.primary, marginTop: 3 }}>
-            {tauxRecuperation.toFixed(0)} %
-          </div>
-          <div style={{ fontSize: 11, color: THEME.text.muted, marginTop: 3 }}>
-            CA encaissé vs mise de départ
-          </div>
-        </div>
-      </div>
-
-      {/* Barre de progression vers le Seuil de rentabilité */}
-      <div style={{ marginTop: 14, background: THEME.bg.card, padding: '12px 14px', borderRadius: 8, border: '1px solid ' + THEME.border.base }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 8, flexWrap: 'wrap', gap: 4 }}>
-          <span style={{ fontWeight: 700, color: THEME.text.primary }}>Progression vers le Seuil de Rentabilité (Point Mort)</span>
-          <span style={{ fontWeight: 800, color: THEME.accent.primary }}>
-            {caTotal.toLocaleString('fr-FR')} Ar / {baseInvestissement.toLocaleString('fr-FR')} Ar
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 10, fontFamily: FONTS.mono, fontWeight: 700, padding: '2px 8px', borderRadius: RADIUS.tag, background: isBreakEven ? `${THEME.brand.emerald}18` : `${THEME.brand.amber}18`, color: isBreakEven ? THEME.brand.emerald : THEME.brand.amber, border: `1px solid ${isBreakEven ? THEME.brand.emerald : THEME.brand.amber}40` }}>
+            {isBreakEven ? 'Point Mort Validé' : 'En Amortissement'}
           </span>
         </div>
+      </div>
 
-        <div style={{ width: '100%', height: 9, background: THEME.border.base, borderRadius: 10, overflow: 'hidden' }}>
-          <div
-            style={{
-              width: `${tauxRecuperation}%`,
-              height: '100%',
-              background: tauxRecuperation >= 100 ? THEME.accent.green : THEME.accent.orange,
-              borderRadius: 10,
-              transition: 'width 0.4s ease',
-            }}
-          />
+      {/* Cockpit Asymétrique : 65% métriques financières + 35% Seuil de rentabilité jauge */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)', gap: 12, alignItems: 'stretch' }}>
+        {/* Grille 2x2 Dense des 4 métriques capitales */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div style={{ background: THEME.bg.surface, padding: '9px 11px', borderRadius: RADIUS.item, border: `1px solid ${THEME.border.base}` }}>
+            <div style={{ fontSize: 10, color: THEME.text.muted, fontWeight: 700, textTransform: 'uppercase', fontFamily: FONTS.mono }}>Capital de Base</div>
+            <div style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 16, color: THEME.brand.terracotta, marginTop: 2 }}>
+              {baseInvestissement.toLocaleString('fr-FR')} <span style={{ fontSize: 11, fontFamily: FONTS.mono, fontWeight: 500 }}>Ar</span>
+            </div>
+            <div style={{ fontSize: 10, color: THEME.text.muted, marginTop: 2 }}>
+              {capitalInvesti > 0 ? 'Apports déclarés' : 'Dépenses stock + fret'}
+            </div>
+          </div>
+
+          <div style={{ background: THEME.bg.surface, padding: '9px 11px', borderRadius: RADIUS.item, border: `1px solid ${THEME.border.base}` }}>
+            <div style={{ fontSize: 10, color: THEME.text.muted, fontWeight: 700, textTransform: 'uppercase', fontFamily: FONTS.mono }}>Bénéfice Net</div>
+            <div style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 16, color: beneficeNet >= 0 ? THEME.brand.emerald : THEME.accent.danger, marginTop: 2 }}>
+              {beneficeNet >= 0 ? '+' : ''}{beneficeNet.toLocaleString('fr-FR')} <span style={{ fontSize: 11, fontFamily: FONTS.mono, fontWeight: 500 }}>Ar</span>
+            </div>
+            <div style={{ fontSize: 10, color: THEME.text.muted, marginTop: 2 }}>
+              Marge réelle − charges
+            </div>
+          </div>
+
+          <div style={{ background: THEME.bg.surface, padding: '9px 11px', borderRadius: RADIUS.item, border: `1px solid ${THEME.border.base}` }}>
+            <div style={{ fontSize: 10, color: THEME.text.muted, fontWeight: 700, textTransform: 'uppercase', fontFamily: FONTS.mono }}>Rendement (ROI)</div>
+            <div style={{ fontFamily: FONTS.mono, fontWeight: 800, fontSize: 16, color: tauxRoi >= 0 ? THEME.brand.emerald : THEME.accent.danger, marginTop: 2 }}>
+              {tauxRoi >= 0 ? '+' : ''}{tauxRoi.toFixed(1)} %
+            </div>
+            <div style={{ fontSize: 10, color: THEME.text.muted, marginTop: 2 }}>
+              Gains nets / Capital investi
+            </div>
+          </div>
+
+          <div style={{ background: THEME.bg.surface, padding: '9px 11px', borderRadius: RADIUS.item, border: `1px solid ${THEME.border.base}` }}>
+            <div style={{ fontSize: 10, color: THEME.text.muted, fontWeight: 700, textTransform: 'uppercase', fontFamily: FONTS.mono }}>Taux Recouvrement</div>
+            <div style={{ fontFamily: FONTS.mono, fontWeight: 800, fontSize: 16, color: THEME.brand.navy, marginTop: 2 }}>
+              {tauxRecuperation.toFixed(0)} %
+            </div>
+            <div style={{ fontSize: 10, color: THEME.text.muted, marginTop: 2 }}>
+              CA encaissé vs mise
+            </div>
+          </div>
         </div>
 
-        <div style={{ fontSize: 11.5, color: THEME.text.secondary, marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-          {tauxRecuperation >= 100 ? (
-            <>
-              <CheckCircle2 size={15} style={{ color: THEME.accent.green }} />
-              <span style={{ fontWeight: 600, color: THEME.accent.green }}>
-                Point mort atteint ! Votre mise initiale est amortie et chaque vente génère du pur profit net.
+        {/* Console Jauge Point Mort */}
+        <div style={{ background: THEME.bg.surface, padding: '10px 12px', borderRadius: RADIUS.item, border: `1px solid ${THEME.border.base}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11, marginBottom: 6 }}>
+              <span style={{ fontWeight: 700, color: THEME.text.primary, fontFamily: FONTS.display }}>Point Mort</span>
+              <span style={{ fontFamily: FONTS.mono, fontWeight: 700, color: THEME.brand.navy, fontSize: 10.5 }}>
+                {caTotal.toLocaleString('fr-FR')} / {baseInvestissement.toLocaleString('fr-FR')} Ar
               </span>
-            </>
-          ) : (
-            <>
-              <AlertCircle size={15} style={{ color: THEME.accent.orange }} />
-              <span>
-                Il reste <strong style={{ color: THEME.text.primary }}>{resteARecuperer.toLocaleString('fr-FR')} Ar</strong> de chiffre d'affaires à encaisser pour atteindre le seuil de rentabilité.
-              </span>
-            </>
-          )}
+            </div>
+
+            <div style={{ width: '100%', height: 7, background: THEME.border.base, borderRadius: RADIUS.pill, overflow: 'hidden' }}>
+              <div
+                style={{
+                  width: `${Math.min(100, Math.max(0, tauxRecuperation))}%`,
+                  height: '100%',
+                  background: isBreakEven ? THEME.brand.emerald : THEME.brand.amber,
+                  borderRadius: RADIUS.pill,
+                  transition: 'width 0.4s ease',
+                }}
+              />
+            </div>
+          </div>
+
+          <div style={{ fontSize: 10.5, color: THEME.text.secondary, marginTop: 8, display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+            {isBreakEven ? (
+              <>
+                <CheckCircle2 size={14} style={{ color: THEME.brand.emerald, flexShrink: 0, marginTop: 1 }} />
+                <span style={{ color: THEME.brand.emerald, fontWeight: 600, lineHeight: 1.35 }}>
+                  Point mort atteint ! Votre mise initiale est amortie et chaque vente génère du bénéfice pur.
+                </span>
+              </>
+            ) : (
+              <>
+                <AlertCircle size={14} style={{ color: THEME.brand.amber, flexShrink: 0, marginTop: 1 }} />
+                <span style={{ lineHeight: 1.35 }}>
+                  Reste <strong style={{ color: THEME.text.primary, fontFamily: FONTS.mono }}>{resteARecuperer.toLocaleString('fr-FR')} Ar</strong> de CA pour atteindre le seuil de rentabilité.
+                </span>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </Card>
@@ -126,3 +137,4 @@ const InvestmentRoiWidget = memo(function InvestmentRoiWidget({
 });
 
 export default InvestmentRoiWidget;
+

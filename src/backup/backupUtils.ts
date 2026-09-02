@@ -73,6 +73,7 @@ export function migrateDataSchema(rawData: any): any {
       emprunts: [],
       frais: [],
       chargesFixes: [],
+      paiements: [],
       comptes: ['Caisse / Espèces', 'MVola', 'Orange Money', 'BMOI Banque'],
       devises: { rmb: 680, usd: 4600 },
     };
@@ -92,17 +93,28 @@ export function migrateDataSchema(rawData: any): any {
     emprunts: Array.isArray(rawData.emprunts) ? rawData.emprunts : [],
     frais: Array.isArray(rawData.frais) ? rawData.frais : (Array.isArray(rawData.notesDeFrais) ? rawData.notesDeFrais : []),
     chargesFixes: Array.isArray(rawData.chargesFixes) ? rawData.chargesFixes : [],
+    paiements: Array.isArray(rawData.paiements) ? rawData.paiements : [],
     comptes: Array.isArray(rawData.comptes) && rawData.comptes.length > 0 ? rawData.comptes : ['Caisse / Espèces', 'MVola', 'Orange Money', 'BMOI Banque'],
     devises: rawData.devises && typeof rawData.devises === 'object' ? rawData.devises : { rmb: 680, usd: 4600 },
   };
 
-  // Normalisation douce des champs numériques pour éviter les NaN
-  migrated.products = migrated.products.map((p: any) => ({
-    ...p,
-    prixAchat: Number(p.prixAchat) || 0,
-    prixVente: Number(p.prixVente) || 0,
-    stock: Number(p.stock) || 0,
-  }));
+  // Normalisation douce des champs numériques et conservation rigoureuse des images
+  migrated.products = migrated.products.map((p: any) => {
+    let images: string[] = [];
+    if (Array.isArray(p.images) && p.images.length > 0) {
+      images = p.images.filter((img: any) => typeof img === 'string' && img.trim().length > 0);
+    } else if (typeof p.image === 'string' && p.image.trim().length > 0) {
+      images = [p.image.trim()];
+    }
+
+    return {
+      ...p,
+      images,
+      prixAchat: Number(p.prixAchat) || 0,
+      prixVente: Number(p.prixVente) || 0,
+      stock: Number(p.stock) || 0,
+    };
+  });
 
   migrated.ventes = migrated.ventes.map((v: any) => ({
     ...v,
@@ -121,6 +133,8 @@ export function migrateDataSchema(rawData: any): any {
 export interface DataHealthReport {
   score: number; // 0 à 100
   totalRecords: number;
+  totalImages: number;
+  totalImagesSizeEstimate: string;
   anomalies: string[];
   warnings: string[];
 }
@@ -139,7 +153,28 @@ export function analyzeDataHealth(data: any): DataHealthReport {
     (data?.commandes?.length || 0) +
     (data?.fournisseurs?.length || 0) +
     (data?.clients?.length || 0) +
-    (data?.mouvements?.length || 0);
+    (data?.mouvements?.length || 0) +
+    (data?.paiements?.length || 0);
+
+  // Statistiques sur les images
+  let totalImages = 0;
+  let totalImagesBytes = 0;
+  products.forEach((p: any) => {
+    const pImages = Array.isArray(p.images) ? p.images : (p.image ? [p.image] : []);
+    pImages.forEach((img: string) => {
+      if (typeof img === 'string' && img.length > 0) {
+        totalImages++;
+        totalImagesBytes += img.length;
+      }
+    });
+  });
+
+  const totalImagesSizeEstimate =
+    totalImagesBytes < 1024
+      ? `${totalImagesBytes} B`
+      : totalImagesBytes < 1024 * 1024
+      ? `${(totalImagesBytes / 1024).toFixed(1)} KB`
+      : `${(totalImagesBytes / (1024 * 1024)).toFixed(2)} MB`;
 
   // Vérification 1 : Prix ou montants NaN / invalides
   let nanCount = 0;
@@ -176,7 +211,7 @@ export function analyzeDataHealth(data: any): DataHealthReport {
   score -= warnings.length * 5;
   if (score < 0) score = 0;
 
-  return { score, totalRecords, anomalies, warnings };
+  return { score, totalRecords, totalImages, totalImagesSizeEstimate, anomalies, warnings };
 }
 
 /**

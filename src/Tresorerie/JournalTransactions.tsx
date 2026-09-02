@@ -47,6 +47,9 @@ export function getCategoryBadge(cat: string, tag?: string, isInvest = false) {
   if (isInvest || cat === 'investissement' || tag === '#investissement' || tag === '#capital') {
     return { label: '👤 Apport / Capital', bg: '#FEF3EB', color: '#E8985E' };
   }
+  if (tag === '#frais-bancaires' || cat === 'frais' || tag === '#frais-transaction') {
+    return { label: '💳 Frais Transaction', bg: '#FEE2E2', color: '#991B1B' };
+  }
   switch (cat) {
     case 'vente':
       return { label: '🛒 Vente Business', bg: '#EBF4EC', color: '#3F7A5C' };

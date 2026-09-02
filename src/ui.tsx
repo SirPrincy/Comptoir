@@ -1,15 +1,44 @@
 import React from 'react';
 import { THEME } from './colors';
 import { FONTS, TYPOGRAPHY } from './fonts';
+import { ComptoirMonogram, ComptoirLogo, ComptoirSceau, BrandIcon } from './components/ComptoirLogo';
+
+export { ComptoirMonogram, ComptoirLogo, ComptoirSceau, BrandIcon };
+
+/**
+ * Système d'élévation et de rayons continus style Apple (Human Interface Guidelines)
+ */
+export const RADIUS = {
+  micro: 6,       // micro-indicateurs, pastilles de statut
+  tag: 8,         // étiquettes techniques, badges de comptabilité
+  control: 10,    // boutons, champs de saisie, sélecteurs, onglets
+  item: 12,       // lignes de listes isolées, sous-blocs imbriqués
+  card: 16,       // panneaux de contenu, cartes statistiques, graphiques
+  container: 18,  // barres de filtres principales, récapitulatifs
+  modal: 22,      // fenêtres modales, dialogues centrés
+  drawer: 24,     // tiroir de navigation latérale
+  pill: 9999,     // badges arrondis, pastilles complètes
+};
+
+export const SHADOWS = {
+  none: 'none',
+  inset: 'inset 0 1px 2px rgba(0, 0, 0, 0.04)',
+  subtle: '0 1px 3px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02)',
+  card: '0 2px 12px -2px rgba(0, 0, 0, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.02)',
+  raised: '0 4px 16px -2px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)',
+  floating: '0 12px 32px -4px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04)',
+  modal: '0 24px 64px -12px rgba(0, 0, 0, 0.18), 0 8px 24px -4px rgba(0, 0, 0, 0.08)',
+  drawer: '12px 0 40px -4px rgba(0, 0, 0, 0.12)',
+};
 
 export const Card = ({ children, style }: any) => (
   <div style={{
     background: THEME.bg.card,
     border: `1px solid ${THEME.border.base}`,
-    borderRadius: 8,
+    borderRadius: RADIUS.card,
     padding: '20px 22px',
     boxSizing: 'border-box',
-    boxShadow: '0 2px 8px -2px rgba(29, 26, 22, 0.04)',
+    boxShadow: SHADOWS.card,
     transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
     ...style
   }}>{children}</div>
@@ -17,20 +46,19 @@ export const Card = ({ children, style }: any) => (
 
 export const cardTitle = {
   ...TYPOGRAPHY.cardTitle,
-  color: THEME.text.muted,
+  color: THEME.text.secondary,
   marginBottom: 14,
-  letterSpacing: '0.14em'
+  letterSpacing: '-0.01em'
 };
 
 export const Label = ({ children }: any) => (
   <div style={{
-    fontFamily: FONTS.mono,
-    fontSize: 11,
-    textTransform: 'uppercase',
-    letterSpacing: '0.1em',
+    fontFamily: FONTS.body,
+    fontSize: 12,
+    letterSpacing: '-0.01em',
     color: THEME.text.secondary,
     marginBottom: 6,
-    fontWeight: 600
+    fontWeight: 500
   }}>
     {children}
   </div>
@@ -43,27 +71,33 @@ export const Field = ({ label, children, style }: any) => (
   </div>
 );
 
-export const Empty = ({ text, title = "Journal vide", action, actionLabel }: any) => (
+export const Empty = ({ text, title = "Aucun élément", action, actionLabel }: any) => (
   <div style={{
-    padding: '40px 24px',
+    padding: '44px 24px',
     textAlign: 'center',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    background: THEME.bg.soft,
-    borderRadius: 8,
-    border: `2px dashed ${THEME.border.strong}`
+    background: THEME.bg.card,
+    borderRadius: RADIUS.card,
+    border: `1px solid ${THEME.border.base}`,
+    boxShadow: SHADOWS.subtle,
+    position: 'relative',
+    overflow: 'hidden',
   }}>
-    <div style={{ fontFamily: FONTS.display, fontSize: 20, textTransform: 'uppercase', letterSpacing: '0.04em', color: THEME.text.primary }}>
+    <div style={{ width: 48, height: 48, borderRadius: RADIUS.pill, background: THEME.bg.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
+      <ComptoirMonogram size={26} variant="outline" />
+    </div>
+    <div style={{ fontFamily: FONTS.display, fontSize: 17, fontWeight: 600, letterSpacing: '-0.02em', color: THEME.text.primary, position: 'relative', zIndex: 1 }}>
       {title}
     </div>
-    <p style={{ fontSize: 13, color: THEME.text.muted, margin: 0, maxWidth: 420 }}>
+    <p style={{ fontSize: 13, color: THEME.text.muted, margin: 0, maxWidth: 420, lineHeight: 1.5, position: 'relative', zIndex: 1 }}>
       {text}
     </p>
     {action && actionLabel && (
-      <button onClick={action} style={{ ...primaryBtn, marginTop: 6 }}>
+      <button onClick={action} style={{ ...primaryBtn, marginTop: 8, position: 'relative', zIndex: 1 }}>
         {actionLabel}
       </button>
     )}
@@ -76,50 +110,64 @@ export const Stat = ({ label, value, subvalue, icon: Icon, accent = THEME.accent
     <div style={{
       background: THEME.bg.card,
       border: `1px solid ${THEME.border.base}`,
-      borderTop: `3px solid ${finalAccent}`,
-      borderRadius: 8,
-      padding: '16px 18px',
+      borderRadius: RADIUS.card,
+      padding: '18px 20px',
       minWidth: 0,
       boxSizing: 'border-box',
-      boxShadow: '0 2px 6px -1px rgba(29, 26, 22, 0.04)',
+      boxShadow: SHADOWS.card,
+      transition: 'box-shadow 0.2s ease, transform 0.15s ease',
     }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'space-between',
         gap: 8,
-        fontFamily: FONTS.mono,
-        fontSize: 10.5,
-        textTransform: 'uppercase',
-        letterSpacing: '0.14em',
-        color: THEME.text.muted,
-        fontWeight: 600,
-        marginBottom: 8,
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis'
+        marginBottom: 10,
       }}>
-        {Icon && <Icon size={13} color={finalAccent} style={{ flexShrink: 0 }} />}
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+        <span style={{
+          fontFamily: FONTS.body,
+          fontSize: 12,
+          fontWeight: 500,
+          color: THEME.text.secondary,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap'
+        }}>{label}</span>
+        {Icon && (
+          <div style={{
+            width: 26,
+            height: 26,
+            borderRadius: RADIUS.micro,
+            background: `${finalAccent}14`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: finalAccent,
+            flexShrink: 0
+          }}>
+            <Icon size={14} strokeWidth={2.2} />
+          </div>
+        )}
       </div>
       <div style={{
         fontFamily: FONTS.display,
         color: THEME.text.primary,
-        fontSize: 'clamp(20px, 4vw, 26px)',
-        fontWeight: 500,
-        letterSpacing: '0.01em',
-        lineHeight: 1.1,
+        fontSize: 'clamp(22px, 3vw, 26px)',
+        fontWeight: 700,
+        letterSpacing: '-0.025em',
+        lineHeight: 1.15,
         wordBreak: 'break-word'
       }}>
         {value}
       </div>
       {subvalue && (
         <div style={{
-          fontFamily: FONTS.mono,
-          fontSize: 11,
+          fontFamily: FONTS.body,
+          fontSize: 12,
           color: THEME.text.muted,
-          marginTop: 5,
+          marginTop: 6,
           fontWeight: 500,
-          letterSpacing: '0.04em'
+          letterSpacing: '-0.01em'
         }}>
           {subvalue}
         </div>
@@ -129,8 +177,8 @@ export const Stat = ({ label, value, subvalue, icon: Icon, accent = THEME.accent
 };
 
 export const SectionHeader = ({ title, action, actionLabel }: any) => (
-  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '12px 0 16px', gap: 12, flexWrap: 'wrap' }}>
-    <div style={{ ...TYPOGRAPHY.sectionTitle, color: THEME.text.primary }}>{title}</div>
+  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '14px 0 18px', gap: 12, flexWrap: 'wrap' }}>
+    <div style={{ ...TYPOGRAPHY.sectionTitle, color: THEME.text.primary, fontSize: 19 }}>{title}</div>
     {actionLabel && <button onClick={action} style={ghostBtn as any}>{actionLabel}</button>}
   </div>
 );
@@ -142,24 +190,25 @@ export const Modal = ({ title, onClose, children }: any) => (
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'rgba(29, 26, 22, 0.65)',
+    background: 'rgba(0, 0, 0, 0.4)',
     zIndex: 100,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     padding: '16px',
-    backdropFilter: 'blur(4px)'
+    backdropFilter: 'blur(20px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(20px) saturate(180%)',
   }}>
     <div className="modal-container" style={{
       background: THEME.bg.card,
-      borderRadius: 10,
+      borderRadius: RADIUS.modal,
       padding: '24px 28px',
       width: '100%',
-      maxWidth: 560,
+      maxWidth: 580,
       maxHeight: '90vh',
       display: 'flex',
       flexDirection: 'column',
-      boxShadow: '0 20px 50px -10px rgba(0,0,0,0.3)',
+      boxShadow: SHADOWS.modal,
       border: `1px solid ${THEME.border.strong}`,
       boxSizing: 'border-box',
     }}>
@@ -168,31 +217,35 @@ export const Modal = ({ title, onClose, children }: any) => (
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 18,
-        paddingBottom: 12,
+        paddingBottom: 14,
         borderBottom: `1px solid ${THEME.border.base}`
       }}>
         <div style={{
           fontFamily: FONTS.display,
           color: THEME.text.primary,
-          fontSize: 20,
-          fontWeight: 600,
-          textTransform: 'uppercase',
-          letterSpacing: '0.04em'
+          fontSize: 18,
+          fontWeight: 700,
+          letterSpacing: '-0.02em'
         }}>
           {title}
         </div>
         <button
           onClick={onClose}
           style={{
-            background: 'transparent',
+            background: THEME.bg.surface,
             border: 'none',
             cursor: 'pointer',
-            fontFamily: FONTS.mono,
-            fontSize: 20,
-            color: THEME.text.muted,
+            width: 28,
+            height: 28,
+            borderRadius: RADIUS.pill,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontFamily: FONTS.body,
+            fontSize: 16,
+            color: THEME.text.secondary,
             lineHeight: 1,
-            padding: '0 6px',
-            borderRadius: 4
+            transition: 'background-color 0.15s ease'
           }}
           title="Fermer"
         >
@@ -208,39 +261,82 @@ export const Modal = ({ title, onClose, children }: any) => (
 
 export const inputStyle = {
   width: '100%',
-  height: 40,
+  height: 38,
   padding: '0 14px',
-  borderRadius: 6,
+  borderRadius: RADIUS.control,
   border: `1px solid ${THEME.border.strong}`,
   fontSize: 13.5,
+  fontFamily: FONTS.body,
   background: THEME.bg.card,
+  color: THEME.text.primary,
   boxSizing: 'border-box' as const,
   outline: 'none',
+  boxShadow: SHADOWS.inset,
   transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
 };
 
-export const selectStyle = { ...inputStyle, cursor: 'pointer' };
+export const selectStyle = {
+  ...inputStyle,
+  cursor: 'pointer',
+  boxShadow: SHADOWS.subtle
+};
+
+export const brandBtn = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 7,
+  background: THEME.brand.blue,
+  color: '#FFFFFF',
+  border: '1px solid transparent',
+  borderRadius: RADIUS.control,
+  padding: '0 18px',
+  fontFamily: FONTS.body,
+  fontWeight: 600,
+  fontSize: 13,
+  letterSpacing: '-0.01em',
+  cursor: 'pointer',
+  height: 38,
+  whiteSpace: 'nowrap' as const,
+  boxShadow: '0 1px 3px rgba(0, 113, 227, 0.25)',
+};
+
+export const terracottaBtn = {
+  ...brandBtn,
+  background: THEME.brand.amber,
+  boxShadow: '0 1px 3px rgba(255, 149, 0, 0.25)',
+};
+
+export const emeraldBtn = {
+  ...brandBtn,
+  background: THEME.brand.emerald,
+  boxShadow: '0 1px 3px rgba(52, 199, 89, 0.25)',
+};
+
+export const navyBtn = {
+  ...brandBtn,
+  background: THEME.brand.navy,
+  boxShadow: '0 1px 3px rgba(30, 58, 95, 0.25)',
+};
 
 export const primaryBtn = {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: 8,
+  gap: 7,
   background: THEME.text.primary,
-  color: THEME.bg.base,
+  color: THEME.bg.card,
   border: '1px solid transparent',
-  borderRadius: 6,
-  padding: '0 20px',
-  fontFamily: FONTS.mono,
+  borderRadius: RADIUS.control,
+  padding: '0 18px',
+  fontFamily: FONTS.body,
   fontWeight: 600,
-  fontSize: 12,
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.08em',
+  fontSize: 13,
+  letterSpacing: '-0.01em',
   cursor: 'pointer',
-  height: 40,
+  height: 38,
   whiteSpace: 'nowrap' as const,
-  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.12)',
-  transition: 'transform 0.15s ease, opacity 0.15s ease, background-color 0.15s ease',
+  boxShadow: SHADOWS.subtle,
 };
 
 export const ghostBtn = {
@@ -248,57 +344,58 @@ export const ghostBtn = {
   alignItems: 'center',
   justifyContent: 'center',
   gap: 6,
-  background: THEME.bg.card,
-  border: `1px solid ${THEME.border.strong}`,
-  borderRadius: 6,
-  padding: '8px 16px',
-  fontFamily: FONTS.mono,
-  fontSize: 11.5,
-  fontWeight: 600,
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.06em',
+  background: THEME.bg.surface,
+  border: `1px solid ${THEME.border.base}`,
+  borderRadius: RADIUS.control,
+  padding: '0 14px',
+  fontFamily: FONTS.body,
+  fontSize: 13,
+  fontWeight: 500,
+  letterSpacing: '-0.01em',
   color: THEME.text.primary,
   cursor: 'pointer',
   whiteSpace: 'nowrap' as const,
-  height: 38,
-  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)',
-  transition: 'background-color 0.15s ease, border-color 0.15s ease',
+  height: 36,
+  boxShadow: 'none',
 };
 
 export const iconBtn = {
   background: 'transparent',
-  border: 'none',
+  border: `1px solid transparent`,
   color: THEME.accent.danger,
   cursor: 'pointer',
   padding: 8,
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  borderRadius: 4,
+  borderRadius: RADIUS.control,
 };
 
 export const rowCard = {
   display: 'flex',
-  justify: 'space-between',
+  justifyContent: 'space-between',
   alignItems: 'center',
   background: THEME.bg.card,
   border: `1px solid ${THEME.border.base}`,
-  borderRadius: 6,
+  borderRadius: RADIUS.item,
   padding: '14px 18px',
   gap: 12,
   flexWrap: 'wrap' as const,
   boxSizing: 'border-box' as const,
-  boxShadow: '0 1px 4px rgba(29, 26, 22, 0.02)',
+  boxShadow: SHADOWS.subtle,
+  transition: 'border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease',
 };
 
 export const tooltipStyle = {
   background: THEME.text.primary,
   border: 'none',
-  borderRadius: 4,
-  fontFamily: FONTS.mono,
-  fontSize: 11,
-  color: THEME.text.light
+  borderRadius: RADIUS.tag,
+  fontFamily: FONTS.body,
+  fontSize: 12,
+  color: THEME.text.light,
+  boxShadow: SHADOWS.floating,
 };
+
 
 
 

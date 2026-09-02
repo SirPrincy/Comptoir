@@ -109,11 +109,15 @@ export function buildToutesTransactions({
 }) {
   const items: any[] = [];
 
-  // 1. Ventes (comptoir ou directes) sans mouvement de paiement explicite
+  // 1. Ventes (comptoir ou directes) sans mouvement ou paiement explicite
   ventes.forEach((v: any) => {
+    const vIdStr = String(v.id);
     const hasMvtPaiement =
-      mouvements.some((m: any) => m.venteId === v.id) ||
-      (paiements && paiements.some((p: any) => p.nature === 'vente' && p.lignes?.some((l: any) => l.cibleId === v.id)));
+      mouvements.some((m: any) =>
+        String(m.venteId) === vIdStr ||
+        (m.paiementId && paiements?.some((p: any) => String(p.id) === String(m.paiementId) && p.lignes?.some((l: any) => String(l.cibleId) === vIdStr)))
+      ) ||
+      (paiements && paiements.some((p: any) => p.lignes?.some((l: any) => String(l.cibleId) === vIdStr)));
 
     if (hasMvtPaiement) {
       return;
@@ -139,12 +143,17 @@ export function buildToutesTransactions({
     }
   });
 
-  // 2. Commandes (Achats & Fret) sans mouvement de paiement explicite
+  // 2. Commandes (Achats & Fret) sans mouvement ou paiement explicite
   commandes.forEach((c: any) => {
+    const cIdStr = String(c.id);
+
     // Achats Marchandise
     const hasMvtAchat =
-      mouvements.some((m: any) => m.commandeId === c.id && (m.categorie === 'achat' || m.tag === '#stock-chine')) ||
-      (paiements && paiements.some((p: any) => p.nature === 'marchandise' && p.lignes?.some((l: any) => l.cibleId === c.id)));
+      mouvements.some((m: any) =>
+        (m.commandeId && String(m.commandeId) === cIdStr && (m.categorie === 'achat' || m.tag === '#stock-chine' || !m.categorie)) ||
+        (m.paiementId && paiements?.some((p: any) => String(p.id) === String(m.paiementId) && p.lignes?.some((l: any) => String(l.cibleId) === cIdStr)))
+      ) ||
+      (paiements && paiements.some((p: any) => p.lignes?.some((l: any) => String(l.cibleId) === cIdStr)));
 
     if (!hasMvtAchat) {
       const payeMarchandise = getMontantPayeMarchandise(c, paiements);
@@ -172,8 +181,11 @@ export function buildToutesTransactions({
 
     // Fret Logistique
     const hasMvtFret =
-      mouvements.some((m: any) => m.commandeId === c.id && (m.categorie === 'fret' || m.tag === '#fret-logistique')) ||
-      (paiements && paiements.some((p: any) => p.nature === 'fret' && p.lignes?.some((l: any) => l.cibleId === c.id)));
+      mouvements.some((m: any) =>
+        (m.commandeId && String(m.commandeId) === cIdStr && (m.categorie === 'fret' || m.tag === '#fret-logistique')) ||
+        (m.paiementId && paiements?.some((p: any) => String(p.id) === String(m.paiementId) && p.lignes?.some((l: any) => String(l.cibleId) === cIdStr && l.cibleType === 'fret')))
+      ) ||
+      (paiements && paiements.some((p: any) => p.lignes?.some((l: any) => String(l.cibleId) === cIdStr && l.cibleType === 'fret')));
 
     if (!hasMvtFret) {
       const payeFret = getMontantPayeFret(c, paiements);
@@ -209,7 +221,7 @@ export function buildToutesTransactions({
     const defaultCat = isTrans ? 'transfert' : (isInvest ? 'investissement' : 'manuel');
 
     const pObj = paiements && paiements.find((p: any) =>
-      p.id === m.paiementId ||
+      (m.paiementId && String(p.id) === String(m.paiementId)) ||
       (p.date === m.date && p.montantTotal === m.montant && p.compte === m.compte)
     );
 
@@ -236,7 +248,7 @@ export function buildToutesTransactions({
   // 4. Règlements de factures / encaissements directs dans `paiements` (sans doublon de mouvement)
   (paiements || []).forEach((p: any) => {
     const dejaDansMouvements = mouvements.some((m: any) =>
-      m.paiementId === p.id ||
+      (m.paiementId && String(m.paiementId) === String(p.id)) ||
       (m.date === p.date && Number(m.montant) === Number(p.montantTotal) && m.compte === p.compte)
     );
 

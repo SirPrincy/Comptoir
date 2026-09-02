@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Download, Upload, Database, RotateCcw, AlertTriangle, Check, FileJson, Activity, ShieldCheck, Wrench, Clock } from 'lucide-react';
+import { Download, Upload, Database, RotateCcw, AlertTriangle, Check, FileJson, Activity, ShieldCheck, Wrench, Clock, Image as ImageIcon } from 'lucide-react';
 import { Modal, primaryBtn, ghostBtn } from '../ui';
 import {
   CURRENT_SCHEMA_VERSION,
@@ -197,18 +197,28 @@ export default function BackupModal({ open, onClose, data, onRestore }: BackupMo
         )}
 
         {/* Récapitulatif du contenu actuel */}
-        <div style={{ background: '#FAF7F2', padding: 12, borderRadius: 8, border: '1px solid #EAE2D4' }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: '#3D5A6C', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Database size={15} />
-            <span>État des enregistrements : ({healthReport.totalRecords} au total)</span>
+        <div style={{ background: '#FAF7F2', padding: 14, borderRadius: 8, border: '1px solid #EAE2D4' }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: '#3D5A6C', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Database size={15} />
+              <span>État des enregistrements : ({healthReport.totalRecords} au total)</span>
+            </div>
+            {healthReport.totalImages > 0 && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(45, 106, 79, 0.1)', color: '#2D6A4F', fontSize: 11.5, fontWeight: 600, padding: '2px 8px', borderRadius: 12, border: '1px solid rgba(45, 106, 79, 0.25)' }}>
+                <ImageIcon size={13} />
+                <span>{healthReport.totalImages} photo{healthReport.totalImages > 1 ? 's' : ''} embarquée{healthReport.totalImages > 1 ? 's' : ''} ({healthReport.totalImagesSizeEstimate})</span>
+              </span>
+            )}
           </div>
           <div style={{ fontSize: 12, color: '#5E584E', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 4 }}>
             <div>• Produits : <strong>{data.products?.length || 0}</strong></div>
+            <div>• Photos Articles : <strong>{healthReport.totalImages}</strong> <span style={{ color: '#2D6A4F', fontSize: 11 }}>({healthReport.totalImagesSizeEstimate})</span></div>
             <div>• Achats / Commandes : <strong>{data.commandes?.length || 0}</strong></div>
             <div>• Ventes enregistrées : <strong>{data.ventes?.length || 0}</strong></div>
             <div>• Fournisseurs & Transitaires : <strong>{data.fournisseurs?.length || 0}</strong></div>
             <div>• Clients : <strong>{data.clients?.length || 0}</strong></div>
             <div>• Mouvements Trésorerie : <strong>{data.mouvements?.length || 0}</strong></div>
+            <div>• Règlements & Paiements : <strong>{data.paiements?.length || 0}</strong></div>
             <div>• Opérations de Change : <strong>{data.changes?.length || 0}</strong></div>
             <div>• Immobilisations : <strong>{data.immobilisations?.length || 0}</strong></div>
             <div>• Emprunts : <strong>{data.emprunts?.length || 0}</strong></div>
@@ -219,17 +229,17 @@ export default function BackupModal({ open, onClose, data, onRestore }: BackupMo
         <div style={{ background: '#FFFFFF', padding: 14, borderRadius: 8, border: '1px solid #EAE2D4', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ fontWeight: 700, fontSize: 13.5, color: '#26333D', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Download size={16} color="#3F7A5C" />
-            <span>1. Télécharger une sauvegarde (Export JSON v{CURRENT_SCHEMA_VERSION})</span>
+            <span>1. Télécharger une sauvegarde complète avec photos (Export JSON v{CURRENT_SCHEMA_VERSION})</span>
           </div>
-          <div style={{ fontSize: 12, color: '#8A8375' }}>
-            Génère un fichier `.json` structuré et migré, contenant l'intégralité de vos données d'entreprise.
+          <div style={{ fontSize: 12, color: '#6A6355', lineHeight: 1.4 }}>
+            Génère un fichier `.json` structuré et autonome, contenant <strong>l'intégralité de vos données d'entreprise et toutes les photos d'articles</strong> (encodées en base64 haute fidélité).
           </div>
           <button
             onClick={handleExportJSON}
             style={{ ...primaryBtn, height: 38, marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 6, alignSelf: 'flex-start' }}
           >
             <FileJson size={15} />
-            <span>Télécharger ma sauvegarde (.json)</span>
+            <span>Télécharger ma sauvegarde avec photos (.json)</span>
           </button>
         </div>
 
@@ -237,10 +247,10 @@ export default function BackupModal({ open, onClose, data, onRestore }: BackupMo
         <div style={{ background: '#FFFFFF', padding: 14, borderRadius: 8, border: '1px solid #EAE2D4', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ fontWeight: 700, fontSize: 13.5, color: '#26333D', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Upload size={16} color="#3D5A6C" />
-            <span>2. Restaurer depuis un fichier (Import JSON avec Migration Auto)</span>
+            <span>2. Restaurer depuis un fichier (Import JSON avec Photos & Migration Auto)</span>
           </div>
-          <div style={{ fontSize: 12, color: '#8A8375' }}>
-            Sélectionnez un fichier `.json` (ancien ou récent). Les données seront adaptées et migrées automatiquement.
+          <div style={{ fontSize: 12, color: '#6A6355', lineHeight: 1.4 }}>
+            Sélectionnez un fichier `.json` (ancien ou récent). Vos catalogues, finances, clients et <strong>toutes vos photos d'articles</strong> seront restaurés et adaptés instantanément.
           </div>
 
           <input

@@ -102,7 +102,7 @@ export default function ModalPaiementFacture({
           <span>Règlement / Encaissement de Factures (Multi-Paiement)</span>
         </div>
         <div style={{ fontSize: 12, color: '#8A8375', marginBottom: 14 }}>
-          Cochez une ou plusieurs factures. Le montant global s'auto-calcule et sera ventilé automatiquement (FIFO).
+          Cochez les factures concernées ou saisissez un règlement libre. Le surplus ou paiement sans facture sera conservé en acompte imputable plus tard.
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -336,6 +336,11 @@ export default function ModalPaiementFacture({
                 value={factureForm.frais || ''}
                 onChange={e => setFactureForm({ ...factureForm, frais: e.target.value })}
               />
+              {Number(factureForm.frais) > 0 && (
+                <div style={{ fontSize: 11, color: '#C24A3F', marginTop: 3, fontWeight: 600 }}>
+                  💸 + {Number(factureForm.frais).toLocaleString('fr-FR')} Ar de frais débités sur {factureForm.compte}
+                </div>
+              )}
             </Field>
 
             <Field label="Date">
@@ -354,7 +359,11 @@ export default function ModalPaiementFacture({
             compteSelectionne={factureForm.compte}
             soldesParCompte={soldesParCompte}
             soldeRmbDispo={soldeRmbInfo?.soldeRmbDispo}
-            montantOperation={Number(factureForm.montant) || 0}
+            montantOperation={
+              factureForm.nature === 'vente'
+                ? Math.max(0, (Number(factureForm.montant) || 0) - (Number(factureForm.frais) || 0))
+                : ((Number(factureForm.montant) || 0) + (Number(factureForm.frais) || 0))
+            }
             typeOperation={factureForm.nature === 'vente' ? 'credit' : 'debit'}
             activeComptes={activeComptes}
           />
@@ -377,34 +386,80 @@ export default function ModalPaiementFacture({
           </Field>
 
           {/* Indicateur récapitulatif en bas de modal */}
-          {isSomeSelected && (
-            <div style={{ background: '#FAF7F2', border: '1px solid #EAE2D4', borderRadius: 8, padding: '10px 12px', fontSize: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600, color: '#26333D' }}>
-                <span>{selectedIds.length} facture{selectedIds.length > 1 ? 's' : ''} sélectionnée{selectedIds.length > 1 ? 's' : ''}</span>
-                <span>Reste dû cumulé : <strong>{totalResteDuSelection.toLocaleString('fr-FR')} Ar</strong></span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, paddingTop: 4, borderTop: '1px dashed #EAE2D4' }}>
-                <span>Montant à imputer :</span>
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#3D5A6C' }}>
-                  {montantSaisi.toLocaleString('fr-FR')} Ar
-                </span>
-              </div>
+          {montantSaisi > 0 && (() => {
+            const montantImpute = Math.min(montantSaisi, totalResteDuSelection);
+            const reliquatAcompte = Math.max(0, montantSaisi - totalResteDuSelection);
 
-              {isPartiel && (
-                <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6, color: '#B78103', background: '#FFF8E1', padding: '4px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
-                  <Info size={13} />
-                  <span>Paiement partiel — sera ventilé sur les factures les plus anciennes d'abord (FIFO).</span>
-                </div>
-              )}
+            return (
+              <div style={{ background: '#FAF7F2', border: '1px solid #EAE2D4', borderRadius: 8, padding: '10px 12px', fontSize: 12 }}>
+                {isSomeSelected ? (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600, color: '#26333D' }}>
+                      <span>{selectedIds.length} facture{selectedIds.length > 1 ? 's' : ''} sélectionnée{selectedIds.length > 1 ? 's' : ''}</span>
+                      <span>Reste dû cumulé : <strong>{totalResteDuSelection.toLocaleString('fr-FR')} Ar</strong></span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, paddingTop: 4, borderTop: '1px dashed #EAE2D4' }}>
+                      <span>Montant affecté aux factures :</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: '#3D5A6C' }}>
+                        {montantImpute.toLocaleString('fr-FR')} Ar
+                      </span>
+                    </div>
 
-              {isDepasse && (
-                <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6, color: '#C24A3F', background: '#FBEAE8', padding: '4px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
-                  <AlertCircle size={13} />
-                  <span>Le montant saisi dépasse le total dû ({totalResteDuSelection.toLocaleString('fr-FR')} Ar). Le paiement sera ajusté au reste dû exact.</span>
+                    {reliquatAcompte > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, color: '#276749', fontWeight: 700 }}>
+                        <span>Acompte libre / Surplus (reliquat non imputé) :</span>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: '#276749' }}>
+                          + {reliquatAcompte.toLocaleString('fr-FR')} Ar
+                        </span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ color: '#2B6CB0', fontWeight: 600, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Paiement / Encaissement libre sans facture :</span>
+                      <span style={{ fontSize: 13.5, fontWeight: 800, color: '#2B6CB0' }}>
+                        {montantSaisi.toLocaleString('fr-FR')} Ar
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 11, color: '#4A5568', fontStyle: 'italic' }}>
+                      💡 Ce versement sera conservé en acompte disponible et pourra être affecté plus tard à vos factures.
+                    </div>
+                  </div>
+                )}
+
+                {Number(factureForm.frais) > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, color: '#C24A3F', fontWeight: 600 }}>
+                    <span>Frais de transaction ajoutés :</span>
+                    <span>+ {Number(factureForm.frais).toLocaleString('fr-FR')} Ar</span>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, paddingTop: 6, borderTop: '1px solid #EAE2D4', fontWeight: 700, color: '#26333D' }}>
+                  <span>Total net mouvementé ({factureForm.compte}) :</span>
+                  <span style={{ fontSize: 13.5, color: factureForm.nature === 'vente' ? '#3F7A5C' : '#C24A3F' }}>
+                    {factureForm.nature === 'vente'
+                      ? `+ ${(montantSaisi - (Number(factureForm.frais) || 0)).toLocaleString('fr-FR')} Ar net`
+                      : `− ${(montantSaisi + (Number(factureForm.frais) || 0)).toLocaleString('fr-FR')} Ar décaissés`}
+                  </span>
                 </div>
-              )}
-            </div>
-          )}
+
+                {isPartiel && (
+                  <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6, color: '#B78103', background: '#FFF8E1', padding: '4px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
+                    <Info size={13} />
+                    <span>Paiement partiel — sera ventilé sur les factures les plus anciennes d'abord (FIFO).</span>
+                  </div>
+                )}
+
+                {reliquatAcompte > 0 && isSomeSelected && (
+                  <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6, color: '#276749', background: '#F0FFF4', padding: '4px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
+                    <Info size={13} />
+                    <span>Le montant dépasse les factures sélectionnées ({totalResteDuSelection.toLocaleString('fr-FR')} Ar). Le surplus de {reliquatAcompte.toLocaleString('fr-FR')} Ar sera conservé en acompte libre.</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
             <button type="button" onClick={onClose} style={{ ...ghostBtn, flex: '1 1 100px', justifyContent: 'center' }}>
@@ -413,13 +468,13 @@ export default function ModalPaiementFacture({
             <button
               type="button"
               onClick={enregistrerPaiementFacture}
-              disabled={!isSomeSelected || !factureForm.montant || Number(factureForm.montant) <= 0}
+              disabled={!factureForm.montant || Number(factureForm.montant) <= 0}
               style={{
                 ...primaryBtn,
                 flex: '1 1 180px',
                 justifyContent: 'center',
                 background: factureForm.nature === 'vente' ? '#3F7A5C' : '#3D5A6C',
-                opacity: (isSomeSelected && Number(factureForm.montant) > 0) ? 1 : 0.4,
+                opacity: (Number(factureForm.montant) > 0) ? 1 : 0.4,
               }}
             >
               <CheckCircle2 size={15} /> {factureForm.nature === 'vente' ? "Valider l'encaissement" : "Valider le règlement"}

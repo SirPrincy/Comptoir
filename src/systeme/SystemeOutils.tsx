@@ -31,15 +31,20 @@ import {
   Check,
   ArrowDownUp,
   Cpu,
-  Building2
+  Building2,
+  HelpCircle,
+  BookOpen,
+  FileText
 } from 'lucide-react';
 import { THEME } from '../colors';
 import { FONTS, TYPOGRAPHY } from '../fonts';
-import { Card, cardTitle, Stat, inputStyle, selectStyle, primaryBtn, ghostBtn, Label } from '../ui';
+import { Card, cardTitle, Stat, inputStyle, selectStyle, primaryBtn, ghostBtn, Label, RADIUS, SHADOWS } from '../ui';
 import DiagnosticReport from '../dashboard/DiagnosticReport';
 import { exportAllDataCsv, exportVentesCsv, exportAchatsCsv, exportTresorerieCsv } from '../dashboard/csvExportUtils';
 import { offlineApi } from '../api/offlineApi';
 import { uid } from '../constants';
+import { migrateDataSchema, marquerBackupFait, enregistrerAutoSnapshot, CURRENT_SCHEMA_VERSION } from '../backup/backupUtils';
+import { Image as ImageIcon } from 'lucide-react';
 
 export interface SystemeOutilsProps {
   products: any[];
@@ -60,7 +65,7 @@ export interface SystemeOutilsProps {
   darkMode: boolean;
   isOnline: boolean;
   saving: boolean;
-  initialSubTab?: 'apercu' | 'general' | 'devises' | 'backup' | 'export-csv' | 'diagnostic' | 'api' | 'comptes';
+  initialSubTab?: 'apercu' | 'general' | 'devises' | 'backup' | 'export-csv' | 'diagnostic' | 'api' | 'comptes' | 'help';
   updateData: (key: string, data: any) => void;
   save: (data: any) => void;
   onToggleDarkMode: () => void;
@@ -94,7 +99,7 @@ export default function SystemeOutils({
   onOpenSetupWizard,
   onNavigateTab,
 }: SystemeOutilsProps) {
-  const [subTab, setSubTab] = useState<'apercu' | 'general' | 'devises' | 'backup' | 'export-csv' | 'diagnostic' | 'api' | 'comptes'>(initialSubTab);
+  const [subTab, setSubTab] = useState<'apercu' | 'general' | 'devises' | 'backup' | 'export-csv' | 'diagnostic' | 'api' | 'comptes' | 'help'>(initialSubTab);
   
   // États Devises
   const [inputRmb, setInputRmb] = useState<number>(devises.rmb || 680);
@@ -156,6 +161,27 @@ export default function SystemeOutils({
     paiements.length,
   ]);
 
+  // Statistiques sur les images / photos d'articles
+  const imagesStats = useMemo(() => {
+    let count = 0;
+    let bytes = 0;
+    products.forEach((p: any) => {
+      const pImages = Array.isArray(p.images) ? p.images : (p.image ? [p.image] : []);
+      pImages.forEach((img: string) => {
+        if (typeof img === 'string' && img.length > 0) {
+          count++;
+          bytes += img.length;
+        }
+      });
+    });
+    const sizeStr = bytes < 1024
+      ? `${bytes} B`
+      : bytes < 1024 * 1024
+      ? `${(bytes / 1024).toFixed(1)} KB`
+      : `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    return { count, bytes, sizeStr };
+  }, [products]);
+
   const databaseSizeEstimate = useMemo(() => {
     try {
       const json = JSON.stringify({
@@ -215,10 +241,10 @@ export default function SystemeOutils({
     }
   }, [convAmount, convCurrency, devises]);
 
-  // Télécharger JSON
+  // Télécharger JSON (avec intégration complète des photos)
   const handleDownloadBackup = () => {
     try {
-      const payload = {
+      const cleanData = migrateDataSchema({
         products,
         ventes,
         commandes,
@@ -234,9 +260,17 @@ export default function SystemeOutils({
         paiements,
         devises,
         comptes,
+      });
+
+      const payload = {
+        app: 'Comptoir ERP',
+        schemaVersion: CURRENT_SCHEMA_VERSION,
         exportedAt: new Date().toISOString(),
-        version: '4.3.3',
+        totalImages: imagesStats.count,
+        totalImagesSize: imagesStats.sizeStr,
+        ...cleanData,
       };
+
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -247,14 +281,21 @@ export default function SystemeOutils({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      setRestoreFeedback({ type: 'success', msg: 'Sauvegarde JSON exportée avec succès !' });
+
+      marquerBackupFait();
+      enregistrerAutoSnapshot(cleanData);
+
+      setRestoreFeedback({
+        type: 'success',
+        msg: `Sauvegarde JSON exportée avec succès (${totalEntities} entités + ${imagesStats.count} photo${imagesStats.count > 1 ? 's' : ''}) !`
+      });
       setTimeout(() => setRestoreFeedback(null), 4000);
     } catch (err: any) {
       setRestoreFeedback({ type: 'error', msg: 'Erreur lors de la génération du fichier : ' + err.message });
     }
   };
 
-  // Restaurer JSON
+  // Restaurer JSON (avec migration automatique et restauration des photos)
   const handleFileRestore = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -266,8 +307,19 @@ export default function SystemeOutils({
         if (typeof parsed !== 'object' || parsed === null) {
           throw new Error('Format JSON invalide');
         }
-        save(parsed);
-        setRestoreFeedback({ type: 'success', msg: 'Données restaurées avec succès depuis le fichier !' });
+
+        const migrated = migrateDataSchema(parsed);
+        save(migrated);
+
+        let restoredImgs = 0;
+        migrated.products?.forEach((p: any) => {
+          if (Array.isArray(p.images)) restoredImgs += p.images.length;
+        });
+
+        setRestoreFeedback({
+          type: 'success',
+          msg: `Données et ${restoredImgs} photo${restoredImgs > 1 ? 's' : ''} restaurées avec succès depuis le fichier !`
+        });
         setTimeout(() => setRestoreFeedback(null), 5000);
       } catch (err: any) {
         setRestoreFeedback({ type: 'error', msg: 'Échec de la restauration : ' + (err.message || 'fichier invalide') });
@@ -495,6 +547,7 @@ export default function SystemeOutils({
           { id: 'export-csv', label: 'Exportations CSV', icon: FileSpreadsheet },
           { id: 'diagnostic', label: 'Audit & Diagnostic', icon: Activity },
           { id: 'api', label: 'Console API v1', icon: Terminal },
+          { id: 'help', label: 'Aide & FAQ', icon: HelpCircle },
         ].map((tabItem) => {
           const active = subTab === tabItem.id;
           const Icon = tabItem.icon;
@@ -672,6 +725,23 @@ export default function SystemeOutils({
                 <span>WIZARD</span>
               </button>
             </div>
+          </Card>
+
+          {/* CARTE 7 : AIDE & FAQ */}
+          <Card>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ fontFamily: FONTS.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.14em', color: THEME.text.muted, fontWeight: 600 }}>
+                CENTRE D'AIDE & DOCUMENTATION
+              </div>
+              <HelpCircle size={16} color={THEME.accent.primary} />
+            </div>
+            <div style={{ fontSize: 13, color: THEME.text.secondary, lineHeight: 1.5, marginBottom: 16 }}>
+              Guide d'utilisation, réponses aux questions fréquentes sur la restauration avec photos, la trésorerie et les devises.
+            </div>
+            <button onClick={() => setSubTab('help')} style={{ ...primaryBtn, width: '100%', justifyContent: 'center' }}>
+              <BookOpen size={13} />
+              <span>CONSULTER L'AIDE & FAQ</span>
+            </button>
           </Card>
         </div>
       )}
@@ -948,16 +1018,20 @@ export default function SystemeOutils({
                 <span>EXPORTER UNE SAUVEGARDE COMPLÈTE</span>
               </div>
               <p style={{ fontSize: 13, color: THEME.text.secondary, lineHeight: 1.5, marginBottom: 16 }}>
-                Générez un fichier JSON autonome contenant toutes vos collections : catalogue, commandes fournisseurs, ventes, paiements, charges fixes, immobilisations, emprunts et devises.
+                Générez un fichier JSON autonome contenant toutes vos collections : catalogue complet, <strong>photos et galeries d'articles</strong>, commandes fournisseurs, ventes, paiements, charges fixes, immobilisations, emprunts et devises.
               </p>
-              <div style={{ background: THEME.bg.soft, padding: '12px 14px', borderRadius: 6, marginBottom: 16, fontSize: 12, color: THEME.text.muted, fontFamily: FONTS.mono }}>
+              <div style={{ background: THEME.bg.soft, padding: '12px 14px', borderRadius: 6, marginBottom: 16, fontSize: 12, color: THEME.text.muted, fontFamily: FONTS.mono, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <div>STATUT : Base synchronisée IndexedDB + localStorage</div>
                 <div>TAILLE ESTIMÉE : {databaseSizeEstimate}</div>
                 <div>ENTITÉS : {totalEntities.toLocaleString()} objets</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: THEME.accent.green, fontWeight: 600 }}>
+                  <ImageIcon size={13} />
+                  <span>PHOTOS EMBARQUÉES : {imagesStats.count} ({imagesStats.sizeStr})</span>
+                </div>
               </div>
               <button onClick={handleDownloadBackup} style={{ ...primaryBtn, width: '100%', justifyContent: 'center' }}>
                 <Download size={14} />
-                <span>TÉLÉCHARGER LE FICHIER .JSON</span>
+                <span>TÉLÉCHARGER LE FICHIER .JSON (AVEC PHOTOS)</span>
               </button>
             </Card>
 
@@ -1324,6 +1398,158 @@ export default function SystemeOutils({
               ))}
             </div>
           </Card>
+        </div>
+      )}
+
+      {/* VUE 8 : CENTRE D'AIDE & DOCUMENTATION (FAQ) */}
+      {subTab === 'help' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* BANNIÈRE D'ACCUEIL AIDE */}
+          <div style={{
+            background: THEME.bg.card,
+            border: `1px solid ${THEME.border.base}`,
+            borderRadius: RADIUS.card,
+            padding: '20px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 20,
+            flexWrap: 'wrap',
+            boxShadow: SHADOWS.card,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{
+                width: 46,
+                height: 46,
+                borderRadius: 12,
+                background: `${THEME.accent.primary}18`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: THEME.accent.primary,
+              }}>
+                <BookOpen size={24} />
+              </div>
+              <div>
+                <h2 style={{ fontFamily: FONTS.display, fontSize: 20, margin: 0, color: THEME.text.primary, textTransform: 'uppercase' }}>
+                  Centre d'Aide & Documentation ERP
+                </h2>
+                <div style={{ fontSize: 13, color: THEME.text.secondary, marginTop: 4 }}>
+                  Guide d'utilisation et réponses aux questions fréquemment posées sur votre application.
+                </div>
+              </div>
+            </div>
+
+            <button onClick={() => setSubTab('backup')} style={{ ...primaryBtn, gap: 8 }}>
+              <HardDrive size={14} />
+              <span>GÉRER MES SAUVEGARDES</span>
+            </button>
+          </div>
+
+          {/* GRILLE DES QUESTIONS FRÉQUENTES */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 20 }}>
+            {/* FAQ 1 : SAUVEGARDE & PHOTOS */}
+            <Card>
+              <div style={{ ...cardTitle, display: 'flex', alignItems: 'center', gap: 10, color: THEME.accent.primary }}>
+                <HardDrive size={18} />
+                <span>Sauvegarde & Restauration avec Photos</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13, color: THEME.text.primary, lineHeight: 1.5 }}>
+                <div style={{ fontWeight: 700, color: THEME.text.primary }}>
+                  Q : Si je sauvegarde puis restaure un fichier JSON, mes photos sont-elles conservées ?
+                </div>
+                <div style={{ background: THEME.bg.soft, padding: '12px 14px', borderRadius: 8, border: `1px solid ${THEME.border.base}`, color: THEME.text.secondary }}>
+                  <strong style={{ color: THEME.accent.green }}>Oui, à 100 % !</strong> Lorsque vous téléchargez votre sauvegarde au format <code>.json</code>, toutes les images de votre catalogue sont automatiquement converties et intégrées au fichier. Lors de l'import, vos articles et leurs photos réapparaissent exactement à leur place.
+                </div>
+                <div style={{ fontSize: 12, color: THEME.text.muted }}>
+                  💡 <em>Conseil : Téléchargez régulièrement un fichier de sauvegarde depuis l'onglet <strong>Sauvegarde & Restore</strong> pour sécuriser votre base.</em>
+                </div>
+              </div>
+            </Card>
+
+            {/* FAQ 2 : REGLEMENT MULTI-FACTURES */}
+            <Card>
+              <div style={{ ...cardTitle, display: 'flex', alignItems: 'center', gap: 10, color: THEME.accent.primary }}>
+                <DollarSign size={18} />
+                <span>Multi-Paiements & Acomptes Libres</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13, color: THEME.text.primary, lineHeight: 1.5 }}>
+                <div style={{ fontWeight: 700, color: THEME.text.primary }}>
+                  Q : Comment régler plusieurs factures en une fois sans multiplier les lignes dans le journal ?
+                </div>
+                <div style={{ background: THEME.bg.soft, padding: '12px 14px', borderRadius: 8, border: `1px solid ${THEME.border.base}`, color: THEME.text.secondary }}>
+                  Utilisez le bouton <strong>"Régler des Factures"</strong> dans Trésorerie. Vous pouvez cocher autant de factures que souhaité. L'application génère <strong>une seule ligne consolidée</strong> dans le journal de trésorerie avec le détail disponible au clic.
+                </div>
+                <div style={{ background: THEME.bg.soft, padding: '12px 14px', borderRadius: 8, border: `1px solid ${THEME.border.base}`, color: THEME.text.secondary }}>
+                  <strong>Acomptes libres :</strong> Vous pouvez également effectuer un paiement sans sélectionner de facture. La somme est mise en réserve en <em>Acompte Libre / Reliquat Disponible</em> et pourra être imputée plus tard.
+                </div>
+              </div>
+            </Card>
+
+            {/* FAQ 3 : COMPTES FINANCIERS */}
+            <Card>
+              <div style={{ ...cardTitle, display: 'flex', alignItems: 'center', gap: 10, color: THEME.accent.primary }}>
+                <Sliders size={18} />
+                <span>Gestion des Comptes Financiers & Caisses</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13, color: THEME.text.primary, lineHeight: 1.5 }}>
+                <div style={{ fontWeight: 700, color: THEME.text.primary }}>
+                  Q : Comment ajouter ou organiser mes moyens de paiement (Mobile Money, Caisse, Banque) ?
+                </div>
+                <div style={{ background: THEME.bg.soft, padding: '12px 14px', borderRadius: 8, border: `1px solid ${THEME.border.base}`, color: THEME.text.secondary }}>
+                  Rendez-vous dans le sous-onglet <strong>Comptes Financiers</strong> pour ajouter de nouveaux libellés de compte (ex: <em>Caisse Principale, MVola, Orange Money, BNI Courant</em>). Ils deviendront immédiatement sélectionnables lors des encaissements et transferts.
+                </div>
+              </div>
+            </Card>
+
+            {/* FAQ 4 : TAUX & DEVISES */}
+            <Card>
+              <div style={{ ...cardTitle, display: 'flex', alignItems: 'center', gap: 10, color: THEME.accent.primary }}>
+                <Coins size={18} />
+                <span>Devises, Yuan RMB & Dollar USD</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13, color: THEME.text.primary, lineHeight: 1.5 }}>
+                <div style={{ fontWeight: 700, color: THEME.text.primary }}>
+                  Q : Comment sont recalculés les prix de revient en Ariary lors des achats en Chine ou Fret ?
+                </div>
+                <div style={{ background: THEME.bg.soft, padding: '12px 14px', borderRadius: 8, border: `1px solid ${THEME.border.base}`, color: THEME.text.secondary }}>
+                  Les taux configurés dans <strong>Taux & Devises</strong> servent à convertir les montants exprimés en Yuan (RMB) ou Dollar (USD) en Ariary (MGA) pour déterminer le coût de revient unitaire net de chaque produit importé.
+                </div>
+              </div>
+            </Card>
+
+            {/* FAQ 5 : HORS-LIGNE & PWA */}
+            <Card>
+              <div style={{ ...cardTitle, display: 'flex', alignItems: 'center', gap: 10, color: THEME.accent.primary }}>
+                <Zap size={18} />
+                <span>Mode Hors-Ligne & Base Local-First</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13, color: THEME.text.primary, lineHeight: 1.5 }}>
+                <div style={{ fontWeight: 700, color: THEME.text.primary }}>
+                  Q : Puis-je utiliser l'application sans connexion Internet ?
+                </div>
+                <div style={{ background: THEME.bg.soft, padding: '12px 14px', borderRadius: 8, border: `1px solid ${THEME.border.base}`, color: THEME.text.secondary }}>
+                  <strong>Absolument !</strong> L'ERP fonctionne sur une architecture Local-First stockée dans le navigateur (IndexedDB). Toutes vos saisies, ventes et modifications sont enregistrées localement même en coupure réseau.
+                </div>
+              </div>
+            </Card>
+
+            {/* FAQ 6 : EXPORT EXCEL */}
+            <Card>
+              <div style={{ ...cardTitle, display: 'flex', alignItems: 'center', gap: 10, color: THEME.accent.primary }}>
+                <FileSpreadsheet size={18} />
+                <span>Exports CSV & Compatibilité Excel</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13, color: THEME.text.primary, lineHeight: 1.5 }}>
+                <div style={{ fontWeight: 700, color: THEME.text.primary }}>
+                  Q : Comment réexploiter mes ventes et achats sur Microsoft Excel ou Numbers ?
+                </div>
+                <div style={{ background: THEME.bg.soft, padding: '12px 14px', borderRadius: 8, border: `1px solid ${THEME.border.base}`, color: THEME.text.secondary }}>
+                  Depuis l'onglet <strong>Exportations CSV</strong>, téléchargez en un clic le pack complet. Les fichiers sont formatés avec l'encodage UTF-8 avec BOM et des séparateurs adaptés à Excel.
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
       )}
     </div>

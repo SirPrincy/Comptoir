@@ -1,11 +1,14 @@
 /**
- * Configuration et constantes typographiques de Comptoir ERP (Variation 7 - Refined Architectural Craft)
+ * Configuration et constantes typographiques de Comptoir ERP
+ * Système typographique inspiré d'Apple Human Interface Guidelines :
+ * SF Pro Display / SF Pro Text (-apple-system, BlinkMacSystemFont) pour une clarté absolue + SF Mono pour les montants et devises.
  */
 
 export const FONTS = {
-  display: "'Oswald', sans-serif",
-  body: "'Inter', system-ui, -apple-system, sans-serif",
-  mono: "'JetBrains Mono', monospace",
+  primary: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Plus Jakarta Sans', system-ui, sans-serif",
+  display: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Plus Jakarta Sans', system-ui, sans-serif",
+  body: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Plus Jakarta Sans', system-ui, sans-serif",
+  mono: "'SF Mono', 'JetBrains Mono', Menlo, Monaco, Consolas, monospace",
 };
 
 export const TYPOGRAPHY = {
@@ -13,67 +16,90 @@ export const TYPOGRAPHY = {
   displayFont: FONTS.display,
   monoFont: FONTS.mono,
   
-  // Styles typographiques réutilisables
-  appTitle: {
-    fontFamily: FONTS.display,
-    fontWeight: 600,
-    fontSize: 18,
-    letterSpacing: '0.04em',
-    textTransform: 'uppercase' as const,
-    lineHeight: 1.15,
-  },
+  // Hiérarchie typographique fluide et épurée style Apple
   heroTitle: {
     fontFamily: FONTS.display,
-    fontWeight: 600,
-    fontSize: 'clamp(2.4rem, 5vw, 3.8rem)',
-    letterSpacing: '-0.01em',
-    lineHeight: 0.95,
-    textTransform: 'uppercase' as const,
+    fontWeight: 700,
+    fontSize: 'clamp(26px, 3.8vw, 34px)',
+    letterSpacing: '-0.03em',
+    lineHeight: 1.15,
+  },
+  pageTitle: {
+    fontFamily: FONTS.display,
+    fontWeight: 700,
+    fontSize: 22,
+    letterSpacing: '-0.025em',
+    lineHeight: 1.2,
   },
   sectionTitle: {
     fontFamily: FONTS.display,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 600,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.06em',
+    letterSpacing: '-0.015em',
+    lineHeight: 1.25,
   },
   cardTitle: {
-    fontFamily: FONTS.mono,
-    fontSize: 11,
+    fontFamily: FONTS.body,
+    fontSize: 13,
     fontWeight: 600,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.12em',
+    letterSpacing: '-0.01em',
+    lineHeight: 1.3,
+  },
+  appTitle: {
+    fontFamily: FONTS.display,
+    fontSize: 17,
+    fontWeight: 700,
+    letterSpacing: '-0.02em',
+  },
+  kpiLabel: {
+    fontFamily: FONTS.body,
+    fontSize: 11,
+    fontWeight: 500,
+    letterSpacing: '-0.01em',
+  },
+  statValueMega: {
+    fontFamily: FONTS.display,
+    fontSize: 'clamp(24px, 2.8vw, 30px)',
+    fontWeight: 700,
+    letterSpacing: '-0.03em',
+    lineHeight: 1.1,
   },
   statValue: {
     fontFamily: FONTS.display,
-    fontSize: 26,
-    fontWeight: 500,
-    letterSpacing: '0.01em',
-    lineHeight: 1.1,
+    fontSize: 22,
+    fontWeight: 700,
+    letterSpacing: '-0.025em',
+    lineHeight: 1.15,
   },
-  label: {
+  body: {
     fontFamily: FONTS.body,
-    fontSize: 12,
+    fontSize: 13.5,
+    fontWeight: 400,
+    lineHeight: 1.5,
+  },
+  bodyDense: {
+    fontFamily: FONTS.body,
+    fontSize: 12.5,
     fontWeight: 500,
+    lineHeight: 1.45,
   },
   sidebarLabel: {
-    fontFamily: FONTS.mono,
-    fontSize: 10,
+    fontFamily: FONTS.body,
+    fontSize: 11,
     fontWeight: 600,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.18em',
-    opacity: 0.7,
+    letterSpacing: '-0.01em',
   },
   badge: {
     fontFamily: FONTS.mono,
     fontSize: 11,
     fontWeight: 600,
-    letterSpacing: '0.05em',
+    letterSpacing: '-0.01em',
   },
-  number: {
-    fontFamily: FONTS.display,
-    fontWeight: 500,
-    letterSpacing: '0.02em',
+  monoValue: {
+    fontFamily: FONTS.mono,
+    fontWeight: 600,
+    letterSpacing: '-0.02em',
   },
 };
+
 

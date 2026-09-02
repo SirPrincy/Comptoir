@@ -31,6 +31,18 @@ export interface ItemPayable {
 /**
  * Algorithme de ventilation FIFO d'un paiement sur plusieurs factures/commandes
  */
+export function getTotalAllouePaiement(p: any): number {
+  if (!p || !Array.isArray(p.lignes)) return 0;
+  return p.lignes.reduce((sum: number, l: any) => sum + (Number(l.montantAlloue) || 0), 0);
+}
+
+export function getReliquatPaiement(p: any): number {
+  if (!p) return 0;
+  const montantTotal = Number(p.montantTotal) || 0;
+  const totalAlloue = getTotalAllouePaiement(p);
+  return Math.max(0, montantTotal - totalAlloue);
+}
+
 export function repartirPaiement(
   montantTotal: number,
   itemsCoches: ItemPayable[]
@@ -77,7 +89,7 @@ export function getMontantPayeMarchandise(c: any, paiements: any[] = []): number
     for (const p of paiements) {
       if (Array.isArray(p.lignes)) {
         for (const l of p.lignes) {
-          if (l.cibleType === 'marchandise' && l.cibleId === c.id) {
+          if ((l.cibleType === 'marchandise' || l.cibleType === 'achat' || !l.cibleType) && String(l.cibleId) === String(c.id)) {
             hasMatch = true;
             totalAlloue += Number(l.montantAlloue) || 0;
           }
@@ -131,7 +143,7 @@ export function getMontantPayeFret(c: any, paiements: any[] = []): number {
     for (const p of paiements) {
       if (Array.isArray(p.lignes)) {
         for (const l of p.lignes) {
-          if (l.cibleType === 'fret' && l.cibleId === c.id) {
+          if (l.cibleType === 'fret' && String(l.cibleId) === String(c.id)) {
             hasMatch = true;
             totalAlloue += Number(l.montantAlloue) || 0;
           }
@@ -269,7 +281,7 @@ export function getMontantPayeVente(v: any, paiements: any[] = []): number {
     for (const p of paiements) {
       if (Array.isArray(p.lignes)) {
         for (const l of p.lignes) {
-          if (l.cibleType === 'vente' && l.cibleId === v.id) {
+          if ((l.cibleType === 'vente' || !l.cibleType) && String(l.cibleId) === String(v.id)) {
             hasMatch = true;
             totalAlloue += Number(l.montantAlloue) || 0;
           }

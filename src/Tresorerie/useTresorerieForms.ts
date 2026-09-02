@@ -222,7 +222,7 @@ export function useTresorerieForms({
   const enregistrerPaiementFacture = () => {
     const montantGlobal = Number(factureForm.montant);
     const selectedIds = Array.isArray(factureForm.selectedIds) ? factureForm.selectedIds : [];
-    if (!montantGlobal || montantGlobal <= 0 || selectedIds.length === 0) return;
+    if (!montantGlobal || montantGlobal <= 0) return;
 
     const nature = factureForm.nature;
     let listSource: any[] = [];
@@ -231,7 +231,6 @@ export function useTresorerieForms({
     else listSource = commandesUnpaidFret;
 
     const itemsAEffectuer = listSource.filter((item: any) => selectedIds.includes(item.id));
-    if (itemsAEffectuer.length === 0) return;
 
     const itemsPayables: ItemPayable[] = itemsAEffectuer.map((item: any) => {
       let resteDu = 0;
@@ -248,15 +247,17 @@ export function useTresorerieForms({
     });
 
     const result = repartirPaiement(montantGlobal, itemsPayables);
-    if (result.lignes.length === 0) return;
 
     const dateIso = factureForm.date ? new Date(factureForm.date).toISOString() : new Date().toISOString();
+
+    const fraisNum = Number(factureForm.frais) || 0;
 
     const nouveauPaiement = {
       id: uid(),
       nature,
       date: dateIso,
-      montantTotal: result.montantEffectif,
+      montantTotal: montantGlobal,
+      frais: fraisNum > 0 ? fraisNum : undefined,
       compte: factureForm.compte,
       reference: factureForm.reference.trim(),
       description: factureForm.description.trim(),
@@ -267,31 +268,44 @@ export function useTresorerieForms({
     const nextMvs: any[] = [];
 
     if (nature === 'vente') {
+      let descVente = factureForm.description.trim();
+      if (!descVente) {
+        if (result.lignes.length === 0) {
+          descVente = `Acompte libre Vente (Non imputé)`;
+        } else if (result.surplus > 0) {
+          descVente = `Encaissement Ventes (${result.lignes.length} facture(s)) + Acompte (${result.surplus.toLocaleString('fr-FR')} Ar)`;
+        } else {
+          descVente = `Encaissement Ventes (${result.lignes.length} facture(s))`;
+        }
+      }
+
       const mvt = {
         id: uid(),
         type: 'entrée',
-        montant: result.montantEffectif,
+        categorie: 'vente',
+        montant: montantGlobal,
         compte: factureForm.compte,
         tag: '#vente',
-        reference: factureForm.reference.trim() || factureForm.beneficiaire,
-        description: factureForm.description.trim() || `Encaissement Ventes (${result.lignes.length} facture(s))`,
+        reference: factureForm.reference.trim() || factureForm.beneficiaire.trim(),
+        description: descVente,
         date: dateIso,
         paiementId: nouveauPaiement.id,
         venteId: result.lignes.length === 1 ? result.lignes[0].cibleId : undefined,
       };
       nextMvs.push(mvt);
 
-      const fraisNum = Number(factureForm.frais);
       if (fraisNum > 0) {
         const mfrais = {
           id: uid(),
           type: 'sortie',
+          categorie: 'frais',
           montant: fraisNum,
           compte: factureForm.compte,
           tag: '#frais-bancaires',
-          reference: factureForm.reference.trim() ? `Frais ${factureForm.reference.trim()}` : '',
-          description: `Frais transaction sur encaissement : ${factureForm.description.trim()}`,
+          reference: factureForm.reference.trim() ? `Frais ${factureForm.reference.trim()}` : (factureForm.beneficiaire.trim() ? `Frais ${factureForm.beneficiaire.trim()}` : ''),
+          description: `Frais de transaction — ${descVente}`,
           date: dateIso,
+          paiementId: nouveauPaiement.id,
         };
         nextMvs.push(mfrais);
       }
@@ -326,32 +340,44 @@ export function useTresorerieForms({
       const defaultTag = isMarchandise ? '#stock-chine' : '#fret-logistique';
       const defaultCat = isMarchandise ? 'achat' : 'fret';
 
+      let descAchat = factureForm.description.trim();
+      if (!descAchat) {
+        if (result.lignes.length === 0) {
+          descAchat = `Acompte libre ${isMarchandise ? 'Marchandises' : 'Fret'} (Non imputé)`;
+        } else if (result.surplus > 0) {
+          descAchat = `Règlement ${isMarchandise ? 'Marchandises' : 'Fret'} (${result.lignes.length} commande(s)) + Acompte (${result.surplus.toLocaleString('fr-FR')} Ar)`;
+        } else {
+          descAchat = `Règlement ${isMarchandise ? 'Marchandises' : 'Fret'} (${result.lignes.length} commande(s))`;
+        }
+      }
+
       const mvt = {
         id: uid(),
         type: 'sortie',
         categorie: defaultCat,
-        montant: result.montantEffectif,
+        montant: montantGlobal,
         compte: factureForm.compte,
         tag: defaultTag,
-        reference: factureForm.reference.trim() || factureForm.beneficiaire,
-        description: factureForm.description.trim() || `Règlement ${isMarchandise ? 'Marchandises' : 'Fret'} (${result.lignes.length} commande(s))`,
+        reference: factureForm.reference.trim() || factureForm.beneficiaire.trim(),
+        description: descAchat,
         date: dateIso,
         paiementId: nouveauPaiement.id,
         commandeId: result.lignes.length === 1 ? result.lignes[0].cibleId : undefined,
       };
       nextMvs.push(mvt);
 
-      const fraisNum = Number(factureForm.frais);
       if (fraisNum > 0) {
         const mfrais = {
           id: uid(),
           type: 'sortie',
+          categorie: 'frais',
           montant: fraisNum,
           compte: factureForm.compte,
           tag: '#frais-bancaires',
-          reference: factureForm.reference.trim() ? `Frais ${factureForm.reference.trim()}` : '',
-          description: `Frais transaction sur règlement : ${factureForm.description.trim()}`,
+          reference: factureForm.reference.trim() ? `Frais ${factureForm.reference.trim()}` : (factureForm.beneficiaire.trim() ? `Frais ${factureForm.beneficiaire.trim()}` : ''),
+          description: `Frais de transaction — ${descAchat}`,
           date: dateIso,
+          paiementId: nouveauPaiement.id,
         };
         nextMvs.push(mfrais);
       }
@@ -404,6 +430,89 @@ export function useTresorerieForms({
     }
 
     setShowPaiementFactureModal(false);
+  };
+
+  const imputerPaiementExistant = (paiementId: string, nouvellesAllocations: { cibleId: string; montantAlloue: number }[]) => {
+    const targetPaiement = paiements.find((p: any) => p.id === paiementId);
+    if (!targetPaiement || !nouvellesAllocations || nouvellesAllocations.length === 0) return;
+
+    const nature = targetPaiement.nature;
+    const existingLignes = Array.isArray(targetPaiement.lignes) ? [...targetPaiement.lignes] : [];
+
+    for (const alloc of nouvellesAllocations) {
+      if (alloc.montantAlloue <= 0) continue;
+      const existingIdx = existingLignes.findIndex((l: any) => l.cibleId === alloc.cibleId && l.cibleType === nature);
+      if (existingIdx >= 0) {
+        existingLignes[existingIdx] = {
+          ...existingLignes[existingIdx],
+          montantAlloue: existingLignes[existingIdx].montantAlloue + alloc.montantAlloue,
+        };
+      } else {
+        existingLignes.push({
+          cibleType: nature,
+          cibleId: alloc.cibleId,
+          montantAlloue: alloc.montantAlloue,
+        });
+      }
+    }
+
+    const updatedPaiement = {
+      ...targetPaiement,
+      lignes: existingLignes,
+    };
+
+    const nextPaiements = paiements.map((p: any) => p.id === paiementId ? updatedPaiement : p);
+
+    let updatedVentes = ventes;
+    let updatedCommandes = commandes;
+
+    if (nature === 'vente') {
+      updatedVentes = ventes.map((v: any) => {
+        const alloc = nouvellesAllocations.find(a => a.cibleId === v.id);
+        if (!alloc) return v;
+        const totalVente = Number(v.total) || ((Number(v.pu || 0) * Number(v.qty || 1)) + (Number(v.fraisLivraison) || 0));
+        const ancienPaye = getMontantPayeVente(v, paiements);
+        const nouveauPaye = ancienPaye + alloc.montantAlloue;
+        const isComplete = nouveauPaye >= totalVente;
+        return {
+          ...v,
+          montantPaye: nouveauPaye,
+          statutPaiement: isComplete ? 'Payé' : 'Partiel',
+        };
+      });
+    } else {
+      updatedCommandes = commandes.map((c: any) => {
+        const alloc = nouvellesAllocations.find(a => a.cibleId === c.id);
+        if (!alloc) return c;
+        if (nature === 'marchandise') {
+          const totalAchat = c.total !== undefined ? Number(c.total) : (Number(c.pu || 0) * Number(c.qty || 1));
+          const ancienPaye = getMontantPayeMarchandise(c, paiements);
+          const nouveauPaye = ancienPaye + alloc.montantAlloue;
+          const isComplete = nouveauPaye >= totalAchat;
+          return {
+            ...c,
+            montantPayeMarchandise: nouveauPaye,
+            statutPaiementMarchandise: isComplete ? 'Payé' : 'Partiel',
+          };
+        } else {
+          const totalFret = Number(c.fraisTransport || 0);
+          const ancienPaye = getMontantPayeFret(c, paiements);
+          const nouveauPaye = ancienPaye + alloc.montantAlloue;
+          const isComplete = nouveauPaye >= totalFret;
+          return {
+            ...c,
+            montantPayeFret: nouveauPaye,
+            statutPaiementFret: isComplete ? 'Payé' : 'Partiel',
+          };
+        }
+      });
+    }
+
+    updateData({
+      paiements: nextPaiements,
+      ventes: updatedVentes,
+      commandes: updatedCommandes,
+    });
   };
 
   const ajouterMouvement = () => {
@@ -521,6 +630,7 @@ export function useTresorerieForms({
     handleToggleSelectId,
     handleToggleSelectAll,
     enregistrerPaiementFacture,
+    imputerPaiementExistant,
     ajouterMouvement,
     executerTransfert,
   };

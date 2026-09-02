@@ -1,6 +1,6 @@
 import React from 'react';
-import { ArrowRight } from 'lucide-react';
-import { primaryBtn } from '../ui';
+import { ArrowRight, Edit3 } from 'lucide-react';
+import { primaryBtn, ghostBtn } from '../ui';
 import { WIZARD_STEPS, getActiveStep } from './logistiqueUtils';
 import { getStatutMarchandiseLabel, getStatutFretLabel } from '../paymentUtils';
 
@@ -10,10 +10,11 @@ interface ColisRowProps {
   product?: any;
   transitaire?: any;
   onOuvrir: (id: string) => void;
+  onEdit?: (commande: any) => void;
   onNavigateTab?: (tab: string) => void;
 }
 
-export default function ColisRow({ commande: c, product: p, transitaire, onOuvrir, onNavigateTab }: ColisRowProps) {
+export default function ColisRow({ commande: c, product: p, transitaire, onOuvrir, onEdit, onNavigateTab }: ColisRowProps) {
   const isCompletedQC = c.qualityCheck?.isCompleted;
   const activeStepNumber = getActiveStep(c);
   const stMarchandise = getStatutMarchandiseLabel(c);
@@ -97,6 +98,27 @@ export default function ColisRow({ commande: c, product: p, transitaire, onOuvri
       </div>
 
       <div className="w-full sm:w-auto flex items-center justify-end gap-2 shrink-0">
+        {onEdit && (
+          <button
+            onClick={() => onEdit(c)}
+            className="w-full sm:w-auto justify-center"
+            style={{
+              ...ghostBtn,
+              height: 34,
+              fontSize: 12,
+              padding: '0 10px',
+              border: '1px solid #3D5A6C',
+              color: '#3D5A6C',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+            } as any}
+            title="Modifier les informations de cette commande d'achat"
+          >
+            <Edit3 size={13} color="#3D5A6C" />
+            <span>Éditer</span>
+          </button>
+        )}
         {isCompletedQC && onNavigateTab && (
           <button
             onClick={() => onNavigateTab('vente')}

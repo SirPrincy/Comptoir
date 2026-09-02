@@ -8,6 +8,7 @@ import { calculerScoreFournisseur, getQCBadgeInfo } from '../qcUtils';
 import { getMontantPayeMarchandise, getRestePayeMarchandise, getStatutMarchandiseLabel, calculerSoldeRMB } from '../paymentUtils';
 import RecommandationTransitaire from './RecommandationTransitaire';
 import AchatFormModal from './components/AchatFormModal';
+import AchatEditModal from './components/AchatEditModal';
 import AchatPaiementModal from './components/AchatPaiementModal';
 import AchatListe from './components/AchatListe';
 
@@ -38,6 +39,7 @@ const Achat = memo(function Achat({
   const safePaiements = Array.isArray(paiements) ? paiements : [];
 
   const [showCmd, setShowCmd] = useState(false);
+  const [editingCommande, setEditingCommande] = useState<any | null>(null);
   const [subTab, setSubTab] = useState<'attente' | 'historique'>('attente');
   const [searchHistory, setSearchHistory] = useState(initialSearch);
 
@@ -209,10 +211,29 @@ const Achat = memo(function Achat({
         fournisseurs={safeFournisseurs}
         searchHistory={searchHistory}
         ouvrirModalPaiement={setPaiementCommande}
+        onEditCommande={setEditingCommande}
         supprimerCommande={supprimerCommande}
         onNavigateTab={onNavigateTab}
         paiements={safePaiements}
       />
+
+      {editingCommande && (
+        <AchatEditModal
+          commande={editingCommande}
+          onClose={() => setEditingCommande(null)}
+          products={safeProducts}
+          fournisseurs={safeFournisseurs}
+          commandes={safeCommandes}
+          ventes={safeVentes}
+          devises={devises}
+          soldeRmbInfo={soldeRmbInfo}
+          updateAll={updateAll}
+          updateData={updateData}
+          paiements={safePaiements}
+          today={today}
+          onNavigateTab={onNavigateTab}
+        />
+      )}
 
       <AchatPaiementModal
         paiementCommande={paiementCommande}

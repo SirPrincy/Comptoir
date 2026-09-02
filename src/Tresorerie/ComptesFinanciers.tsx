@@ -8,6 +8,7 @@ interface ComptesFinanciersProps {
   filtreCompte: string;
   setFiltreCompte: (compte: string) => void;
   onOpenTransfert: () => void;
+  soldeGlobal?: number;
   soldeRmb?: number;
   valeurRmbAr?: number;
   comptes?: string[];
@@ -43,6 +44,7 @@ export default function ComptesFinanciers({
   filtreCompte,
   setFiltreCompte,
   onOpenTransfert,
+  soldeGlobal = 0,
   soldeRmb = 0,
   valeurRmbAr = 0,
   comptes,
@@ -92,9 +94,21 @@ export default function ComptesFinanciers({
 
   return (
     <div style={{ marginBottom: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#8A8375', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-          Portefeuilles & Comptes ({activeComptes.length})
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#26333D', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Portefeuilles & Comptes ({activeComptes.length})
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: soldeGlobal >= 0 ? '#3F7A5C' : '#C24A3F', background: '#F4F7F5', border: '1px solid #D1E2D7', padding: '3px 8px', borderRadius: 6 }}>
+              Total MGA : {soldeGlobal.toLocaleString('fr-FR')} Ar
+            </div>
+            {soldeRmb > 0 && (
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#B78103', background: '#FFFDF5', border: '1px solid #F5E6C4', padding: '3px 8px', borderRadius: 6 }}>
+                Réserve RMB : {soldeRmb.toLocaleString('fr-FR')} ¥ <span style={{ fontSize: 10.5, fontWeight: 500, color: '#8A8375' }}>(≈ {valeurRmbAr.toLocaleString('fr-FR')} Ar)</span>
+              </div>
+            )}
+          </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <button

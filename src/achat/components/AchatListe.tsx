@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Package, Trash2, CheckCircle2, Clock } from 'lucide-react';
+import { Package, Trash2, CheckCircle2, Clock, Edit3 } from 'lucide-react';
 import { THEME } from '../../colors';
 import { Empty, ghostBtn, iconBtn } from '../../ui';
 import { getMontantPayeMarchandise, getRestePayeMarchandise, getStatutMarchandiseLabel } from '../../paymentUtils';
@@ -9,7 +9,8 @@ export default function AchatListe({
   products, 
   fournisseurs, 
   searchHistory, 
-  ouvrirModalPaiement, 
+  ouvrirModalPaiement,
+  onEditCommande,
   supprimerCommande,
   onNavigateTab,
   paiements = [],
@@ -46,10 +47,14 @@ export default function AchatListe({
           <div key={c.id} style={{ background: THEME.bg.card, border: `1px solid ${THEME.border.base}`, borderRadius: 10, padding: '10px 14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
               
-              <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+              <div 
+                style={{ flex: '1 1 200px', minWidth: 0, cursor: onEditCommande ? 'pointer' : 'default' }}
+                onClick={() => onEditCommande && onEditCommande(c)}
+                title={onEditCommande ? 'Cliquer pour modifier cet achat' : undefined}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <Package size={16} color={THEME.text.muted} />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: THEME.text.primary, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 13.5, fontWeight: 700, color: THEME.accent.primary, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', textDecoration: onEditCommande ? 'underline' : 'none', textUnderlineOffset: 3 }}>
                     {p ? p.nom : 'Article supprimé'}
                     {p && p.couleur ? ` — ${p.couleur}` : ''}
                   </span>
@@ -83,7 +88,7 @@ export default function AchatListe({
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                 <div style={{ textAlign: 'right', minWidth: 100 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: THEME.text.primary }}>{itemTotal.toLocaleString('fr-FR')} Ar</div>
                   {reste > 0 ? (
@@ -95,7 +100,30 @@ export default function AchatListe({
                   )}
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {onEditCommande && (
+                    <button
+                      onClick={() => onEditCommande(c)}
+                      style={{
+                        ...ghostBtn,
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        padding: '4px 10px',
+                        borderRadius: 6,
+                        border: '1px solid #3D5A6C',
+                        background: '#FAF7F2',
+                        color: '#3D5A6C',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        cursor: 'pointer',
+                      }}
+                      title="Modifier les détails de cet achat"
+                    >
+                      <Edit3 size={13} color="#3D5A6C" />
+                      <span>Éditer</span>
+                    </button>
+                  )}
                   {onNavigateTab && (
                     <button
                       onClick={() => onNavigateTab('logistique')}

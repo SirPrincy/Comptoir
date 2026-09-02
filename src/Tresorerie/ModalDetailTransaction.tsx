@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Receipt, Calendar, CreditCard, Tag, ArrowRight, CheckCircle2, User, Building, Package, Ship, ShoppingCart, Trash2, AlertTriangle } from 'lucide-react';
+import { Receipt, Calendar, CreditCard, Tag, ArrowRight, CheckCircle2, User, Building, Package, Ship, ShoppingCart, Trash2, AlertTriangle, PlusCircle, Link2 } from 'lucide-react';
 import { Modal, primaryBtn, ghostBtn, iconBtn } from '../ui';
 import { THEME } from '../colors';
 import { formatDateDisplay, getCategoryBadge } from './JournalTransactions';
 import { getAccountIcon } from './ComptesFinanciers';
+import { getTotalAllouePaiement, getReliquatPaiement } from '../paymentUtils';
+import ModalImputerFacture from './ModalImputerFacture';
 
 interface ModalDetailTransactionProps {
   transaction: any | null;
@@ -15,6 +17,7 @@ interface ModalDetailTransactionProps {
   fournisseurs?: any[];
   paiements?: any[];
   supprimerMouvement?: (id: string, item?: any) => void;
+  imputerPaiementExistant?: (paiementId: string, allocations: { cibleId: string; montantAlloue: number }[]) => void;
 }
 
 export default function ModalDetailTransaction({
@@ -27,8 +30,11 @@ export default function ModalDetailTransaction({
   fournisseurs = [],
   paiements = [],
   supprimerMouvement,
+  imputerPaiementExistant,
 }: ModalDetailTransactionProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showImputerModal, setShowImputerModal] = useState(false);
+
   if (!transaction) return null;
 
   const isPositif = transaction.type === 'entrée';
@@ -41,12 +47,14 @@ export default function ModalDetailTransaction({
   ));
 
   const hasMultipleLignes = paiementObj && Array.isArray(paiementObj.lignes) && paiementObj.lignes.length > 0;
+  const reliquatPaiement = paiementObj ? getReliquatPaiement(paiementObj) : 0;
 
   // Single item helpers
   const singleVente = transaction.venteId ? ventes.find((v: any) => v.id === transaction.venteId) : null;
   const singleCommande = transaction.commandeId ? commandes.find((c: any) => c.id === transaction.commandeId) : null;
 
   return (
+    <>
     <Modal
       isOpen={Boolean(transaction)}
       onClose={onClose}
@@ -305,6 +313,84 @@ export default function ModalDetailTransaction({
           </div>
         ) : null}
 
+        {/* STATUT ACOMPTE LIBRE / RELIQUAT DISPONIBLE (SAGE LOGIC) */}
+        {paiementObj && (
+          <div style={{
+            background: reliquatPaiement > 0 ? '#E3EFE9' : THEME.bg.card,
+            border: `1px solid ${reliquatPaiement > 0 ? '#C4DEC0' : THEME.border.base}`,
+            borderRadius: 10,
+            padding: '12px 14px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: reliquatPaiement > 0 ? '#276749' : THEME.text.primary }}>
+                {reliquatPaiement > 0 ? '💡 Acompte Libre / Reliquat Disponible' : '✔ Statut du Règlement'}
+              </div>
+              <div style={{ fontSize: 11, color: reliquatPaiement > 0 ? '#3A7D5B' : THEME.text.secondary, marginTop: 2 }}>
+                {reliquatPaiement > 0
+                  ? `${reliquatPaiement.toLocaleString('fr-FR')} Ar disponible sur ce versement`
+                  : `Ce versement de ${Number(paiementObj.montantTotal || 0).toLocaleString('fr-FR')} Ar est intégralement imputé.`}
+              </div>
+            </div>
+
+            {imputerPaiementExistant && (
+              <button
+                type="button"
+                onClick={() => setShowImputerModal(true)}
+                style={{
+                  padding: '7px 12px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: '#3D5A6C',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: 11.5,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <PlusCircle size={14} />
+                <span>{reliquatPaiement > 0 ? 'Imputer cet acompte' : 'Ajouter des factures'}</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* FRAIS DE TRANSACTION ASSOCIÉS */}
+        {paiementObj && Number(paiementObj.frais) > 0 && (
+          <div style={{
+            background: '#FEF2F2',
+            border: '1px solid #FEE2E2',
+            borderRadius: 10,
+            padding: '12px 14px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <CreditCard size={16} color="#DC2626" />
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#991B1B' }}>
+                  Frais de transaction débités
+                </div>
+                <div style={{ fontSize: 11, color: '#B91C1C' }}>
+                  Enregistré en débit séparé sur {paiementObj.compte}
+                </div>
+              </div>
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#DC2626' }}>
+              − {Number(paiementObj.frais).toLocaleString('fr-FR')} Ar
+            </div>
+          </div>
+        )}
+
         {/* BOUTONS D'ACTION */}
         <div style={{
           display: 'flex',
@@ -388,5 +474,21 @@ export default function ModalDetailTransaction({
         </div>
       </div>
     </Modal>
+
+    {showImputerModal && paiementObj && imputerPaiementExistant && (
+      <ModalImputerFacture
+        show={showImputerModal}
+        onClose={() => setShowImputerModal(false)}
+        paiement={paiementObj}
+        imputerPaiementExistant={imputerPaiementExistant}
+        ventes={ventes}
+        commandes={commandes}
+        products={products}
+        fournisseurs={fournisseurs}
+        clients={clients}
+        paiements={paiements}
+      />
+    )}
+    </>
   );
 }

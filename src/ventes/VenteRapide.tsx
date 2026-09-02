@@ -1,7 +1,8 @@
 import React, {  useState, useMemo , memo } from 'react';
 import { Trash2, CheckCircle2, Clock, Search, Filter, Calendar, User, X } from 'lucide-react';
 import { COMPTES_FINANCIERS, uid } from '../constants';
-import { SectionHeader, Modal, Field, Empty, inputStyle, selectStyle, primaryBtn, ghostBtn, iconBtn } from '../ui';
+import { SectionHeader, Modal, Field, Empty, inputStyle, selectStyle, primaryBtn, ghostBtn, iconBtn, RADIUS, SHADOWS } from '../ui';
+import { THEME } from '../colors';
 import { computeStock } from '../stock/stockUtils';
 import { getStatutVenteLabel, getMontantPayeVente, getRestePayeVente } from '../paymentUtils';
 import { calculerSoldesComptes } from '../Tresorerie/tresorerieUtils';
@@ -463,14 +464,21 @@ const VenteRapide = memo(function VenteRapide({
 
       {/* Barre de Recherche, Filtres & Synthèse */}
       {ventes.length > 0 && (
-        <div style={{ background: '#FAF7F2', border: '1px solid #EAE2D4', borderRadius: 10, padding: '10px 12px', marginBottom: 12 }}>
+        <div style={{
+          background: THEME.bg.card,
+          border: `1px solid ${THEME.border.base}`,
+          borderRadius: RADIUS.container,
+          padding: '12px 14px',
+          marginBottom: 14,
+          boxShadow: SHADOWS.card,
+        }}>
           {/* Ligne de filtres principaux */}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
             {/* Recherche textuelle libre */}
             <div style={{ position: 'relative', flex: '1 1 200px', minWidth: 160 }}>
               <Search
                 size={14}
-                style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#8A8375' }}
+                style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: THEME.text.muted }}
               />
               <input
                 style={{ ...inputStyle, paddingLeft: 30, height: 34, fontSize: 12 } as any}
@@ -482,7 +490,7 @@ const VenteRapide = memo(function VenteRapide({
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#8A8375', padding: 2 }}
+                  style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: THEME.text.muted, padding: 2 }}
                 >
                   <X size={13} />
                 </button>
@@ -498,10 +506,11 @@ const VenteRapide = memo(function VenteRapide({
                   fontSize: 11.5,
                   fontWeight: filterStatut === 'all' ? 700 : 500,
                   padding: '5px 10px',
-                  borderRadius: 6,
-                  border: '1px solid #EAE2D4',
-                  background: filterStatut === 'all' ? '#3D5A6C' : '#FFFFFF',
-                  color: filterStatut === 'all' ? '#FAF7F2' : '#5E584E',
+                  borderRadius: RADIUS.control,
+                  border: `1px solid ${filterStatut === 'all' ? THEME.accent.primary : THEME.border.base}`,
+                  background: filterStatut === 'all' ? THEME.text.primary : THEME.bg.card,
+                  color: filterStatut === 'all' ? THEME.bg.base : THEME.text.secondary,
+                  boxShadow: filterStatut === 'all' ? SHADOWS.raised : SHADOWS.subtle,
                   cursor: 'pointer',
                 }}
               >
@@ -514,10 +523,11 @@ const VenteRapide = memo(function VenteRapide({
                   fontSize: 11.5,
                   fontWeight: filterStatut === 'paye' ? 700 : 500,
                   padding: '5px 10px',
-                  borderRadius: 6,
-                  border: '1px solid #C4DEC0',
-                  background: filterStatut === 'paye' ? '#3F7A5C' : '#FFFFFF',
-                  color: filterStatut === 'paye' ? '#FFFFFF' : '#3F7A5C',
+                  borderRadius: RADIUS.control,
+                  border: `1px solid ${filterStatut === 'paye' ? THEME.accent.green : THEME.border.base}`,
+                  background: filterStatut === 'paye' ? THEME.accent.green : THEME.bg.card,
+                  color: filterStatut === 'paye' ? THEME.text.light : THEME.accent.green,
+                  boxShadow: filterStatut === 'paye' ? SHADOWS.raised : SHADOWS.subtle,
                   cursor: 'pointer',
                 }}
               >
@@ -530,10 +540,11 @@ const VenteRapide = memo(function VenteRapide({
                   fontSize: 11.5,
                   fontWeight: filterStatut === 'partiel' ? 700 : 500,
                   padding: '5px 10px',
-                  borderRadius: 6,
-                  border: '1px solid #FFE082',
-                  background: filterStatut === 'partiel' ? '#B78103' : '#FFFFFF',
-                  color: filterStatut === 'partiel' ? '#FFFFFF' : '#B78103',
+                  borderRadius: RADIUS.control,
+                  border: `1px solid ${filterStatut === 'partiel' ? THEME.accent.orange : THEME.border.base}`,
+                  background: filterStatut === 'partiel' ? THEME.accent.orange : THEME.bg.card,
+                  color: filterStatut === 'partiel' ? THEME.text.light : THEME.accent.orange,
+                  boxShadow: filterStatut === 'partiel' ? SHADOWS.raised : SHADOWS.subtle,
                   cursor: 'pointer',
                 }}
               >
@@ -546,10 +557,11 @@ const VenteRapide = memo(function VenteRapide({
                   fontSize: 11.5,
                   fontWeight: filterStatut === 'impayes' ? 700 : 500,
                   padding: '5px 10px',
-                  borderRadius: 6,
-                  border: '1px solid #FACFC2',
-                  background: filterStatut === 'impayes' ? '#C24A3F' : '#FFFFFF',
-                  color: filterStatut === 'impayes' ? '#FFFFFF' : '#C24A3F',
+                  borderRadius: RADIUS.control,
+                  border: `1px solid ${filterStatut === 'impayes' ? THEME.accent.danger : THEME.border.base}`,
+                  background: filterStatut === 'impayes' ? THEME.accent.danger : THEME.bg.card,
+                  color: filterStatut === 'impayes' ? THEME.text.light : THEME.accent.danger,
+                  boxShadow: filterStatut === 'impayes' ? SHADOWS.raised : SHADOWS.subtle,
                   cursor: 'pointer',
                 }}
               >
@@ -559,11 +571,11 @@ const VenteRapide = memo(function VenteRapide({
           </div>
 
           {/* Ligne secondaire : Filtre Client & Filtre Plage de Dates */}
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTop: '1px solid #EAE2D4' }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTop: `1px solid ${THEME.border.base}` }}>
             {/* Filtre Client */}
             {clients.length > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: '1 1 180px', minWidth: 160 }}>
-                <User size={13} color="#8A8375" />
+                <User size={13} color={THEME.text.muted} />
                 <select
                   style={{ ...selectStyle, height: 32, fontSize: 11.5, padding: '0 8px', flex: 1 } as any}
                   value={filterClientId}
@@ -581,15 +593,15 @@ const VenteRapide = memo(function VenteRapide({
 
             {/* Filtre Plage de Date */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              <Calendar size={13} color="#8A8375" />
-              <span style={{ fontSize: 11, color: '#736B5E' }}>Du:</span>
+              <Calendar size={13} color={THEME.text.muted} />
+              <span style={{ fontSize: 11, color: THEME.text.muted }}>Du:</span>
               <input
                 type="date"
                 value={filterDateDebut}
                 onChange={e => setFilterDateDebut(e.target.value)}
                 style={{ ...inputStyle, height: 32, fontSize: 11.5, padding: '0 6px', width: 125 } as any}
               />
-              <span style={{ fontSize: 11, color: '#736B5E' }}>Au:</span>
+              <span style={{ fontSize: 11, color: THEME.text.muted }}>Au:</span>
               <input
                 type="date"
                 value={filterDateFin}
@@ -605,11 +617,12 @@ const VenteRapide = memo(function VenteRapide({
                 onClick={reinitialiserFiltres}
                 style={{
                   fontSize: 11,
-                  color: '#C24A3F',
+                  color: THEME.accent.danger,
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
                   padding: '4px 6px',
+                  borderRadius: RADIUS.tag,
                   display: 'flex',
                   alignItems: 'center',
                   gap: 3,
@@ -623,18 +636,18 @@ const VenteRapide = memo(function VenteRapide({
           </div>
 
           {/* Mini-synthèse sur la sélection filtrée */}
-          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 8, paddingTop: 6, fontSize: 11.5, borderTop: '1px dashed #EAE2D4', color: '#5E584E' }}>
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 8, paddingTop: 6, fontSize: 11.5, borderTop: `1px dashed ${THEME.border.base}`, color: THEME.text.secondary }}>
             <span><strong>{ventesFiltrees.length}</strong> vente{ventesFiltrees.length > 1 ? 's' : ''} trouvée{ventesFiltrees.length > 1 ? 's' : ''}</span>
-            <span>Total ventes : <strong style={{ color: '#3D5A6C' }}>{statsFiltrees.totalCA.toLocaleString('fr-FR')} Ar</strong></span>
-            <span>Encaissé : <strong style={{ color: '#3F7A5C' }}>{statsFiltrees.totalEncaisse.toLocaleString('fr-FR')} Ar</strong></span>
+            <span>Total ventes : <strong style={{ color: THEME.accent.primary }}>{statsFiltrees.totalCA.toLocaleString('fr-FR')} Ar</strong></span>
+            <span>Encaissé : <strong style={{ color: THEME.accent.green }}>{statsFiltrees.totalEncaisse.toLocaleString('fr-FR')} Ar</strong></span>
             {statsFiltrees.totalRestantDu > 0 && (
-              <span>Reste à percevoir : <strong style={{ color: '#C24A3F' }}>{statsFiltrees.totalRestantDu.toLocaleString('fr-FR')} Ar</strong></span>
+              <span>Reste à percevoir : <strong style={{ color: THEME.accent.danger }}>{statsFiltrees.totalRestantDu.toLocaleString('fr-FR')} Ar</strong></span>
             )}
           </div>
         </div>
       )}
 
-      <div style={{ fontSize: 13, fontWeight: 600, color: '#8A8375', margin: '4px 0 10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: THEME.text.muted, margin: '4px 0 10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         Historique des ventes ({ventesFiltrees.length}{ventesFiltrees.length !== ventes.length ? ` / ${ventes.length}` : ''})
       </div>
       {ventes.length === 0 ? (
@@ -642,7 +655,7 @@ const VenteRapide = memo(function VenteRapide({
       ) : ventesFiltrees.length === 0 ? (
         <Empty text="Aucune vente ne correspond à vos critères de recherche." />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {ventesFiltrees.map((v: any) => {
             const p = products.find((pr: any) => pr.id === v.productId);
             const puAffiche = v.pu ?? (p?.prixVente || (v.total && v.qty ? v.total / v.qty : 0));
@@ -653,24 +666,31 @@ const VenteRapide = memo(function VenteRapide({
             const reste = getRestePayeVente(v);
 
             return (
-              <div key={v.id} style={{ background: '#FFFFFF', border: '1px solid #EAE2D4', borderRadius: 10, padding: '10px 14px' }}>
+              <div key={v.id} style={{
+                background: THEME.bg.card,
+                border: `1px solid ${THEME.border.base}`,
+                borderRadius: RADIUS.item,
+                padding: '12px 16px',
+                boxShadow: SHADOWS.subtle,
+                transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+              }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                   <div style={{ flex: '1 1 200px', minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                      <span style={{ fontWeight: 600, fontSize: 14 }}>{p ? p.nom : '(produit supprimé)'} {p?.couleur ? `· ${p.couleur}` : ''}</span>
+                      <span style={{ fontWeight: 600, fontSize: 14, color: THEME.text.primary }}>{p ? p.nom : '(produit supprimé)'} {p?.couleur ? `· ${p.couleur}` : ''}</span>
                       <span style={{
                         fontSize: 10.5,
                         fontWeight: 600,
                         padding: '1px 6px',
-                        borderRadius: 4,
-                        background: stVente.type === 'paye' ? '#E3EFE9' : (stVente.type === 'partiel' ? '#FFF8E1' : '#FFF3E0'),
-                        color: stVente.type === 'paye' ? '#3F7A5C' : (stVente.type === 'partiel' ? '#B78103' : '#E65100'),
-                        border: `1px solid ${stVente.type === 'paye' ? '#C4DEC0' : (stVente.type === 'partiel' ? '#FFE082' : '#FFE0B2')}`,
+                        borderRadius: RADIUS.tag,
+                        background: stVente.type === 'paye' ? `${THEME.accent.green}18` : (stVente.type === 'partiel' ? `${THEME.accent.orange}18` : `${THEME.accent.danger}18`),
+                        color: stVente.type === 'paye' ? THEME.accent.green : (stVente.type === 'partiel' ? THEME.accent.orange : THEME.accent.danger),
+                        border: `1px solid ${stVente.type === 'paye' ? `${THEME.accent.green}40` : (stVente.type === 'partiel' ? `${THEME.accent.orange}40` : `${THEME.accent.danger}40`)}`,
                       }}>
                         {stVente.label}
                       </span>
                     </div>
-                    <div style={{ fontSize: 12, color: '#8A8375', wordBreak: 'break-word', marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: THEME.text.muted, wordBreak: 'break-word', marginTop: 2 }}>
                       {new Date(v.date).toLocaleDateString('fr-FR')} · qté {v.qty} · PU {Number(puAffiche).toLocaleString('fr-FR')} Ar
                       {Number(v.fraisLivraison) > 0 ? ` · 🚚 Livr: ${Number(v.fraisLivraison).toLocaleString('fr-FR')} Ar` : ''}
                       {cl ? ` · Client: ${cl.nom}` : ''}
@@ -678,18 +698,18 @@ const VenteRapide = memo(function VenteRapide({
                       {v.description ? ` · ${v.description}` : ''}
                     </div>
                     {stVente.type === 'partiel' && (
-                      <div style={{ fontSize: 11.5, color: '#B78103', fontWeight: 600, marginTop: 2 }}>
+                      <div style={{ fontSize: 11.5, color: THEME.accent.orange, fontWeight: 600, marginTop: 2 }}>
                         Versé: {paye.toLocaleString('fr-FR')} Ar · Solde restant dû: {reste.toLocaleString('fr-FR')} Ar
                       </div>
                     )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                     <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontWeight: 700, color: isUnpaid ? '#E65100' : '#3F7A5C', fontSize: 14, whiteSpace: 'nowrap', display: 'block' }}>
+                      <span style={{ fontWeight: 700, color: isUnpaid ? THEME.accent.danger : THEME.accent.green, fontSize: 14, whiteSpace: 'nowrap', display: 'block' }}>
                         +{Number(v.total).toLocaleString('fr-FR')} Ar
                       </span>
                       {isUnpaid && reste > 0 && stVente.type === 'partiel' && (
-                        <span style={{ fontSize: 10.5, color: '#B78103', fontWeight: 600, display: 'block' }}>
+                        <span style={{ fontSize: 10.5, color: THEME.accent.orange, fontWeight: 600, display: 'block' }}>
                           reste: {reste.toLocaleString('fr-FR')} Ar
                         </span>
                       )}

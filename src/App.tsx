@@ -22,7 +22,7 @@ import {
   SECTIONS,
   uid,
 } from './constants';
-import { Card, cardTitle, Label, Field, Empty, Stat, SectionHeader, Modal, inputStyle, selectStyle, primaryBtn, ghostBtn, iconBtn, rowCard, tooltipStyle } from './ui';
+import { Card, cardTitle, Label, Field, Empty, Stat, SectionHeader, Modal, inputStyle, selectStyle, primaryBtn, brandBtn, ghostBtn, iconBtn, rowCard, tooltipStyle, RADIUS, SHADOWS, ComptoirMonogram, ComptoirLogo, BrandIcon } from './ui';
 import VenteRapide from './ventes/VenteRapide';
 import Achat from './achat/Achat';
 import Logistique from './logistique/Logistique';
@@ -312,7 +312,7 @@ export default function App() {
           <Achat products={products} commandes={commandes} ventes={ventes} fournisseurs={fournisseurs} devises={devises} changes={changes} mouvements={mouvements} updateAll={updateAll} sourcing={sourcing} updateData={updateData} onNavigateTab={(targetTab: string) => setTab(targetTab)} initialSearch={searchPreset} paiements={paiements} comptes={comptes} />
         )}
         {tab === 'logistique' && (
-          <Logistique products={products} commandes={commandes} ventes={ventes} fournisseurs={fournisseurs} devises={devises} updateAll={updateAll} onNavigateTab={(targetTab: string) => setTab(targetTab)} />
+          <Logistique products={products} commandes={commandes} ventes={ventes} fournisseurs={fournisseurs} devises={devises} updateAll={updateAll} updateData={updateData} paiements={paiements} onNavigateTab={(targetTab: string) => setTab(targetTab)} />
         )}
         {tab === 'stock' && (
           <Stock products={products} commandes={commandes} ventes={ventes} mouvements={mouvements} devises={devises} updateAll={updateAll} updateData={updateData} initialSearch={searchPreset} />
@@ -451,15 +451,15 @@ export default function App() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(20, 16, 13, 0.65)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', backdropFilter: 'blur(5px)' }}>
           <div className="modal-container" style={{
             background: THEME.bg.base,
-            borderRadius: 16,
+            borderRadius: RADIUS.modal,
             padding: '22px 24px',
             width: '100%',
             maxWidth: 960,
             maxHeight: '90vh',
             display: 'flex',
             flexDirection: 'column',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.25), 0 0 0 1px ' + THEME.border.strong,
-            border: `1px solid ${THEME.border.base}`,
+            boxShadow: SHADOWS.modal,
+            border: `1px solid ${THEME.border.strong}`,
             boxSizing: 'border-box',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${THEME.border.base}` }}>
@@ -467,7 +467,7 @@ export default function App() {
                 <Activity size={20} color={THEME.accent.orange} />
                 <span>Diagnostic d'Intégrité des Données</span>
               </div>
-              <button onClick={() => setDiagnosticOpen(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 24, color: THEME.text.muted, lineHeight: 1, padding: '0 6px', borderRadius: 4 }} title="Fermer">&times;</button>
+              <button onClick={() => setDiagnosticOpen(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 24, color: THEME.text.muted, lineHeight: 1, padding: '0 6px', borderRadius: RADIUS.tag }} title="Fermer">&times;</button>
             </div>
             <div style={{ overflowY: 'auto', overflowX: 'hidden', paddingRight: 2, margin: '0 -2px', flex: 1 }}>
               <DiagnosticReport
@@ -531,80 +531,52 @@ const Header = memo(function Header({ saving, isOnline = true, onOpenDrawer, onO
   const Icon = currentSection.icon;
 
   return (
-    <div style={{
-      padding: '12px 24px',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      borderBottom: '1px solid ' + THEME.border.base,
-      background: THEME.bg.base,
-      position: 'sticky', top: 0, zIndex: 30,
-      gap: 16,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flexShrink: 0 }}>
+    <div
+      className="glass-header"
+      style={{
+        padding: '10px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottom: `1px solid ${THEME.border.base}`,
+        position: 'sticky',
+        top: 0,
+        zIndex: 30,
+        gap: 14,
+        boxShadow: SHADOWS.subtle,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flexShrink: 0 }}>
         <button
           onClick={onOpenDrawer}
           style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 36, height: 36, borderRadius: 4,
-            border: '1px solid ' + THEME.border.strong, background: THEME.bg.card,
-            color: THEME.text.primary, cursor: 'pointer',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 36,
+            height: 36,
+            borderRadius: RADIUS.control,
+            border: `1px solid ${THEME.border.base}`,
+            background: THEME.bg.surface,
+            color: THEME.text.primary,
+            cursor: 'pointer',
+            transition: 'background-color 0.15s ease, transform 0.1s ease',
             flexShrink: 0,
           }}
-          title="Ouvrir le menu des sections"
+          title="Ouvrir la barre latérale"
         >
-          <Menu size={18} />
+          <Menu size={17} strokeWidth={2.2} />
         </button>
 
-        <div
+        <ComptoirLogo
+          size="md"
+          subtitle={currentSection.label}
           onClick={() => onNavigate('dashboard')}
-          style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, cursor: 'pointer' }}
-        >
-          <div style={{
-            width: 34, height: 34, borderRadius: 4, background: THEME.text.primary,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-            border: '1px solid ' + THEME.border.strong,
-          }}>
-            <Package size={17} color={THEME.bg.base} />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{
-              fontFamily: FONTS.display,
-              fontWeight: 600,
-              fontSize: 17,
-              letterSpacing: '0.04em',
-              textTransform: 'uppercase',
-              lineHeight: 1.05,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              color: THEME.text.primary
-            }}>
-              Comptoir Central
-            </div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-              fontFamily: FONTS.mono,
-              fontSize: 10,
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              color: THEME.text.muted,
-              marginTop: 2,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }}>
-              <Icon size={10} color={THEME.accent.primary} style={{ flexShrink: 0 }} />
-              <span style={{ fontWeight: 600, color: THEME.accent.primary, overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentSection.label}</span>
-            </div>
-          </div>
-        </div>
+        />
       </div>
 
-      {/* BARRE DE RECHERCHE GLOBALE ARCHITECTURALE */}
-      <div style={{ flex: '1 1 320px', maxWidth: 460, display: 'flex', justifyContent: 'center' }}>
+      {/* BARRE DE RECHERCHE GLOBALE */}
+      <div style={{ flex: '1 1 320px', maxWidth: 440, display: 'flex', justifyContent: 'center' }}>
         <GlobalSearchBar
           products={products}
           commandes={commandes}
@@ -614,36 +586,53 @@ const Header = memo(function Header({ saving, isOnline = true, onOpenDrawer, onO
         />
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        {/* BOUTONS D'ACCÈS RAPIDE APPLE */}
+        <button
+          onClick={onToggleDarkMode}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 36,
+            height: 36,
+            borderRadius: RADIUS.pill,
+            border: `1px solid ${THEME.border.base}`,
+            background: THEME.bg.surface,
+            color: THEME.text.primary,
+            cursor: 'pointer',
+            transition: 'background-color 0.15s ease',
+          }}
+          title={darkMode ? 'Passer en mode clair' : 'Passer en mode sombre'}
+        >
+          {darkMode ? <Sun size={16} strokeWidth={2.2} /> : <Moon size={16} strokeWidth={2.2} />}
+        </button>
+
         <button
           onClick={onOpenDrawer}
           style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '7px 14px', borderRadius: 4,
-            border: '1px solid ' + THEME.border.strong, background: THEME.bg.card,
-            fontFamily: FONTS.mono, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '0 14px',
+            height: 36,
+            borderRadius: RADIUS.control,
+            border: `1px solid ${THEME.border.base}`,
+            background: THEME.bg.surface,
+            fontFamily: FONTS.body,
+            fontSize: 13,
+            fontWeight: 500,
+            letterSpacing: '-0.01em',
             color: THEME.text.primary,
             cursor: 'pointer',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+            transition: 'background-color 0.15s ease',
           }}
         >
-          <Menu size={14} style={{ flexShrink: 0 }} />
-          <span>Menu</span>
+          <Grid size={15} strokeWidth={2.2} style={{ flexShrink: 0 }} />
+          <span className="hidden sm:inline">Sections</span>
         </button>
 
-        {/* STATUS META VARIATION 7 */}
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
-          fontFamily: FONTS.mono, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em',
-          lineHeight: 1.25,
-          color: THEME.text.secondary
-        }} className="hidden md:flex">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: !isOnline ? THEME.accent.orange : (saving ? THEME.accent.primary : THEME.accent.green), fontWeight: 600 }}>
-            <span>●</span>
-            <span>{!isOnline ? 'STATUS: OFFLINE' : saving ? 'SYNC: SAVING...' : 'STATUS: ONLINE'}</span>
-          </div>
-          <div style={{ color: THEME.text.muted, fontSize: 9 }}>[ERP 4.3.3]</div>
-        </div>
+
       </div>
     </div>
   );
@@ -655,11 +644,11 @@ const NavDrawer = memo(function NavDrawer({ open, onClose, tab, setTab, counts, 
   const groups = Array.from(new Set(SECTIONS.map(s => s.group)));
 
   const getBadge = (id: string) => {
-    if (id === 'stock' && counts.produits > 0) return `${counts.produits} art.`;
-    if (id === 'achat' && counts.achats > 0) return `${counts.achats} à payer`;
-    if (id === 'logistique' && counts.transit > 0) return `${counts.transit} en transit`;
-    if (id === 'fournisseurs' && counts.fournisseurs > 0) return counts.fournisseurs;
-    if (id === 'clients' && counts.clients > 0) return counts.clients;
+    if (id === 'stock' && counts.produits > 0) return `${counts.produits}`;
+    if (id === 'achat' && counts.achats > 0) return `${counts.achats}`;
+    if (id === 'logistique' && counts.transit > 0) return `${counts.transit}`;
+    if (id === 'fournisseurs' && counts.fournisseurs > 0) return `${counts.fournisseurs}`;
+    if (id === 'clients' && counts.clients > 0) return `${counts.clients}`;
     return null;
   };
 
@@ -669,79 +658,78 @@ const NavDrawer = memo(function NavDrawer({ open, onClose, tab, setTab, counts, 
       <div
         onClick={onClose}
         style={{
-          position: 'absolute', inset: 0,
-          background: 'rgba(29, 26, 22, 0.55)',
-          backdropFilter: 'blur(3px)',
-          animation: 'fadeIn 0.15s ease-out',
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.35)',
+          backdropFilter: 'blur(12px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+          animation: 'fadeIn 0.18s ease-out',
         }}
       />
 
-      {/* Drawer content */}
+      {/* Drawer content / Apple Sidebar */}
       <div style={{
         position: 'relative',
-        width: '100%', maxWidth: 'min(320px, 88vw)',
+        width: '100%',
+        maxWidth: 'min(300px, 86vw)',
         height: '100%',
         background: THEME.bg.card,
-        borderRight: '1px solid ' + THEME.border.strong,
-        boxShadow: '4px 0 24px rgba(29, 26, 22, 0.15)',
-        display: 'flex', flexDirection: 'column',
+        borderRight: `1px solid ${THEME.border.base}`,
+        boxShadow: SHADOWS.drawer,
+        display: 'flex',
+        flexDirection: 'column',
         zIndex: 101,
+        overflow: 'hidden',
       }}>
         {/* Drawer Header */}
         <div style={{
-          padding: '18px 20px 16px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          borderBottom: '1px solid ' + THEME.border.base,
-          background: THEME.bg.base,
+          padding: '16px 18px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: `1px solid ${THEME.border.base}`,
+          background: THEME.bg.surface,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{
-              width: 34, height: 34, borderRadius: 4, background: THEME.text.primary,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Ship size={17} color={THEME.bg.base} />
-            </div>
-            <div>
-              <div style={{ fontFamily: FONTS.display, fontWeight: 600, fontSize: 17, letterSpacing: '0.04em', textTransform: 'uppercase', color: THEME.text.primary, lineHeight: 1.1 }}>
-                Comptoir Central
-              </div>
-              <div style={{ fontFamily: FONTS.mono, fontSize: 9.5, textTransform: 'uppercase', letterSpacing: '0.12em', color: THEME.text.muted, marginTop: 2 }}>
-                SYSTEM NAV_
-              </div>
-            </div>
-          </div>
+          <ComptoirLogo size="sm" subtitle="Système de Gestion" />
           <button
             onClick={onClose}
             style={{
-              width: 32, height: 32, borderRadius: 4, border: '1px solid ' + THEME.border.strong,
-              background: THEME.bg.card, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: THEME.text.muted,
-              fontFamily: FONTS.mono, fontSize: 16
+              width: 28,
+              height: 28,
+              borderRadius: RADIUS.pill,
+              border: 'none',
+              background: THEME.bg.card,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: THEME.text.secondary,
+              boxShadow: SHADOWS.subtle,
+              transition: 'background-color 0.15s ease',
             }}
+            title="Fermer"
           >
-            <X size={16} />
+            <X size={15} strokeWidth={2.2} />
           </button>
         </div>
 
         {/* Drawer Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 14px' }}>
-          {groups.map((groupName, gIdx) => {
+        <div style={{ flex: 1, overflowY: 'auto', padding: '14px 10px' }}>
+          {groups.map((groupName) => {
             const groupSections = SECTIONS.filter(s => s.group === groupName);
             return (
-              <div key={groupName} style={{ marginBottom: 20 }}>
+              <div key={groupName} style={{ marginBottom: 18 }}>
                 <div style={{
-                  fontFamily: FONTS.mono,
-                  fontSize: 10,
+                  fontFamily: FONTS.body,
+                  fontSize: 11,
                   fontWeight: 600,
                   color: THEME.text.muted,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.18em',
-                  padding: '4px 8px 8px',
-                  opacity: 0.75
+                  letterSpacing: '-0.01em',
+                  padding: '4px 10px 6px',
                 }}>
                   {groupName}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                   {groupSections.map(item => {
                     const Icon = item.icon;
                     const active = tab === item.id;
@@ -754,35 +742,51 @@ const NavDrawer = memo(function NavDrawer({ open, onClose, tab, setTab, counts, 
                           onClose();
                         }}
                         style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '9px 12px', borderRadius: 4,
-                          border: active ? `1px solid ${THEME.accent.primary}` : '1px solid transparent',
-                          cursor: 'pointer', textAlign: 'left',
-                          background: active ? THEME.bg.surface : 'transparent',
-                          color: active ? THEME.accent.primary : THEME.text.primary,
-                          fontWeight: active ? 600 : 500, fontSize: 13.5,
-                          transition: 'all 0.1s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 10px',
+                          borderRadius: RADIUS.control,
+                          border: '1px solid transparent',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          background: active ? THEME.brand.blue : 'transparent',
+                          color: active ? '#FFFFFF' : THEME.text.primary,
+                          fontWeight: active ? 600 : 500,
+                          fontSize: 13,
+                          letterSpacing: '-0.01em',
+                          boxShadow: active ? '0 1px 3px rgba(0, 113, 227, 0.25)' : 'none',
                           width: '100%',
+                          transition: 'background-color 0.12s ease, color 0.12s ease',
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                           <div style={{
-                            width: 26, height: 26, borderRadius: 4,
-                            background: active ? THEME.accent.primary : THEME.bg.chip,
-                            color: active ? THEME.bg.base : THEME.text.primary,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            width: 24,
+                            height: 24,
+                            borderRadius: RADIUS.micro,
+                            background: active ? 'rgba(255, 255, 255, 0.2)' : THEME.bg.surface,
+                            color: active ? '#FFFFFF' : THEME.text.secondary,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
                           }}>
-                            <Icon size={14} />
+                            <Icon size={14} strokeWidth={2.2} />
                           </div>
-                          <span style={{ fontFamily: FONTS.body }}>{item.label}</span>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {item.label}
+                          </span>
                         </div>
                         {badge && (
                           <span style={{
-                            fontFamily: FONTS.mono,
-                            fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 3,
-                            background: active ? THEME.accent.primary : THEME.bg.chip,
-                            color: active ? THEME.bg.base : THEME.text.secondary,
-                            letterSpacing: '0.04em'
+                            fontFamily: FONTS.body,
+                            fontSize: 11,
+                            fontWeight: 600,
+                            padding: '1px 7px',
+                            borderRadius: RADIUS.pill,
+                            background: active ? 'rgba(255, 255, 255, 0.25)' : THEME.bg.surface,
+                            color: active ? '#FFFFFF' : THEME.text.secondary,
                           }}>
                             {badge}
                           </span>
@@ -798,20 +802,26 @@ const NavDrawer = memo(function NavDrawer({ open, onClose, tab, setTab, counts, 
 
         {/* Drawer Footer */}
         <div style={{
-          padding: '14px 18px',
-          borderTop: '1px solid ' + THEME.border.base,
-          background: THEME.bg.base,
-          fontFamily: FONTS.mono,
-          fontSize: 10,
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
-          color: THEME.text.muted,
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '12px 16px',
+          borderTop: `1px solid ${THEME.border.base}`,
+          background: THEME.bg.surface,
+          fontFamily: FONTS.body,
+          fontSize: 12,
+          color: THEME.text.secondary,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
         }}>
-          <span>COMPTOIR CENTRAL</span>
-          <span style={{ color: saving ? THEME.accent.orange : THEME.accent.green, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ width: 5, height: 5, borderRadius: '50%', background: saving ? THEME.accent.orange : THEME.accent.green }} />
-            {saving ? 'SAVING…' : 'LOCAL DB OK'}
+          <span style={{ fontWeight: 500 }}>Comptoir Central</span>
+          <span style={{
+            color: saving ? THEME.brand.amber : THEME.brand.emerald,
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: RADIUS.pill, background: saving ? THEME.brand.amber : THEME.brand.emerald }} />
+            {saving ? 'Enregistrement…' : 'Connecté'}
           </span>
         </div>
       </div>
