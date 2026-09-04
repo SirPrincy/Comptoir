@@ -2,6 +2,7 @@ import { computeStock } from '../stock/stockUtils';
 import { getRestePayeVente, getRestePayeMarchandise, getRestePayeFret } from '../paymentUtils';
 import { calculerPlanAmortissementMensuel } from '../immobilisations/immoUtils';
 import { getProductCostBreakdown, calculerCA, calculerCogs, calculerPertesEtGains, calculerOpex } from '../pnl/pnlUtils';
+import { calculerSoldesComptes } from '../Tresorerie/tresorerieUtils';
 import { BilanData } from './types';
 
 export function computeBilanData(
@@ -64,30 +65,22 @@ export function computeBilanData(
   });
 
   // C. Disponibilités (Trésorerie active dans les comptes financiers)
+  const balancesComptes = calculerSoldesComptes({
+    ventes,
+    commandes,
+    mouvements,
+    paiements,
+    products,
+    comptes,
+  });
+
   let totalDisponibilites = 0;
-  const balancesComptes: Record<string, number> = {};
+  const tauxRmb = devises?.rmb || 680;
 
-  const allComptes = comptes.length > 0 ? comptes : ['Caisse / Espèces', 'MVola', 'Orange Money', 'BMOI Banque'];
-  allComptes.forEach(c => {
-    balancesComptes[c] = 0;
-  });
-
-  (mouvements || []).forEach((m: any) => {
-    const montant = Number(m.montant) || 0;
-    const compte = m.compte || 'Caisse / Espèces';
-    if (!(compte in balancesComptes)) {
-      balancesComptes[compte] = 0;
-    }
-    const isEntree = m.type === 'entree' || m.type === 'entrée' || m.type === 'investissement';
-    if (isEntree) {
-      balancesComptes[compte] += montant;
-    } else {
-      balancesComptes[compte] -= montant;
-    }
-  });
-
-  Object.values(balancesComptes).forEach(b => {
-    totalDisponibilites += b;
+  Object.entries(balancesComptes).forEach(([compte, solde]) => {
+    const isRmb = compte.toLowerCase().includes('rmb') || compte.toLowerCase().includes('yuan');
+    const valAr = isRmb ? solde * tauxRmb : solde;
+    totalDisponibilites += valAr;
   });
 
   const totalActifCirculant = valeurStockTotal + totalCreancesClients + totalDisponibilites;

@@ -60,11 +60,12 @@ export default function BilanActif({ data }: BilanActifProps) {
         <div style={{ padding: '4px 24px 10px', display: 'flex', flexDirection: 'column', gap: 4, background: THEME.bg.soft }}>
           {Object.entries(data.balancesComptes).map(([compte, solde]) => {
             const soldeNum = solde as number;
+            const isRmb = compte.toLowerCase().includes('rmb') || compte.toLowerCase().includes('yuan');
             return (
               <div key={compte} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: THEME.text.muted }}>
                 <span>• {compte}</span>
                 <span style={{ fontWeight: 500, color: soldeNum >= 0 ? THEME.text.secondary : THEME.accent.orange }}>
-                  {soldeNum.toLocaleString()} Ar
+                  {isRmb ? `${soldeNum.toLocaleString()} ¥` : `${soldeNum.toLocaleString()} Ar`}
                 </span>
               </div>
             );
