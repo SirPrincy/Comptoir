@@ -1,9 +1,9 @@
 import React from 'react';
 import { THEME } from './colors';
 import { FONTS, TYPOGRAPHY } from './fonts';
-import { ComptoirMonogram, ComptoirLogo, ComptoirSceau, BrandIcon } from './components/ComptoirLogo';
+import { ComptoirMonogram, ComptoirLogo, ComptoirSceau, BrandIcon, ComptoirSvgLogo, downloadOfficialSvg, RAW_COMPTOIR_SVG } from './components/ComptoirLogo';
 
-export { ComptoirMonogram, ComptoirLogo, ComptoirSceau, BrandIcon };
+export { ComptoirMonogram, ComptoirLogo, ComptoirSceau, BrandIcon, ComptoirSvgLogo, downloadOfficialSvg, RAW_COMPTOIR_SVG };
 
 /**
  * Système d'élévation et de rayons continus style Apple (Human Interface Guidelines)

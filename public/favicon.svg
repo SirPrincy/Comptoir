@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="favBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E242B" />
+      <stop offset="50%" stop-color="#14181D" />
+      <stop offset="100%" stop-color="#0B0D10" />
+    </linearGradient>
+
+    <linearGradient id="favBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2F80ED" />
+      <stop offset="100%" stop-color="#0056B3" />
+    </linearGradient>
+
+    <linearGradient id="favCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+
+    <linearGradient id="favSilver" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#CBD5E1" stop-opacity="0.7" />
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle Base -->
+  <rect x="0" y="0" width="100" height="100" rx="24" fill="url(#favBg)" />
+  <rect x="1" y="1" width="98" height="98" rx="23" stroke="url(#favSilver)" stroke-width="1.5" stroke-opacity="0.22" fill="none" />
+
+  <!-- Calibrage / Précision -->
+  <circle cx="50" cy="50" r="36" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" stroke-dasharray="2 3" />
+
+  <!-- Branche Arrière (C Bleu) -->
+  <path
+    d="M 64 24
+       C 42 21, 23 34, 23 50
+       C 23 66, 42 79, 64 76"
+    stroke="url(#favBlue)"
+    stroke-width="7"
+    stroke-linecap="round"
+    fill="none"
+  />
+
+  <!-- Branche Avant (C Argenté) -->
+  <path
+    d="M 66 35
+       C 52 32, 36 39, 36 50
+       C 36 61, 52 68, 66 65"
+    stroke="url(#favSilver)"
+    stroke-width="5.5"
+    stroke-linecap="round"
+    fill="none"
+  />
+
+  <!-- Nœud Focal / Pivot -->
+  <circle cx="65" cy="50" r="5.5" fill="url(#favCyan)" />
+  <circle cx="65" cy="50" r="2.5" fill="#FFFFFF" />
+</svg>

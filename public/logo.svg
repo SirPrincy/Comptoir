@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 120" width="100%" height="100%" fill="none">
+  <defs>
+    <!-- Dégradé de fond de l'icône -->
+    <linearGradient id="monogramBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E242B" />
+      <stop offset="50%" stop-color="#14181D" />
+      <stop offset="100%" stop-color="#0B0D10" />
+    </linearGradient>
+
+    <!-- Dégradé bleu signature Apple / Enterprise -->
+    <linearGradient id="brandBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2F80ED" />
+      <stop offset="100%" stop-color="#0056B3" />
+    </linearGradient>
+
+    <!-- Dégradé d'accent cyan lumineux -->
+    <linearGradient id="accentGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+
+    <!-- Dégradé métallique argenté -->
+    <linearGradient id="silverSheen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#A1A1AA" stop-opacity="0.6" />
+    </linearGradient>
+
+    <!-- Ombre portée douce -->
+    <filter id="subtleShadow" x="-10%" y="-10%" width="130%" height="130%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.18" />
+    </filter>
+  </defs>
+
+  <!-- ==================== SYMBOLE / MONOGRAMME ==================== -->
+  <g transform="translate(10, 10)" filter="url(#subtleShadow)">
+    <!-- Squircle Apple Shape (100x100, radius 24) -->
+    <rect x="0" y="0" width="100" height="100" rx="24" fill="url(#monogramBg)" />
+    
+    <!-- Bordure intérieure brillante / specular bezel -->
+    <rect x="0.75" y="0.75" width="98.5" height="98.5" rx="23.25" stroke="url(#silverSheen)" stroke-width="1.2" stroke-opacity="0.25" fill="none" />
+
+    <!-- Cercle de repère géométrique discret (calibrage horloger/précision) -->
+    <circle cx="50" cy="50" r="36" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" stroke-dasharray="2 3" />
+
+    <!-- Branche Arrière du C (Flux d'import / Entrée) -->
+    <path
+      d="M 64 24
+         C 42 21, 23 34, 23 50
+         C 23 66, 42 79, 64 76"
+      stroke="url(#brandBlueGrad)"
+      stroke-width="7"
+      stroke-linecap="round"
+      fill="none"
+    />
+
+    <!-- Branche Avant dynamique (Flux de distribution / Sortie) -->
+    <path
+      d="M 66 35
+         C 52 32, 36 39, 36 50
+         C 36 61, 52 68, 66 65"
+      stroke="url(#silverSheen)"
+      stroke-width="5.5"
+      stroke-linecap="round"
+      fill="none"
+    />
+
+    <!-- Nœud Central / Hub Focal (Le Comptoir / Pivot d'échange) -->
+    <circle cx="65" cy="50" r="5.5" fill="url(#accentGlow)" />
+    <circle cx="65" cy="50" r="2.5" fill="#FFFFFF" />
+
+    <!-- Lueur subtile au cœur -->
+    <circle cx="50" cy="50" r="1.5" fill="#38BDF8" opacity="0.8" />
+  </g>
+
+  <!-- ==================== TYPOGRAPHIE LOGO ==================== -->
+  <g transform="translate(130, 24)">
+    <!-- Titre Principal : COMPTOIR CENTRAL -->
+    <text x="0" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Segoe UI', Roboto, sans-serif" font-size="38" font-weight="800" letter-spacing="-0.03em" fill="#18181B">
+      COMPTOIR
+      <tspan fill="url(#brandBlueGrad)" dx="8">CENTRAL</tspan>
+    </text>
+
+    <!-- Sous-titre institutionnel -->
+    <g transform="translate(2, 68)">
+      <!-- Puce laser bleue -->
+      <rect x="0" y="-8" width="14" height="4" rx="2" fill="url(#accentGlow)" />
+      
+      <text x="24" y="-3" font-family="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" letter-spacing="0.18em" fill="#71717A">
+        SYSTÈME ERP • GESTION, IMPORT &amp; NÉGOCE
+      </text>
+    </g>
+  </g>
+</svg>

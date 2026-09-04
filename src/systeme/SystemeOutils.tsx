@@ -38,7 +38,7 @@ import {
 } from 'lucide-react';
 import { THEME } from '../colors';
 import { FONTS, TYPOGRAPHY } from '../fonts';
-import { Card, cardTitle, Stat, inputStyle, selectStyle, primaryBtn, ghostBtn, Label, RADIUS, SHADOWS } from '../ui';
+import { Card, cardTitle, Stat, inputStyle, selectStyle, primaryBtn, ghostBtn, Label, RADIUS, SHADOWS, ComptoirSvgLogo, downloadOfficialSvg, RAW_COMPTOIR_SVG } from '../ui';
 import DiagnosticReport from '../dashboard/DiagnosticReport';
 import { exportAllDataCsv, exportVentesCsv, exportAchatsCsv, exportTresorerieCsv } from '../dashboard/csvExportUtils';
 import { offlineApi } from '../api/offlineApi';
@@ -124,6 +124,7 @@ export default function SystemeOutils({
   const [apiResponse, setApiResponse] = useState<any>(null);
   const [apiLoading, setApiLoading] = useState<boolean>(false);
   const [apiCopied, setApiCopied] = useState<boolean>(false);
+  const [copiedSvg, setCopiedSvg] = useState<boolean>(false);
 
   // État Comptes
   const [newCompteName, setNewCompteName] = useState('');
@@ -838,6 +839,115 @@ export default function SystemeOutils({
                 >
                   <Sparkles size={14} color={THEME.accent.primary} />
                   <span>OUVRIR LE SETUP WIZARD (10 ÉTAPES)</span>
+                </button>
+              </div>
+            </div>
+          </Card>
+
+          {/* IDENTITÉ VISUELLE & LOGO VECTORIEL (SVG) */}
+          <Card style={{ gridColumn: '1 / -1' }}>
+            <div style={{ ...cardTitle, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <ImageIcon size={16} color={THEME.brand.blue} />
+                <span>IDENTITÉ VISUELLE &amp; LOGO VECTORIEL (SVG)</span>
+              </div>
+              <span style={{ fontSize: 11, fontFamily: FONTS.mono, color: THEME.brand.blue, background: `${THEME.brand.blue}15`, padding: '2px 8px', borderRadius: RADIUS.pill, fontWeight: 700 }}>
+                FORMAT SVG 1.1 VECTORIEL PUR
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginTop: 14 }}>
+              {/* Aperçu Fond Clair */}
+              <div style={{
+                background: '#FFFFFF',
+                borderRadius: RADIUS.card,
+                padding: '24px 20px',
+                border: '1px solid #E4E4E7',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 12,
+                boxShadow: SHADOWS.subtle,
+              }}>
+                <div style={{ fontSize: 11, fontFamily: FONTS.mono, textTransform: 'uppercase', color: '#71717A', fontWeight: 600, letterSpacing: '0.1em' }}>
+                  Aperçu Fond Clair (Standard)
+                </div>
+                <div style={{ width: '100%', maxWidth: 360, padding: '10px 0' }}>
+                  <ComptoirSvgLogo width="100%" isDark={false} />
+                </div>
+              </div>
+
+              {/* Aperçu Fond Sombre */}
+              <div style={{
+                background: '#0E1116',
+                borderRadius: RADIUS.card,
+                padding: '24px 20px',
+                border: '1px solid #27272A',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 12,
+                boxShadow: SHADOWS.subtle,
+              }}>
+                <div style={{ fontSize: 11, fontFamily: FONTS.mono, textTransform: 'uppercase', color: '#A1A1AA', fontWeight: 600, letterSpacing: '0.1em' }}>
+                  Aperçu Fond Sombre (Dark Mode)
+                </div>
+                <div style={{ width: '100%', maxWidth: 360, padding: '10px 0' }}>
+                  <ComptoirSvgLogo width="100%" isDark={true} />
+                </div>
+              </div>
+            </div>
+
+            {/* Barre d'actions & Téléchargements */}
+            <div style={{
+              marginTop: 18,
+              paddingTop: 16,
+              borderTop: `1px solid ${THEME.border.base}`,
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}>
+              <div style={{ fontSize: 12.5, color: THEME.text.secondary }}>
+                Graphisme vectoriel haute précision : compatible documents légaux, factures pro, en-têtes et écrans Retina.
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => downloadOfficialSvg('logo')}
+                  style={{ ...primaryBtn, padding: '8px 14px' }}
+                  title="Télécharger le logo complet Comptoir Central en SVG"
+                >
+                  <Download size={14} />
+                  <span>TÉLÉCHARGER LOGO.SVG</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => downloadOfficialSvg('favicon')}
+                  style={{ ...ghostBtn, padding: '8px 14px' }}
+                  title="Télécharger le monogramme / icône en SVG"
+                >
+                  <Download size={14} />
+                  <span>TÉLÉCHARGER FAVICON.SVG</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(RAW_COMPTOIR_SVG);
+                    setCopiedSvg(true);
+                    setTimeout(() => setCopiedSvg(false), 2500);
+                  }}
+                  style={{ ...ghostBtn, padding: '8px 14px' }}
+                  title="Copier le balisage SVG source"
+                >
+                  {copiedSvg ? <Check size={14} color={THEME.accent.green} /> : <Copy size={14} />}
+                  <span>{copiedSvg ? 'CODE SVG COPIÉ !' : 'COPIER CODE SVG'}</span>
                 </button>
               </div>
             </div>

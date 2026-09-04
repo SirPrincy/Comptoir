@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo, memo, useCallback, useRef } from 'react';
-import { Zap, Package, LayoutDashboard, Plus, Trash2, TrendingUp, Ship, ShoppingCart, Truck, Wallet, Factory, Users, Compass, ArrowDownCircle, ArrowUpCircle, Menu, X, ChevronRight, ArrowRightLeft, HardDrive, ExternalLink, Coins, Sun, Moon, Settings, Activity, FileSpreadsheet, Wifi, WifiOff, Terminal, Grid } from 'lucide-react';
+import { Zap, Package, LayoutDashboard, Plus, Trash2, TrendingUp, Ship, ShoppingCart, Truck, Wallet, Factory, Users, Compass, ArrowDownCircle, ArrowUpCircle, Menu, X, ChevronRight, ArrowRightLeft, HardDrive, ExternalLink, Coins, Sun, Moon, Settings, Activity, FileSpreadsheet, Wifi, WifiOff, Terminal } from 'lucide-react';
 import { ApiTesterModal } from './components/ApiTesterModal';
 import { THEME, CHART_COLORS as COLORS } from './colors';
 import { FONTS, TYPOGRAPHY } from './fonts';
@@ -607,32 +607,6 @@ const Header = memo(function Header({ saving, isOnline = true, onOpenDrawer, onO
         >
           {darkMode ? <Sun size={16} strokeWidth={2.2} /> : <Moon size={16} strokeWidth={2.2} />}
         </button>
-
-        <button
-          onClick={onOpenDrawer}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '0 14px',
-            height: 36,
-            borderRadius: RADIUS.control,
-            border: `1px solid ${THEME.border.base}`,
-            background: THEME.bg.surface,
-            fontFamily: FONTS.body,
-            fontSize: 13,
-            fontWeight: 500,
-            letterSpacing: '-0.01em',
-            color: THEME.text.primary,
-            cursor: 'pointer',
-            transition: 'background-color 0.15s ease',
-          }}
-        >
-          <Grid size={15} strokeWidth={2.2} style={{ flexShrink: 0 }} />
-          <span className="hidden sm:inline">Sections</span>
-        </button>
-
-
       </div>
     </div>
   );
