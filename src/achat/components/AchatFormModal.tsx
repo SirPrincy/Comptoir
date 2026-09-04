@@ -78,6 +78,8 @@ export default function AchatFormModal({
     productId: '',
     source: SOURCES[0],
     fournisseurId: '',
+    acheteurNom: '',
+    commissionAcheteurPct: '',
     transitaireId: '',
     qty: 1,
     devise: 'RMB', // 'RMB' ou 'Ar'
@@ -92,6 +94,7 @@ export default function AchatFormModal({
     statut: 'Commandé',
     dateAchat: today,
   });
+
 
   // Suggestion automatique du meilleur fournisseur pour le produit sélectionné
   const bestSupplierSuggestion = React.useMemo(() => {
@@ -176,11 +179,18 @@ export default function AchatFormModal({
 
     const isoDateAchat = safeDateIso(cmdForm.dateAchat);
 
+    const commPctNum = Number(cmdForm.commissionAcheteurPct) || 0;
+    const commArNum = commPctNum > 0 ? Math.round(totalCalcule * (commPctNum / 100)) : 0;
+
     const c = {
       id: uid(),
       productId: cmdForm.productId,
       source: cmdForm.source,
       fournisseurId: cmdForm.fournisseurId,
+      acheteurNom: cmdForm.acheteurNom?.trim() || undefined,
+      commissionAcheteurPct: commPctNum > 0 ? commPctNum : undefined,
+      commissionAcheteurAr: commArNum > 0 ? commArNum : undefined,
+      tauxRmbPondereApplique: cmdForm.devise === 'RMB' ? (soldeRmbInfo?.tauxActuel || userTauxRmb) : undefined,
       transitaireId: cmdForm.transitaireId,
       qty: qtyVal,
       deviseOrigine: cmdForm.devise,
@@ -200,6 +210,7 @@ export default function AchatFormModal({
       statut: (montantPayeInitial >= totalCalcule && totalCalcule > 0) ? 'En livraison' : 'Commandé',
       dateAchat: isoDateAchat,
     };
+
 
     const prod = safeProducts.find((p: any) => p.id === cmdForm.productId);
 
@@ -233,6 +244,8 @@ export default function AchatFormModal({
       productId: '',
       source: SOURCES[0],
       fournisseurId: '',
+      acheteurNom: '',
+      commissionAcheteurPct: '',
       transitaireId: '',
       qty: 1,
       devise: 'RMB',
@@ -247,6 +260,7 @@ export default function AchatFormModal({
       statut: 'Commandé',
       dateAchat: today,
     });
+
     setCreatedCommandeSuccess(c);
   };
 
@@ -636,16 +650,37 @@ export default function AchatFormModal({
 
                 {cmdForm.devise === 'RMB' ? (
                   <>
-                    <Field label="Taux (Ar/¥)" style={{ flex: '1 1 85px', minWidth: 80 }}>
+                    <Field label="Taux (Ar/¥)" style={{ flex: '1 1 110px', minWidth: 105 }}>
                       <input
                         type="number"
                         step="any"
                         min={1}
-                        placeholder="ex: 680"
-                        style={{ ...inputStyle, fontWeight: 600 } as any}
+                        placeholder="ex: 650"
+                        style={{ ...inputStyle, fontWeight: 700, color: '#8D6E00' } as any}
                         value={cmdForm.tauxRmb}
                         onChange={e => setCmdForm({ ...cmdForm, tauxRmb: e.target.value })}
                       />
+                      {/* Raccourcis de taux fréquents pour l'utilisateur */}
+                      <div style={{ display: 'flex', gap: 3, marginTop: 4 }}>
+                        {[640, 645, 650, 655, 660].map(tx => (
+                          <button
+                            key={tx}
+                            type="button"
+                            onClick={() => setCmdForm({ ...cmdForm, tauxRmb: String(tx) })}
+                            style={{
+                              padding: '1px 4px',
+                              fontSize: 9.5,
+                              borderRadius: 3,
+                              border: '1px solid #D8D0C0',
+                              background: String(cmdForm.tauxRmb) === String(tx) ? '#E1F0E8' : '#FAF7F2',
+                              color: String(cmdForm.tauxRmb) === String(tx) ? '#1E4632' : '#5E584E',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {tx}
+                          </button>
+                        ))}
+                      </div>
                     </Field>
                     <Field label="PU (¥ RMB)" style={{ flex: '1 1 90px', minWidth: 85 }}>
                       <input
@@ -701,6 +736,37 @@ export default function AchatFormModal({
                   </div>
                 </Field>
               </div>
+
+              {/* Champs Acheteur Chine & Commission éventuelle */}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8, paddingTop: 8, borderTop: '1px dashed #EAE2D4' }}>
+                <Field label="Acheteur / Intermédiaire Chine (optionnel)" style={{ flex: '1.5 1 180px' }}>
+                  <input
+                    style={inputStyle as any}
+                    placeholder="Ex: Acheteur Guangzhou, Agent Sourcing..."
+                    value={cmdForm.acheteurNom}
+                    onChange={e => setCmdForm({ ...cmdForm, acheteurNom: e.target.value })}
+                    list="acheteurs-commandes-list"
+                  />
+                  <datalist id="acheteurs-commandes-list">
+                    <option value="Acheteur Guangzhou / Yiwu" />
+                    <option value="Agent de sourcing Chine" />
+                    <option value="Contact WeChat Direct" />
+                    <option value="Tanà Exchange" />
+                  </datalist>
+                </Field>
+                <Field label="Commission acheteur (%)" style={{ flex: '1 1 130px' }}>
+                  <input
+                    type="number"
+                    step="any"
+                    min={0}
+                    placeholder="Ex: 3%"
+                    style={inputStyle as any}
+                    value={cmdForm.commissionAcheteurPct}
+                    onChange={e => setCmdForm({ ...cmdForm, commissionAcheteurPct: e.target.value })}
+                  />
+                </Field>
+              </div>
+
 
               {fraisChineVal > 0 && (
                 <div style={{ fontSize: 11.5, color: '#5E584E', marginTop: 6, padding: '3px 8px', background: '#F4EFE6', borderRadius: 6 }}>

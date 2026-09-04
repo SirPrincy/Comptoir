@@ -1,5 +1,5 @@
 import React, {  useState, useMemo , memo } from 'react';
-import { Coins, Star } from 'lucide-react';
+import { Coins, Star, Wallet } from 'lucide-react';
 import { INTERMEDIAIRES_HABITUELS, CANAUX_RMB, VITESSE_OPTIONS, OperationChange } from './types';
 import { uid } from '../constants';
 import { safeDateIso } from '../ui';
@@ -9,6 +9,8 @@ import ChangeHeaderKPI from './ChangeHeaderKPI';
 import ComparateurExchangers from './ComparateurExchangers';
 import FormulaireChange from './FormulaireChange';
 import JournalOperationsChange from './JournalOperationsChange';
+import PortefeuilleRMBView from './PortefeuilleRMBView';
+
 
 interface ChangeRMBProps {
   changes: OperationChange[];
@@ -32,10 +34,11 @@ const ChangeRMB = memo(function ChangeRMB({
   updateData,
   onApplyTauxToApp,
 }: ChangeRMBProps) {
-  const [subTab, setSubTab] = useState<'journal' | 'fiabilite'>('journal');
+  const [subTab, setSubTab] = useState<'portefeuille' | 'journal' | 'fiabilite'>('portefeuille');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
   const [filterFournisseur, setFilterFournisseur] = useState('Tous');
   const [filterCanal, setFilterCanal] = useState('Tous');
 
@@ -48,6 +51,9 @@ const ChangeRMB = memo(function ChangeRMB({
     taux: '',
     fraisMga: '',
     fournisseur: INTERMEDIAIRES_HABITUELS[0],
+    typeIntermediaire: 'acheteur' as 'acheteur' | 'exchanger' | 'direct' | 'banque',
+    commissionPct: '',
+    commissionMga: '',
     canal: CANAUX_RMB[0],
     vitesseExecution: VITESSE_OPTIONS[0],
     noteFiabilite: '5',
@@ -59,6 +65,7 @@ const ChangeRMB = memo(function ChangeRMB({
   };
 
   const [form, setForm] = useState(initialForm);
+
 
   // Stats Globales de Change
   const stats = useMemo(() => {
@@ -233,6 +240,7 @@ const ChangeRMB = memo(function ChangeRMB({
     const provider = form.fournisseur?.trim() || 'Non spécifié';
     const channel = form.canal || CANAUX_RMB[0];
     const exLabel = `${provider} (${channel})`;
+    const commMga = Number(form.commissionMga) || (frais > 0 ? frais : undefined);
 
     const nouvelleOp: OperationChange = {
       id: opId,
@@ -242,6 +250,9 @@ const ChangeRMB = memo(function ChangeRMB({
       taux: tauxFinal,
       fraisMga: frais > 0 ? frais : undefined,
       fournisseur: provider,
+      typeIntermediaire: form.typeIntermediaire || 'acheteur',
+      commissionPct: Number(form.commissionPct) || undefined,
+      commissionMga: commMga,
       canal: channel,
       exchanger: exLabel,
       vitesseExecution: form.vitesseExecution || VITESSE_OPTIONS[0],
@@ -253,6 +264,7 @@ const ChangeRMB = memo(function ChangeRMB({
       genererMouvementTresorerie: form.genererMouvementTresorerie,
       mouvementId: form.genererMouvementTresorerie ? mvtId : undefined,
     };
+
 
     let nextChanges = [...changes];
     if (editingId) {
@@ -323,6 +335,9 @@ const ChangeRMB = memo(function ChangeRMB({
       taux: String(op.taux),
       fraisMga: op.fraisMga ? String(op.fraisMga) : '',
       fournisseur: op.fournisseur || op.exchanger?.split(' (')[0] || INTERMEDIAIRES_HABITUELS[0],
+      typeIntermediaire: op.typeIntermediaire || 'acheteur',
+      commissionPct: op.commissionPct ? String(op.commissionPct) : '',
+      commissionMga: op.commissionMga ? String(op.commissionMga) : '',
       canal: op.canal || CANAUX_RMB[0],
       vitesseExecution: op.vitesseExecution || VITESSE_OPTIONS[0],
       noteFiabilite: String(op.noteFiabilite || 5),
@@ -334,6 +349,7 @@ const ChangeRMB = memo(function ChangeRMB({
     });
     setShowForm(true);
   };
+
 
   const supprimerOperation = (opId: string) => {
     const op = changes.find(c => c.id === opId);
@@ -399,6 +415,27 @@ const ChangeRMB = memo(function ChangeRMB({
       <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid #EAE2D4', paddingBottom: 6 }}>
         <button
           type="button"
+          onClick={() => setSubTab('portefeuille')}
+          style={{
+            background: subTab === 'portefeuille' ? '#2C5E43' : '#FAF7F2',
+            color: subTab === 'portefeuille' ? '#FFFFFF' : '#5E584E',
+            border: subTab === 'portefeuille' ? '1px solid #2C5E43' : '1px solid #EAE2D4',
+            borderRadius: 6,
+            padding: '6px 14px',
+            fontSize: 12.5,
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <Wallet size={14} />
+          <span>Portefeuille RMB & Acheteurs</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setSubTab('journal')}
           style={{
             background: subTab === 'journal' ? '#2C5E43' : '#FAF7F2',
@@ -440,7 +477,19 @@ const ChangeRMB = memo(function ChangeRMB({
         </button>
       </div>
 
-      {subTab === 'fiabilite' ? (
+      {subTab === 'portefeuille' ? (
+        <PortefeuilleRMBView
+          changes={changes}
+          commandes={commandes}
+          soldeRmbInfo={soldeRmbInfo}
+          tauxMoyenPondere={stats.tauxMoyenPondere}
+          onOpenNewChange={() => {
+            setEditingId(null);
+            setForm(initialForm);
+            setShowForm(true);
+          }}
+        />
+      ) : subTab === 'fiabilite' ? (
         <ComparateurExchangers exchangersAnalysis={exchangersAnalysis} />
       ) : (
         <JournalOperationsChange
@@ -456,6 +505,7 @@ const ChangeRMB = memo(function ChangeRMB({
           onDelete={supprimerOperation}
         />
       )}
+
     </div>
   );
 });

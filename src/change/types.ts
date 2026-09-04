@@ -5,7 +5,10 @@ export interface OperationChange {
   montantRmb: number;
   taux: number;
   fraisMga?: number;
-  fournisseur?: string;
+  fournisseur?: string; // Nom de l'acheteur / cambiste / agent
+  typeIntermediaire?: 'acheteur' | 'exchanger' | 'direct' | 'banque';
+  commissionPct?: number; // % de commission de l'acheteur (ex: 3% ou 5%)
+  commissionMga?: number;
   canal?: string;
   exchanger?: string;
   compteSource?: string;
@@ -21,6 +24,7 @@ export interface OperationChange {
 export const CANAUX_RMB = [
   'Alipay Direct',
   'WeChat Pay',
+  'Compte Acheteur / Agent Chine',
   'UnionPay / Virement bancaire',
   'Recharge 1688 / Taobao',
   'Cash / Espèces',
@@ -36,10 +40,12 @@ export const VITESSE_OPTIONS = [
 ];
 
 export const INTERMEDIAIRES_HABITUELS = [
+  'Acheteur Guangzhou / Yiwu',
+  'Agent de sourcing Chine',
   'Agent de change Tanà',
-  'Agent Guangzhou',
   'Comptoir Exchange P2P',
   'Contact WeChat Direct',
   'Banque / Broker Officiel',
   'Autre / Particulier',
 ];
+

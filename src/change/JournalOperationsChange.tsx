@@ -123,7 +123,14 @@ export default function JournalOperationsChange({
                         <span style={{ fontSize: 11, background: '#FAF7F2', border: '1px solid #EAE2D4', padding: '2px 6px', borderRadius: 4, color: '#5E584E' }}>
                           {channel}
                         </span>
+                        {op.typeIntermediaire && (
+                          <span style={{ fontSize: 11, background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '2px 6px', borderRadius: 4, color: '#1E40AF', fontWeight: 600 }}>
+                            👤 {op.typeIntermediaire}
+                            {op.commissionPct ? ` (${op.commissionPct}%)` : ''}
+                          </span>
+                        )}
                         {op.noteFiabilite && (
+
                           <span style={{ fontSize: 11, color: '#B78103', display: 'flex', alignItems: 'center', gap: 2 }}>
                             <Star size={11} fill="#FFD700" color="#B78103" />
                             <span>{op.noteFiabilite}/5</span>
@@ -198,8 +205,13 @@ export default function JournalOperationsChange({
                       </div>
                       <div style={{ fontSize: 12, fontWeight: 700, color: '#C24A3F', marginTop: 1 }}>
                         - {totalSortie.toLocaleString('fr-FR')} Ar
-                        {op.fraisMga ? <span style={{ fontSize: 10, color: '#8A8375', fontWeight: 400 }}> (dont {op.fraisMga.toLocaleString('fr-FR')} Ar frais)</span> : ''}
+                        {(op.commissionMga || op.fraisMga) ? (
+                          <span style={{ fontSize: 10, color: '#8A8375', fontWeight: 400 }}>
+                            {' '}(dont {((op.commissionMga || 0) + (op.fraisMga || 0)).toLocaleString('fr-FR')} Ar com./frais)
+                          </span>
+                        ) : ''}
                       </div>
+
                       <div style={{ fontSize: 11, fontWeight: 700, color: '#B78103', marginTop: 1 }}>
                         Taux réel : {op.taux} Ar / ¥
                       </div>

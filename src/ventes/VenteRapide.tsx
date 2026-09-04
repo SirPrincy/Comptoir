@@ -56,7 +56,14 @@ const VenteRapide = memo(function VenteRapide({
   const [filterDateFin, setFilterDateFin] = useState('');
 
   const stockByProduct = useMemo(() => computeStock(products, commandes, ventes, mouvements), [products, commandes, ventes, mouvements]);
+  
+  // Produits visibles pour la vente (exclure les produits masqués / archivés)
+  const produitsVisibles = useMemo(() => {
+    return (products || []).filter((p: any) => !Boolean(p.isArchive || p.masque || p.archive));
+  }, [products]);
+
   const selected = products.find((p: any) => p.id === productId);
+
   const stockSelected = selected ? (stockByProduct[selected.id] || 0) : 0;
   const depasseStock = selected && Number(qty) > stockSelected;
   const pu = (prixUnitaire !== '' && !isNaN(Number(prixUnitaire)))
@@ -281,16 +288,18 @@ const VenteRapide = memo(function VenteRapide({
 
       {showModal && (
         <Modal title="Nouvelle vente" onClose={() => setShowModal(false)}>
-          {products.length === 0 ? (
+          {produitsVisibles.length === 0 ? (
             <div style={{ fontSize: 12.5, color: '#C24A3F', marginBottom: 10 }}>
-              Crée d'abord des produits dans l'onglet Stock et fais entrer des achats.
+              {products.length === 0
+                ? "Crée d'abord des produits dans l'onglet Stock et fais entrer des achats."
+                : "Tous vos produits sont actuellement masqués ou archivés. Réactivez-en dans l'onglet Stock."}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <Field label="Produit">
                 <select value={productId} onChange={e => choisirProduit(e.target.value)} style={selectStyle as any}>
                   <option value="">Choisir un produit…</option>
-                  {products.map((p: any) => {
+                  {produitsVisibles.map((p: any) => {
                     const st = stockByProduct[p.id] || 0;
                     return (
                       <option key={p.id} value={p.id} disabled={st <= 0}>
@@ -300,6 +309,7 @@ const VenteRapide = memo(function VenteRapide({
                   })}
                 </select>
               </Field>
+
 
               {depasseStock && (
                 <div style={{ fontSize: 12, color: '#C24A3F', padding: '8px 10px', background: '#FBEAE8', borderRadius: 8 }}>

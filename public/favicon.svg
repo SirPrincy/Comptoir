@@ -1,57 +1,37 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%" fill="none">
   <defs>
     <linearGradient id="favBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1E242B" />
-      <stop offset="50%" stop-color="#14181D" />
-      <stop offset="100%" stop-color="#0B0D10" />
+      <stop offset="0%" stop-color="#1C2028" />
+      <stop offset="100%" stop-color="#0F1216" />
     </linearGradient>
-
-    <linearGradient id="favBlue" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2F80ED" />
-      <stop offset="100%" stop-color="#0056B3" />
+    <linearGradient id="favTopFacet" x1="50" y1="14" x2="50" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#60A5FA" />
+      <stop offset="100%" stop-color="#2563EB" />
     </linearGradient>
-
-    <linearGradient id="favCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="favLeftFacet" x1="18" y1="44" x2="50" y2="92" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E40AF" />
+      <stop offset="100%" stop-color="#0F2468" />
+    </linearGradient>
+    <linearGradient id="favRightFacet" x1="82" y1="44" x2="50" y2="92" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#38BDF8" />
-      <stop offset="100%" stop-color="#0284C7" />
+      <stop offset="100%" stop-color="#1D4ED8" />
     </linearGradient>
-
-    <linearGradient id="favSilver" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95" />
-      <stop offset="100%" stop-color="#CBD5E1" stop-opacity="0.7" />
+    <linearGradient id="favGoldAccent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="100%" stop-color="#D97706" />
     </linearGradient>
   </defs>
 
-  <!-- Squircle Base -->
+  <!-- Squircle Base Haute Définition -->
   <rect x="0" y="0" width="100" height="100" rx="24" fill="url(#favBg)" />
-  <rect x="1" y="1" width="98" height="98" rx="23" stroke="url(#favSilver)" stroke-width="1.5" stroke-opacity="0.22" fill="none" />
+  <rect x="0.75" y="0.75" width="98.5" height="98.5" rx="23.25" stroke="#FFFFFF" stroke-width="1.2" stroke-opacity="0.18" fill="none" />
 
-  <!-- Calibrage / Précision -->
-  <circle cx="50" cy="50" r="36" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" stroke-dasharray="2 3" />
-
-  <!-- Branche Arrière (C Bleu) -->
-  <path
-    d="M 64 24
-       C 42 21, 23 34, 23 50
-       C 23 66, 42 79, 64 76"
-    stroke="url(#favBlue)"
-    stroke-width="7"
-    stroke-linecap="round"
-    fill="none"
-  />
-
-  <!-- Branche Avant (C Argenté) -->
-  <path
-    d="M 66 35
-       C 52 32, 36 39, 36 50
-       C 36 61, 52 68, 66 65"
-    stroke="url(#favSilver)"
-    stroke-width="5.5"
-    stroke-linecap="round"
-    fill="none"
-  />
-
-  <!-- Nœud Focal / Pivot -->
-  <circle cx="65" cy="50" r="5.5" fill="url(#favCyan)" />
-  <circle cx="65" cy="50" r="2.5" fill="#FFFFFF" />
+  <!-- Facettes Cube Iso & Monogramme C sculpté -->
+  <path d="M 50 15 L 81 32 L 50 48 L 19 32 Z" fill="url(#favTopFacet)" />
+  <path d="M 19 34 L 48 50 L 48 83 L 19 67 Z" fill="url(#favLeftFacet)" />
+  <path d="M 52 50 L 81 34 L 81 51 L 65 60 L 65 67 L 81 58 L 81 67 L 52 83 Z" fill="url(#favRightFacet)" />
+  
+  <!-- Point pivot or & lumière -->
+  <circle cx="50" cy="48" r="4" fill="url(#favGoldAccent)" />
+  <circle cx="50" cy="48" r="1.5" fill="#FFFFFF" />
 </svg>

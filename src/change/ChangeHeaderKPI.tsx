@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeftRight, Coins, TrendingUp, Wallet, Check } from 'lucide-react';
-import { Stat, primaryBtn } from '../ui';
+import { Stat, primaryBtn, ghostBtn } from '../ui';
 
 interface ChangeHeaderKPIProps {
   stats: {
@@ -36,27 +36,31 @@ export default function ChangeHeaderKPI({
         <div>
           <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#26333D', display: 'flex', alignItems: 'center', gap: 8 }}>
             <ArrowLeftRight size={20} color="#E8985E" />
-            <span>Change / Exchange RMB</span>
+            <span>Portefeuille & Change RMB</span>
           </h2>
           <div style={{ fontSize: 12, color: '#8A8375', marginTop: 2 }}>
-            Suivi des approvisionnements en Yuan (RMB) et impact automatique sur la Trésorerie MGA.
+            Gestion des achats de Yuan (640, 650, 655 Ar), suivi des acheteurs Chine et impact trésorerie MGA.
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onToggleForm}
-          style={{
-            ...primaryBtn,
-            background: showForm ? '#5E584E' : '#3F7A5C',
-            height: 36,
-            padding: '0 14px',
-            fontSize: 12.5,
-          }}
-        >
-          {showForm ? 'Fermer la saisie' : '+ Nouvelle Opération de Change'}
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={onToggleForm}
+            style={{
+              ...primaryBtn,
+              background: showForm ? '#5E584E' : '#3F7A5C',
+              height: 36,
+              padding: '0 14px',
+              fontSize: 12.5,
+            }}
+          >
+            {showForm ? 'Fermer la saisie' : '+ Nouvelle Opération de Change'}
+          </button>
+        </div>
       </div>
+
+
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>

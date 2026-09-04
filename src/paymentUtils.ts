@@ -198,10 +198,11 @@ export function calculerSoldeRMB(
   (changes || []).forEach((c: any) => {
     const rmb = Number(c.montantRmb) || 0;
     const mga = Number(c.montantMga) || 0;
-    const frais = Number(c.fraisMga) || 0;
+    const frais = Number(c.commissionMga || c.fraisMga) || 0;
     totalRmbAchete += rmb;
     totalMgaChange += mga + frais;
   });
+
 
   // 2. Ajustements manuels dans Mouvements sur compte RMB
   (mouvements || []).forEach((m: any) => {

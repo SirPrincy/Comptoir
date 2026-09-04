@@ -13,6 +13,9 @@ interface FormulaireChangeProps {
     taux: string;
     fraisMga: string;
     fournisseur: string;
+    typeIntermediaire?: 'acheteur' | 'exchanger' | 'direct' | 'banque';
+    commissionPct?: string;
+    commissionMga?: string;
     canal: string;
     vitesseExecution: string;
     noteFiabilite: string;
@@ -28,6 +31,7 @@ interface FormulaireChangeProps {
   handleTauxChange: (val: string) => void;
   comptes?: string[];
 }
+
 
 export default function FormulaireChange({
   editingId,
@@ -52,9 +56,9 @@ export default function FormulaireChange({
       />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
-        {/* Ligne 1 : Date, Fournisseur, Canal */}
+        {/* Ligne 1 : Date, Type d'intermédiaire, Nom / Contact, Canal */}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <Field label="Date de l'opération" style={{ flex: '1 1 140px' }}>
+          <Field label="Date de l'opération" style={{ flex: '1 1 130px' }}>
             <input
               type="date"
               style={inputStyle as any}
@@ -63,12 +67,25 @@ export default function FormulaireChange({
             />
           </Field>
 
-          <Field label="Exchanger / Intermédiaire P2P" style={{ flex: '1.5 1 200px' }}>
+          <Field label="Type d'intermédiaire" style={{ flex: '1 1 150px' }}>
+            <select
+              style={selectStyle as any}
+              value={form.typeIntermediaire || 'acheteur'}
+              onChange={e => setForm({ ...form, typeIntermediaire: e.target.value as any })}
+            >
+              <option value="acheteur">🇨🇳 Acheteur Chine / Agent Sourcing</option>
+              <option value="exchanger">💱 Bureau de change / Exchanger P2P</option>
+              <option value="direct">🤝 Contact WeChat / Particulier</option>
+              <option value="banque">🏦 Banque / Broker Officiel</option>
+            </select>
+          </Field>
+
+          <Field label="Nom de l'acheteur / intermédiaire" style={{ flex: '1.5 1 180px' }}>
             <input
               style={inputStyle as any}
               value={form.fournisseur}
               onChange={e => setForm({ ...form, fournisseur: e.target.value })}
-              placeholder="Ex: Tanà Exchange, Contact WeChat, Agent X"
+              placeholder="Ex: Agent Liu (Guangzhou), Tanà Change, John Acheteur"
               list="exchangers-list"
             />
             <datalist id="exchangers-list">
@@ -78,7 +95,7 @@ export default function FormulaireChange({
             </datalist>
           </Field>
 
-          <Field label="Canal de réception RMB" style={{ flex: '1.5 1 180px' }}>
+          <Field label="Canal de réception RMB" style={{ flex: '1.2 1 160px' }}>
             <select
               style={selectStyle as any}
               value={form.canal}
@@ -91,9 +108,9 @@ export default function FormulaireChange({
           </Field>
         </div>
 
-        {/* Ligne 2 : Montant MGA, Montant RMB, Taux Calculé, Frais */}
+        {/* Ligne 2 : Montant MGA, Montant RMB, Taux Calculé, Frais & Commission */}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', background: '#FFFFFF', padding: 12, borderRadius: 8, border: '1px solid #EAE2D4' }}>
-          <Field label="Montant MGA déboursé (Ar) *" style={{ flex: '1.2 1 160px' }}>
+          <Field label="Montant MGA déboursé (Ar) *" style={{ flex: '1.2 1 150px' }}>
             <input
               type="number"
               style={{ ...inputStyle, fontWeight: 700, color: '#C24A3F' } as any}
@@ -108,11 +125,11 @@ export default function FormulaireChange({
                 }
                 setForm({ ...form, montantMga: newMga, taux: newTaux });
               }}
-              placeholder="Ex: 6 800 000"
+              placeholder="Ex: 6 500 000"
             />
           </Field>
 
-          <Field label="Montant RMB reçu (¥) *" style={{ flex: '1.2 1 160px' }}>
+          <Field label="Montant RMB reçu (¥) *" style={{ flex: '1.2 1 150px' }}>
             <input
               type="number"
               style={{ ...inputStyle, fontWeight: 700, color: '#2C5E43' } as any}
@@ -137,20 +154,58 @@ export default function FormulaireChange({
               style={{ ...inputStyle, fontWeight: 700, color: '#8D6E00' } as any}
               value={form.taux}
               onChange={e => handleTauxChange(e.target.value)}
-              placeholder="Ex: 680"
+              placeholder="Ex: 650"
+            />
+            {/* Raccourcis de taux fréquents pour l'utilisateur */}
+            <div style={{ display: 'flex', gap: 3, marginTop: 4 }}>
+              {[640, 645, 650, 655, 660].map(tx => (
+                <button
+                  key={tx}
+                  type="button"
+                  onClick={() => handleTauxChange(String(tx))}
+                  style={{
+                    padding: '1px 5px',
+                    fontSize: 10,
+                    borderRadius: 3,
+                    border: '1px solid #D8D0C0',
+                    background: form.taux === String(tx) ? '#E1F0E8' : '#FAF7F2',
+                    color: form.taux === String(tx) ? '#1E4632' : '#5E584E',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {tx}
+                </button>
+              ))}
+            </div>
+          </Field>
+
+          <Field label="Commission Acheteur (%)" style={{ flex: '0.8 1 110px' }}>
+            <input
+              type="number"
+              step="any"
+              style={inputStyle as any}
+              value={form.commissionPct || ''}
+              onChange={e => {
+                const pct = Number(e.target.value);
+                const mga = Number(form.montantMga) || 0;
+                const calcComm = pct > 0 && mga > 0 ? String(Math.round(mga * (pct / 100))) : form.commissionMga || '';
+                setForm({ ...form, commissionPct: e.target.value, commissionMga: calcComm });
+              }}
+              placeholder="Ex: 3%"
             />
           </Field>
 
-          <Field label="Frais annexes (Ar, optionnel)" style={{ flex: '1 1 120px' }}>
+          <Field label="Frais / Commission (Ar)" style={{ flex: '1 1 120px' }}>
             <input
               type="number"
               style={inputStyle as any}
               value={form.fraisMga}
-              onChange={e => setForm({ ...form, fraisMga: e.target.value })}
-              placeholder="Ex: 5 000"
+              onChange={e => setForm({ ...form, fraisMga: e.target.value, commissionMga: e.target.value })}
+              placeholder="Ex: 15 000"
             />
           </Field>
         </div>
+
 
         {/* Ligne 3 : Vitesse, Note, Référence & Notes */}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

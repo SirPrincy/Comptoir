@@ -3,6 +3,10 @@ export interface Commande {
   productId: string;
   productNom?: string;
   fournisseurId?: string;
+  acheteurNom?: string; // Nom de l'acheteur / intermédiaire Chine
+  commissionAcheteurPct?: number; // % commission de l'acheteur
+  commissionAcheteurAr?: number; // Montant commission en Ariary
+  tauxRmbPondereApplique?: number; // Taux PUMP figé à la commande
   qty: number;
   pu?: number | string;
   puDevise?: number | string;
@@ -27,3 +31,4 @@ export interface Commande {
   };
   [key: string]: any;
 }
+
