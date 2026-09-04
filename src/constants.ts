@@ -37,6 +37,8 @@ export const COMPTES_FINANCIERS = [
 export const TAGS_TRANSACTION = [
   '#investissement',
   '#capital',
+  '#emprunt',
+  '#remboursement',
   '#fond-roulement',
   '#stock-chine',
   '#fret-logistique',

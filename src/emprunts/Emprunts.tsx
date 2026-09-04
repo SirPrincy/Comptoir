@@ -117,10 +117,12 @@ export default function Emprunts({
       const mvtId = 'mvt-' + Math.random().toString(36).slice(2, 10);
       const m = {
         id: mvtId,
-        type: 'entree',
+        type: 'entrée',
         montant: principal,
         compte: form.compteDest,
-        tag: '#investissement',
+        tag: '#emprunt',
+        categorie: 'emprunt',
+        natureOp: 'emprunt',
         reference: `Emprunt ${nouvelEmprunt.nomPreteur}`,
         description: `Obtention emprunt ${nouvelEmprunt.type === 'personnel' ? 'personnel' : 'institutionnel'} auprès de ${nouvelEmprunt.nomPreteur}`,
         date: safeDateIso(form.dateSignature),

@@ -47,7 +47,6 @@ export function isRetraitCapitalOuPerso(m: any): boolean {
  */
 export function isApportCapital(m: any): boolean {
   if (!m) return false;
-  if (m.type !== 'entrée' && m.type !== 'investissement') return false;
   if (m.isInvestissement) return true;
   if (m.natureOp === 'apport_perso') return true;
   const tag = (m.tag || '').toLowerCase();
@@ -61,11 +60,31 @@ export function isApportCapital(m: any): boolean {
     return true;
   }
   const desc = (m.description || '').toLowerCase();
+  const ref = (m.reference || '').toLowerCase();
   if (
     desc.includes('apport') ||
     desc.includes('injection capital') ||
-    desc.includes('investissement')
+    desc.includes('investissement') ||
+    ref.includes('apport') ||
+    ref.includes('investissement')
   ) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Vérifie si un mouvement est un emprunt bancaire ou auprès d'un tiers (entrée de fonds)
+ */
+export function isEmprunt(m: any): boolean {
+  if (!m) return false;
+  const tag = (m.tag || '').toLowerCase();
+  const cat = (m.categorie || '').toLowerCase();
+  const nat = (m.natureOp || '').toLowerCase();
+  if (tag === '#emprunt' || tag === '#pret' || tag === '#dette' || cat === 'emprunt' || nat === 'emprunt') return true;
+  const desc = (m.description || '').toLowerCase();
+  const ref = (m.reference || '').toLowerCase();
+  if (desc.includes('obtention emprunt') || desc.includes('emprunt') || ref.includes('emprunt')) {
     return true;
   }
   return false;
@@ -284,20 +303,28 @@ export function buildToutesTransactions({
 
   // 3. Tous les Mouvements réels de trésorerie
   mouvements.forEach((m: any) => {
+    const rawType = (m.type || '').toLowerCase();
+    const isEmp = isEmprunt(m);
     const isInvest = isApportCapital(m);
     const isRetrait = isRetraitCapitalOuPerso(m);
     const isTrans = Boolean(m.isTransfert || m.tag === '#transfert' || m.categorie === 'transfert');
+    // Un mouvement d'emprunt, d'investissement/apport de capital ou de type entrée / entree / in / credit est un flux positif (entrée d'argent)
+    const isEntree = rawType === 'entrée' || rawType === 'entree' || rawType === 'in' || rawType === 'credit' || rawType === 'investissement' || isEmp || isInvest;
 
     const defaultTag = isTrans
       ? '#transfert'
-      : (isInvest
-          ? '#investissement'
-          : (isRetrait ? '#retrait-perso' : '#manuel'));
+      : (isEmp
+          ? '#emprunt'
+          : (isInvest
+              ? '#investissement'
+              : (isRetrait ? '#retrait-perso' : '#manuel')));
     const defaultCat = isTrans
       ? 'transfert'
-      : (isInvest
-          ? 'investissement'
-          : (isRetrait ? 'retrait_perso' : 'manuel'));
+      : (isEmp
+          ? 'emprunt'
+          : (isInvest
+              ? 'investissement'
+              : (isRetrait ? 'retrait_perso' : 'manuel')));
 
     const pObj = paiements && paiements.find((p: any) =>
       (m.paiementId && String(p.id) === String(m.paiementId)) ||
@@ -306,8 +333,9 @@ export function buildToutesTransactions({
 
     items.push({
       id: m.id || 'mvt-' + Math.random(),
-      type: m.type === 'entrée' ? 'entrée' : 'sortie',
+      type: isEntree ? 'entrée' : 'sortie',
       isInvestissement: isInvest,
+      isEmprunt: isEmp,
       isRetraitCapital: isRetrait,
       isTransfert: isTrans,
       categorie: m.categorie || defaultCat,
@@ -315,7 +343,7 @@ export function buildToutesTransactions({
       tag: m.tag || defaultTag,
       reference: m.reference || '',
       montant: Number(m.montant) || 0,
-      description: m.description || (isTrans ? 'Transfert de fonds' : (isInvest ? 'Apport / Investissement initial' : (isRetrait ? 'Retrait de capital / Prélèvement personnel' : 'Opération manuelle'))),
+      description: m.description || (isTrans ? 'Transfert de fonds' : (isEmp ? 'Obtention emprunt / Financement' : (isInvest ? 'Apport / Investissement initial' : (isRetrait ? 'Retrait de capital / Prélèvement personnel' : 'Opération manuelle')))),
       date: m.date || new Date().toISOString(),
       isManuel: true,
       paiementId: m.paiementId,

@@ -520,7 +520,7 @@ export function useTresorerieForms({
     const montantNum = Number(form.montant);
     if (!montantNum || montantNum <= 0 || !form.description.trim()) return;
 
-    const isInvest = form.type === 'investissement';
+    const isInvest = form.type === 'investissement' || form.tag === '#investissement' || form.tag === '#capital' || form.natureOp === 'apport_perso';
     const finalType = isInvest ? 'entrée' : form.type;
     const finalTag = isInvest ? (form.tag || '#investissement') : form.tag;
 

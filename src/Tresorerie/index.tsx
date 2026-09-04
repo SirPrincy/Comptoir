@@ -125,11 +125,15 @@ export default function Tresorerie({
       .filter((t: any) =>
         t.type === 'entrée' &&
         !t.isInvestissement &&
+        !t.isEmprunt &&
         !t.isTransfert &&
         t.tag !== '#investissement' &&
         t.tag !== '#capital' &&
+        t.tag !== '#emprunt' &&
         t.tag !== '#transfert' &&
-        t.categorie !== 'transfert'
+        t.categorie !== 'transfert' &&
+        t.categorie !== 'emprunt' &&
+        t.categorie !== 'investissement'
       )
       .reduce((s: number, t: any) => s + (Number(t.montant) || 0), 0);
   }, [toutesTransactions]);
@@ -139,9 +143,14 @@ export default function Tresorerie({
       .filter((t: any) =>
         t.type === 'sortie' &&
         !t.isTransfert &&
+        !t.isInvestissement &&
         t.tag !== '#retrait-perso' &&
+        t.tag !== '#investissement' &&
+        t.tag !== '#capital' &&
+        t.tag !== '#remboursement' &&
         t.tag !== '#transfert' &&
-        t.categorie !== 'transfert'
+        t.categorie !== 'transfert' &&
+        t.categorie !== 'remboursement'
       )
       .reduce((s: number, t: any) => s + (Number(t.montant) || 0), 0);
   }, [toutesTransactions]);
@@ -149,14 +158,14 @@ export default function Tresorerie({
   const resultatBusiness = caBusiness - depensesBusiness;
 
   const apportsPerso = useMemo(() => {
-    return mouvements
-      .filter((m: any) => m.type === 'entrée' && (m.isInvestissement || m.tag === '#investissement' || m.tag === '#capital'))
-      .reduce((s: number, m: any) => s + (Number(m.montant) || 0), 0);
-  }, [mouvements]);
+    return toutesTransactions
+      .filter((t: any) => t.isInvestissement || t.tag === '#investissement' || t.tag === '#capital' || t.tag === '#apport')
+      .reduce((s: number, t: any) => s + (Number(t.montant) || 0), 0);
+  }, [toutesTransactions]);
 
   const prelevementsPerso = useMemo(() => {
     return mouvements
-      .filter((m: any) => m.type === 'sortie' && m.tag === '#retrait-perso')
+      .filter((m: any) => m.type === 'sortie' && (m.tag === '#retrait-perso' || m.tag === '#prelevement-perso' || m.natureOp === 'retrait_perso'))
       .reduce((s: number, m: any) => s + (Number(m.montant) || 0), 0);
   }, [mouvements]);
 
