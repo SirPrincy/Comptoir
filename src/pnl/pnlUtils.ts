@@ -3,6 +3,7 @@ import { Product } from '../stock/types';
 import { Vente } from '../ventes/types';
 import { Commande } from '../achat/types';
 import { Mouvement } from '../Tresorerie/types';
+import { isRetraitCapitalOuPerso } from '../Tresorerie/tresorerieUtils';
 import { NoteDeFrais } from '../frais/NotesDeFrais';
 import { Immobilisation } from '../immobilisations/types';
 import { calculerPlanAmortissementMensuel } from '../immobilisations/immoUtils';
@@ -524,8 +525,9 @@ export function calculerOpex(
       const montant = Number(m.montant) || 0;
       const tag = m.tag || '';
 
-      // Exclusions : Remboursements emprunts, stock achats (déjà dans COGS), immobilisations, retraits perso, change devise, et notes de frais (déjà comptées ci-dessus)
+      // Exclusions : Remboursements emprunts, retraits de capital / prélèvements perso (flux de capitaux propres, PAS une charge !), stock achats, immobilisations, change devise, et notes de frais
       if (
+        isRetraitCapitalOuPerso(m) ||
         tag === '#remboursement' ||
         tag === '#retrait-perso' ||
         tag === '#change-rmb' ||

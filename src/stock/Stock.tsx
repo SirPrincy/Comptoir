@@ -26,7 +26,8 @@ const Stock = memo(function Stock({
   // Filtres
   const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [selectedCat, setSelectedCat] = useState('Tous');
-  const [stockFilter, setStockFilter] = useState<'tous' | 'alerte' | 'dispo' | 'rupture'>('tous');
+  const [stockFilter, setStockFilter] = useState<'tous' | 'alerte' | 'dispo' | 'rupture' | 'archives'>('tous');
+  const [showArchived, setShowArchived] = useState(false);
 
   React.useEffect(() => {
     if (initialSearch !== undefined) {
@@ -55,6 +56,7 @@ const Stock = memo(function Stock({
     prixAchatAr: string;
     prixVente: string;
     seuilMin: string;
+    isArchive?: boolean;
     images: string[];
   }>({
     nom: '',
@@ -66,6 +68,7 @@ const Stock = memo(function Stock({
     prixAchatAr: '',
     prixVente: '',
     seuilMin: '3',
+    isArchive: false,
     images: [],
   });
 
@@ -75,14 +78,21 @@ const Stock = memo(function Stock({
     [products, commandes, ventes, mouvements]
   );
 
-  // Catégories existantes
+  // Catégories existantes (excluant ou incluant selon besoin)
   const existingCategories = useMemo(() => {
     const set = new Set([...CATEGORIES]);
     products.forEach((p: any) => { if (p.categorie) set.add(p.categorie); });
     return Array.from(set);
   }, [products]);
 
-  // KPIs financiers du Stock
+  // Nombre d'articles archivés / masqués
+  const archivedCount = useMemo(() => {
+    return products.filter((p: any) => Boolean(p.isArchive || p.masque || p.archive)).length;
+  }, [products]);
+
+  const activeProductsCount = products.length - archivedCount;
+
+  // KPIs financiers du Stock (basés sur les articles actifs, avec exclusion des alertes pour les masqués)
   const kpis = useMemo(() => {
     let totalUnites = 0;
     let valeurAchatTotale = 0;
@@ -90,9 +100,14 @@ const Stock = memo(function Stock({
     let alertesCount = 0;
 
     products.forEach((p: any) => {
+      const isArchived = Boolean(p.isArchive || p.masque || p.archive);
       const st = stockByProduct[p.id] || 0;
       const seuil = p.seuilMin !== undefined ? Number(p.seuilMin) : 3;
-      if (st <= seuil) alertesCount++;
+      
+      // Un produit masqué ne génère pas d'alerte de rupture
+      if (!isArchived && st <= seuil) {
+        alertesCount++;
+      }
 
       if (st > 0) {
         totalUnites += st;
@@ -112,12 +127,21 @@ const Stock = memo(function Stock({
   // Produits filtrés
   const filteredProducts = useMemo(() => {
     return products.filter((p: any) => {
+      const isArchived = Boolean(p.isArchive || p.masque || p.archive);
       const st = stockByProduct[p.id] || 0;
       const seuil = p.seuilMin !== undefined ? Number(p.seuilMin) : 3;
 
-      if (stockFilter === 'alerte' && st > seuil) return false;
-      if (stockFilter === 'dispo' && st <= 0) return false;
-      if (stockFilter === 'rupture' && st !== 0) return false;
+      // Filtrage par onglet d'état
+      if (stockFilter === 'archives') {
+        if (!isArchived) return false;
+      } else {
+        // Par défaut, masquer les articles archivés sauf si l'option showArchived est activée ou qu'on est sur l'onglet dédié
+        if (isArchived && !showArchived) return false;
+
+        if (stockFilter === 'alerte' && (isArchived || st > seuil)) return false;
+        if (stockFilter === 'dispo' && st <= 0) return false;
+        if (stockFilter === 'rupture' && (isArchived || st !== 0)) return false;
+      }
 
       if (selectedCat !== 'Tous' && p.categorie !== selectedCat) return false;
 
@@ -131,7 +155,7 @@ const Stock = memo(function Stock({
       }
       return true;
     });
-  }, [products, stockByProduct, stockFilter, selectedCat, searchTerm]);
+  }, [products, stockByProduct, stockFilter, showArchived, selectedCat, searchTerm]);
 
   // Enregistrer ou modifier un produit
   const enregistrerProduit = () => {
@@ -161,6 +185,8 @@ const Stock = memo(function Stock({
                 coutTotalRenduAr: pAchatArVal || undefined,
                 prixVente: pVenteVal || undefined,
                 seuilMin: seuilVal,
+                isArchive: Boolean(form.isArchive),
+                masque: Boolean(form.isArchive),
                 images: form.images,
               }
             : p
@@ -181,6 +207,8 @@ const Stock = memo(function Stock({
         coutTotalRenduAr: pAchatArVal || undefined,
         prixVente: pVenteVal || undefined,
         seuilMin: seuilVal,
+        isArchive: Boolean(form.isArchive),
+        masque: Boolean(form.isArchive),
         images: form.images,
       };
       updateAll([...products, p], ventes, commandes);
@@ -196,6 +224,7 @@ const Stock = memo(function Stock({
       prixAchatAr: '',
       prixVente: '',
       seuilMin: '3',
+      isArchive: false,
       images: [],
     });
     setShowForm(false);
@@ -214,9 +243,26 @@ const Stock = memo(function Stock({
       prixAchatAr: p.prixAchatAr || p.coutTotalRenduAr ? String(p.prixAchatAr || p.coutTotalRenduAr) : '',
       prixVente: p.prixVente || p.prixVenteEstime ? String(p.prixVente || p.prixVenteEstime) : '',
       seuilMin: p.seuilMin !== undefined ? String(p.seuilMin) : '3',
+      isArchive: Boolean(p.isArchive || p.masque || p.archive),
       images: existingImgs,
     });
     setShowForm(true);
+  };
+
+  const toggleArchiveProduit = (targetP: any) => {
+    const isNowArchived = !Boolean(targetP.isArchive || targetP.masque || targetP.archive);
+    updateAll(
+      products.map((p: any) =>
+        p.id === targetP.id
+          ? { ...p, isArchive: isNowArchived, masque: isNowArchived }
+          : p
+      ),
+      ventes,
+      commandes
+    );
+    if (selectedDetailProduct && selectedDetailProduct.id === targetP.id) {
+      setSelectedDetailProduct((prev: any) => prev ? { ...prev, isArchive: isNowArchived, masque: isNowArchived } : null);
+    }
   };
 
   const supprimerProduit = (id: string) => updateAll(products.filter((p: any) => p.id !== id), ventes, commandes);
@@ -319,7 +365,7 @@ const Stock = memo(function Stock({
               color: stockFilter === 'tous' ? '#FAF7F2' : '#26333D',
             }}
           >
-            Tous ({products.length})
+            Actifs ({activeProductsCount})
           </button>
           <button
             onClick={() => setStockFilter('dispo')}
@@ -351,6 +397,19 @@ const Stock = memo(function Stock({
           >
             Ruptures
           </button>
+          {archivedCount > 0 && (
+            <button
+              onClick={() => setStockFilter('archives')}
+              style={{
+                padding: '6px 10px', borderRadius: 6, fontSize: 11.5, fontWeight: 600, border: 'none', cursor: 'pointer',
+                background: stockFilter === 'archives' ? '#736B5E' : '#EAE2D4',
+                color: stockFilter === 'archives' ? '#FAF7F2' : '#736B5E',
+              }}
+              title="Articles masqués / fin de vie ne générant plus d'alertes"
+            >
+              📦 Masqués ({archivedCount})
+            </button>
+          )}
         </div>
 
         {ajustementsProduct.length > 0 && (
@@ -411,9 +470,9 @@ const Stock = memo(function Stock({
 
       {/* Liste des produits */}
       {filteredProducts.length === 0 ? (
-        <Empty text="Aucun produit ne correspond à votre recherche." />
+        <Empty text={stockFilter === 'archives' ? "Aucun article masqué ou archivé." : "Aucun produit ne correspond à votre recherche."} />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div className="flex flex-col gap-3 sm:gap-3.5">
           {filteredProducts.map((p: any) => (
             <StockItemCard
               key={p.id}
@@ -425,6 +484,7 @@ const Stock = memo(function Stock({
               onOpenAdjust={(item) => setAdjustProduct(item)}
               onEdit={editerProduit}
               onDelete={supprimerProduit}
+              onToggleArchive={toggleArchiveProduit}
             />
           ))}
         </div>
@@ -451,6 +511,7 @@ const Stock = memo(function Stock({
           onClose={() => setSelectedDetailProduct(null)}
           onEdit={editerProduit}
           onAdjust={(p) => setAdjustProduct(p)}
+          onToggleArchive={toggleArchiveProduit}
           onOpenGallery={(title, images) => setSelectedGallery({ title, images, index: 0 })}
         />
       )}

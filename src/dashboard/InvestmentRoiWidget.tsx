@@ -7,6 +7,8 @@ import { Card, RADIUS, SHADOWS } from '../ui';
 interface InvestmentRoiWidgetProps {
   baseInvestissement: number;
   capitalInvesti: number;
+  totalApportsCapital?: number;
+  totalRetraitsCapital?: number;
   beneficeNet: number;
   tauxRoi: number;
   tauxRecuperation: number;
@@ -17,6 +19,8 @@ interface InvestmentRoiWidgetProps {
 const InvestmentRoiWidget = memo(function InvestmentRoiWidget({
   baseInvestissement,
   capitalInvesti,
+  totalApportsCapital = 0,
+  totalRetraitsCapital = 0,
   beneficeNet,
   tauxRoi,
   tauxRecuperation,
@@ -55,7 +59,11 @@ const InvestmentRoiWidget = memo(function InvestmentRoiWidget({
               {baseInvestissement.toLocaleString('fr-FR')} <span style={{ fontSize: 11, fontFamily: FONTS.mono, fontWeight: 500 }}>Ar</span>
             </div>
             <div style={{ fontSize: 10, color: THEME.text.muted, marginTop: 2 }}>
-              {capitalInvesti > 0 ? 'Apports déclarés' : 'Dépenses stock + fret'}
+              {totalRetraitsCapital > 0
+                ? (totalApportsCapital > 0
+                    ? `Net apports (${totalApportsCapital.toLocaleString('fr-FR')} − ${totalRetraitsCapital.toLocaleString('fr-FR')} Ar)`
+                    : `Net débours (−${totalRetraitsCapital.toLocaleString('fr-FR')} Ar retirés)`)
+                : (capitalInvesti > 0 ? 'Apports déclarés' : 'Dépenses stock + fret')}
             </div>
           </div>
 

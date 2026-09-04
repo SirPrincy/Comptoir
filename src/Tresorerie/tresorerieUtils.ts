@@ -4,6 +4,73 @@ import {
   getMontantPayeVente,
 } from '../paymentUtils';
 
+/**
+ * Vérifie si un mouvement est un retrait de capital / prélèvement personnel (flux de capital, PAS une charge !)
+ */
+export function isRetraitCapitalOuPerso(m: any): boolean {
+  if (!m) return false;
+  if (m.isPerso && m.type === 'sortie') return true;
+  if (m.natureOp === 'retrait_perso') return true;
+  const tag = (m.tag || '').toLowerCase();
+  if (
+    tag === '#retrait-perso' ||
+    tag === '#retrait-capital' ||
+    tag === '#prelevement-perso' ||
+    tag === '#prelevement' ||
+    tag === '#retrait' ||
+    tag.includes('retrait-perso') ||
+    tag.includes('retrait-capital') ||
+    tag.includes('prelevement')
+  ) {
+    return true;
+  }
+  const desc = (m.description || '').toLowerCase();
+  const ref = (m.reference || '').toLowerCase();
+  if (
+    desc.includes('prélèvement perso') ||
+    desc.includes('prelevement perso') ||
+    desc.includes('retrait perso') ||
+    desc.includes('retrait capital') ||
+    desc.includes('retrait de capital') ||
+    desc.includes('prélèvement de capital') ||
+    desc.includes('prelevement de capital') ||
+    ref.includes('retrait perso') ||
+    ref.includes('retrait capital')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Vérifie si un mouvement est un apport de capital / investissement initial
+ */
+export function isApportCapital(m: any): boolean {
+  if (!m) return false;
+  if (m.type !== 'entrée' && m.type !== 'investissement') return false;
+  if (m.isInvestissement) return true;
+  if (m.natureOp === 'apport_perso') return true;
+  const tag = (m.tag || '').toLowerCase();
+  if (
+    tag === '#investissement' ||
+    tag === '#capital' ||
+    tag === '#apport' ||
+    tag === '#apport-perso' ||
+    tag === '#fond-roulement'
+  ) {
+    return true;
+  }
+  const desc = (m.description || '').toLowerCase();
+  if (
+    desc.includes('apport') ||
+    desc.includes('injection capital') ||
+    desc.includes('investissement')
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export function getMontantAchat(c: any, products: any[]) {
   if (c.total !== undefined && c.total !== null && Number(c.total) > 0) return Number(c.total);
   if (c.pu !== undefined && c.pu !== null && Number(c.pu) > 0) return Number(c.pu) * (Number(c.qty) || 1);
@@ -217,11 +284,20 @@ export function buildToutesTransactions({
 
   // 3. Tous les Mouvements réels de trésorerie
   mouvements.forEach((m: any) => {
-    const isInvest = Boolean(m.isInvestissement || m.tag === '#investissement' || m.tag === '#capital');
+    const isInvest = isApportCapital(m);
+    const isRetrait = isRetraitCapitalOuPerso(m);
     const isTrans = Boolean(m.isTransfert || m.tag === '#transfert' || m.categorie === 'transfert');
 
-    const defaultTag = isTrans ? '#transfert' : (isInvest ? '#investissement' : '#manuel');
-    const defaultCat = isTrans ? 'transfert' : (isInvest ? 'investissement' : 'manuel');
+    const defaultTag = isTrans
+      ? '#transfert'
+      : (isInvest
+          ? '#investissement'
+          : (isRetrait ? '#retrait-perso' : '#manuel'));
+    const defaultCat = isTrans
+      ? 'transfert'
+      : (isInvest
+          ? 'investissement'
+          : (isRetrait ? 'retrait_perso' : 'manuel'));
 
     const pObj = paiements && paiements.find((p: any) =>
       (m.paiementId && String(p.id) === String(m.paiementId)) ||
@@ -232,13 +308,14 @@ export function buildToutesTransactions({
       id: m.id || 'mvt-' + Math.random(),
       type: m.type === 'entrée' ? 'entrée' : 'sortie',
       isInvestissement: isInvest,
+      isRetraitCapital: isRetrait,
       isTransfert: isTrans,
       categorie: m.categorie || defaultCat,
       compte: m.compte || 'Caisse / Espèces',
       tag: m.tag || defaultTag,
       reference: m.reference || '',
       montant: Number(m.montant) || 0,
-      description: m.description || (isTrans ? 'Transfert de fonds' : (isInvest ? 'Apport / Investissement initial' : 'Opération manuelle')),
+      description: m.description || (isTrans ? 'Transfert de fonds' : (isInvest ? 'Apport / Investissement initial' : (isRetrait ? 'Retrait de capital / Prélèvement personnel' : 'Opération manuelle'))),
       date: m.date || new Date().toISOString(),
       isManuel: true,
       paiementId: m.paiementId,

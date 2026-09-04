@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, X } from 'lucide-react';
+import { Camera, X, Eye, EyeOff } from 'lucide-react';
 import { Card, Field, inputStyle, selectStyle, primaryBtn } from '../ui';
 import { CATEGORIES } from '../constants';
 import { compressAndReadFile } from './stockUtils';
@@ -16,6 +16,7 @@ interface ProductFormProps {
     prixAchatAr: string;
     prixVente: string;
     seuilMin: string;
+    isArchive?: boolean;
     images: string[];
   };
   setForm: React.Dispatch<React.SetStateAction<any>>;
@@ -146,6 +147,95 @@ export default function ProductForm({
             placeholder="Noir / Rouge"
           />
         </Field>
+
+        {editingId && (
+          <div
+            style={{
+              flex: '1 1 100%',
+              marginTop: 6,
+              padding: '12px 16px',
+              background: form.isArchive ? '#FAF6F4' : '#FDFBF9',
+              borderRadius: 10,
+              border: `1px solid ${form.isArchive ? '#EAD6D0' : '#EAE2D4'}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 16,
+              boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 8,
+                  background: form.isArchive ? '#F6E3DE' : '#F2EDE4',
+                  color: form.isArchive ? '#991B1B' : '#736B5E',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                {form.isArchive ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: form.isArchive ? '#991B1B' : '#26333D', letterSpacing: '-0.01em' }}>
+                  {form.isArchive ? 'Article masqué / archivé (Fin de cycle)' : 'Visibilité du produit dans le catalogue'}
+                </div>
+                <div style={{ fontSize: 11.5, color: '#736B5E', marginTop: 2, lineHeight: 1.35 }}>
+                  {form.isArchive
+                    ? 'Masqué du catalogue actif : aucune notification de rupture ni proposition de réassort.'
+                    : 'Actif dans les flux. Cochez pour masquer et couper les alertes de réapprovisionnement.'}
+                </div>
+              </div>
+            </div>
+
+            {/* Switch Toggle moderne */}
+            <label
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                cursor: 'pointer',
+                userSelect: 'none',
+              }}
+            >
+              <div
+                onClick={() => setForm((prev: any) => ({ ...prev, isArchive: !prev.isArchive }))}
+                style={{
+                  width: 44,
+                  height: 24,
+                  borderRadius: 12,
+                  background: form.isArchive ? '#C24A3F' : '#D1C9BC',
+                  position: 'relative',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s ease',
+                  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)',
+                }}
+              >
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    left: form.isArchive ? 22 : 2,
+                    width: 20,
+                    height: 20,
+                    borderRadius: 10,
+                    background: '#FFFFFF',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                    transition: 'left 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}
+                />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 700, color: form.isArchive ? '#991B1B' : '#5E584E', whiteSpace: 'nowrap' }}>
+                {form.isArchive ? 'Masqué' : 'Visible'}
+              </span>
+            </label>
+          </div>
+        )}
 
         <Field label={`Photos de l'article (${form.images.length}/3 max)`} style={{ flex: '1 1 100%', marginTop: 4 }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>

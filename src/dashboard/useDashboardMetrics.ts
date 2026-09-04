@@ -2,7 +2,12 @@ import { useMemo, useCallback } from 'react';
 import { STATUTS_LOGISTIQUE } from '../constants';
 import { calculerSoldeRMB, getRestePayeVente, getRestePayeMarchandise, getRestePayeFret } from '../paymentUtils';
 import { computeStock } from '../stock/stockUtils';
-import { calculerSoldesComptes, calculerSoldeTotalMga } from '../Tresorerie/tresorerieUtils';
+import {
+  calculerSoldesComptes,
+  calculerSoldeTotalMga,
+  isRetraitCapitalOuPerso,
+  isApportCapital,
+} from '../Tresorerie/tresorerieUtils';
 
 export interface DashboardMetricsProps {
   products: any[];
@@ -108,11 +113,30 @@ export function useDashboardMetrics({
     }, 0);
   }, [ventes, productMap, costMapByProduct]);
 
-  // 3. Capital Investi
-  const capitalInvesti = useMemo(() => {
-    return mouvements
-      .filter((m: any) => m.type === 'entrée' && (m.isInvestissement || m.tag === '#investissement' || m.tag === '#capital' || m.tag === '#fond-roulement'))
-      .reduce((s: number, m: any) => s + (Number(m.montant) || 0), 0);
+  // 3. Capital Investi & Retraits de Capital
+  const { totalApportsCapital, totalRetraitsCapital, capitalInvestiNet, capitalInvesti } = useMemo(() => {
+    let apports = 0;
+    let retraits = 0;
+
+    (mouvements || []).forEach((m: any) => {
+      const montant = Number(m.montant) || 0;
+      if (montant <= 0) return;
+
+      if (isApportCapital(m)) {
+        apports += montant;
+      } else if (isRetraitCapitalOuPerso(m)) {
+        retraits += montant;
+      }
+    });
+
+    const net = Math.max(0, apports - retraits);
+    return {
+      totalApportsCapital: apports,
+      totalRetraitsCapital: retraits,
+      capitalInvestiNet: net,
+      // Capital net investi après déduction des retraits de capital
+      capitalInvesti: apports > 0 ? net : 0,
+    };
   }, [mouvements]);
 
   // 4. Sorties Achats Chine & Fret
@@ -136,10 +160,20 @@ export function useDashboardMetrics({
     }, 0);
   }, [commandes]);
 
-  // 5. Charges opérationnelles
+  // 5. Charges opérationnelles (Exclusion FORMELLE des retraits de capital & prélèvements personnels : ce sont des flux de capitaux propres, PAS des charges !)
   const chargesOperationnelles = useMemo(() => {
-    return mouvements
-      .filter((m: any) => m.type === 'sortie' && !m.isTransfert && m.tag !== '#stock-chine' && m.tag !== '#fret-logistique')
+    return (mouvements || [])
+      .filter((m: any) => {
+        if (m.type !== 'sortie' || m.isTransfert) return false;
+        // Exclusion formelle des retraits de capital / prélèvements perso
+        if (isRetraitCapitalOuPerso(m)) return false;
+        const tag = (m.tag || '').toLowerCase();
+        // Exclusion des achats stock et fret (comptabilisés dans les coûts de revient et le sourcing)
+        if (tag === '#stock-chine' || tag === '#fret-logistique' || tag.includes('achat stock')) return false;
+        // Exclusion des transferts inter-comptes, remboursements de dettes, change devises et immobilisations
+        if (tag === '#transfert' || m.categorie === 'transfert' || tag === '#remboursement' || tag === '#change-rmb' || tag === '#materiel') return false;
+        return true;
+      })
       .reduce((s: number, m: any) => s + (Number(m.montant) || 0), 0);
   }, [mouvements]);
 
@@ -189,7 +223,13 @@ export function useDashboardMetrics({
   // 6. Dépenses d'exploitation globales & Bénéfices
   const totalDepensesGlobales = totalAchatsChine + totalFret + chargesOperationnelles + statsPertes.totalPertesAr;
   const beneficeNet = margeTotale - chargesOperationnelles - statsPertes.totalPertesAr + statsPertes.totalGainsInventaireAr;
-  const baseInvestissement = capitalInvesti > 0 ? capitalInvesti : totalDepensesGlobales;
+  
+  // Recalcul du Capital de Base dans le ROI :
+  // - Si l'utilisateur a déclaré des apports de capital : Base = Apports de capital − Retraits de capital
+  // - Si aucun apport formel n'a été saisi : Base = Dépenses globales (achats stock + fret + charges) − Retraits de capital
+  const baseInvestissement = totalApportsCapital > 0
+    ? Math.max(0, totalApportsCapital - totalRetraitsCapital)
+    : Math.max(0, totalDepensesGlobales - totalRetraitsCapital);
 
   const tauxRoi = baseInvestissement > 0 ? (beneficeNet / baseInvestissement) * 100 : 0;
   const tauxRecuperation = baseInvestissement > 0 ? Math.min(100, Math.max(0, (caTotal / baseInvestissement) * 100)) : 0;
@@ -257,6 +297,8 @@ export function useDashboardMetrics({
 
   const stockAlertesList = useMemo(() => {
     return products.filter((p: any) => {
+      // Les articles masqués / archivés (obsolètes ou non renouvelés) ne doivent plus générer d'alerte
+      if (p.isArchive || p.masque || p.archive) return false;
       const stock = stockByProduct[p.id] !== undefined ? stockByProduct[p.id] : (Number(p.stock) || 0);
       const seuil = Number(p.seuilAlerte) || Number(p.seuilMin) || 2;
       return stock <= seuil;
@@ -389,6 +431,9 @@ export function useDashboardMetrics({
     caTotal,
     margeTotale,
     capitalInvesti,
+    totalApportsCapital,
+    totalRetraitsCapital,
+    capitalInvestiNet,
     totalAchatsChine,
     totalFret,
     chargesOperationnelles,

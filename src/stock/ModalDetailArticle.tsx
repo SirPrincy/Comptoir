@@ -13,7 +13,9 @@ import {
   Image as ImageIcon,
   CheckCircle2,
   Clock,
-  Coins
+  Coins,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Modal, primaryBtn, ghostBtn, inputStyle } from '../ui';
 
@@ -27,6 +29,7 @@ interface ModalDetailArticleProps {
   onClose: () => void;
   onEdit: (product: any) => void;
   onAdjust: (product: any) => void;
+  onToggleArchive?: (product: any) => void;
   onOpenGallery?: (title: string, images: string[]) => void;
 }
 
@@ -40,6 +43,7 @@ export default function ModalDetailArticle({
   onClose,
   onEdit,
   onAdjust,
+  onToggleArchive,
   onOpenGallery,
 }: ModalDetailArticleProps) {
   const [filterType, setFilterType] = useState<'tous' | 'achats' | 'ventes' | 'ajustements'>('tous');
@@ -249,6 +253,11 @@ export default function ModalDetailArticle({
                   {product.couleur}
                 </span>
               )}
+              {(product.isArchive || product.masque) && (
+                <span style={{ fontSize: 10.5, background: '#F5EBE6', color: '#991B1B', border: '1px solid #E5C4B5', padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>
+                  📦 Masqué / Obsolète
+                </span>
+              )}
             </div>
 
             <div style={{ fontSize: 12, color: '#8A8375', marginTop: 3, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -282,7 +291,27 @@ export default function ModalDetailArticle({
           </div>
 
           {/* Boutons d'action rapide */}
-          <div style={{ display: 'flex', gap: 6, flexShrink: 0, marginLeft: 'auto' }}>
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0, marginLeft: 'auto', flexWrap: 'wrap' }}>
+            {onToggleArchive && (
+              <button
+                onClick={() => onToggleArchive(product)}
+                style={{
+                  ...ghostBtn,
+                  padding: '5px 10px',
+                  fontSize: 11.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  background: (product.isArchive || product.masque) ? '#E9F2EC' : '#FAF7F2',
+                  color: (product.isArchive || product.masque) ? '#3F7A5C' : '#8A8375',
+                  borderColor: (product.isArchive || product.masque) ? '#BBDBC7' : '#EAE2D4',
+                }}
+                title={(product.isArchive || product.masque) ? "Réactiver l'article dans le catalogue et les alertes" : "Masquer l'article (ne plus acheter, couper les alertes de rupture)"}
+              >
+                {(product.isArchive || product.masque) ? <Eye size={12} /> : <EyeOff size={12} />}
+                <span>{(product.isArchive || product.masque) ? 'Réactiver' : 'Masquer'}</span>
+              </button>
+            )}
             <button
               onClick={() => { onClose(); onAdjust(product); }}
               style={{ ...ghostBtn, padding: '5px 10px', fontSize: 11.5, display: 'flex', alignItems: 'center', gap: 4 }}

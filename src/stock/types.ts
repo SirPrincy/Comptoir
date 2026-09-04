@@ -14,6 +14,8 @@ export interface Product {
   stock?: number;
   fournisseurId?: string;
   notes?: string;
+  isArchive?: boolean;
+  masque?: boolean;
   [key: string]: any;
 }
 

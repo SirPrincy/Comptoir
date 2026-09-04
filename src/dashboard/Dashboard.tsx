@@ -164,6 +164,8 @@ const Dashboard = memo(function Dashboard({
           <InvestmentRoiWidget
             baseInvestissement={metrics.baseInvestissement}
             capitalInvesti={metrics.capitalInvesti}
+            totalApportsCapital={metrics.totalApportsCapital}
+            totalRetraitsCapital={metrics.totalRetraitsCapital}
             beneficeNet={metrics.beneficeNet}
             tauxRoi={metrics.tauxRoi}
             tauxRecuperation={metrics.tauxRecuperation}
