@@ -56,6 +56,12 @@ export default function ColisRow({
             </span>
           )}
 
+          {isCompletedQC && (
+            <span style={{ fontSize: 10.5, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: '#EBF4EC', color: '#1B6A3E', border: '1px solid #C4DEC0' }}>
+              📂 Archivé en stock
+            </span>
+          )}
+
           {/* Badges de Statut de Paiement Séparés */}
           <span style={{
             fontSize: 10.5,

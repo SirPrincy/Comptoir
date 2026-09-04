@@ -243,7 +243,7 @@ export default function PnlTable({
           indent: true,
         })}
 
-        {((pnl.fraisTransportChineMarchandises > 0) || ((pnlPrevious?.fraisTransportChineMarchandises || 0) > 0)) && renderRow({
+        {renderRow({
           title: "↳ dont Frais transport frns Chine vers entrepôt Chine",
           currentVal: pnl.fraisTransportChineMarchandises,
           prevVal: pnlPrevious?.fraisTransportChineMarchandises,

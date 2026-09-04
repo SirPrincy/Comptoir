@@ -58,10 +58,16 @@ export function getProductCostBreakdown(
       // 2. Frais transport fournisseur Chine vers entrepôt Chine (livraison locale interne Chine)
       // Uniquement si explicitement renseigné dans la commande
       let fraisChine = 0;
-      if (c.fraisLivraisonChine !== undefined && c.fraisLivraisonChine !== null && !isNaN(Number(c.fraisLivraisonChine)) && Number(c.fraisLivraisonChine) > 0) {
-        fraisChine = Number(c.fraisLivraisonChine);
-      } else if (c.fraisLivraisonChineDevise !== undefined && c.fraisLivraisonChineDevise !== null && !isNaN(Number(c.fraisLivraisonChineDevise)) && Number(c.fraisLivraisonChineDevise) > 0) {
-        fraisChine = Math.round(Number(c.fraisLivraisonChineDevise) * taux);
+      const numFraisChine = Number(c.fraisLivraisonChine);
+      const numFraisChineDevise = Number(c.fraisLivraisonChineDevise);
+      const numFraisLivraison = Number(c.fraisLivraison);
+
+      if (!isNaN(numFraisChine) && numFraisChine > 0) {
+        fraisChine = numFraisChine;
+      } else if (!isNaN(numFraisChineDevise) && numFraisChineDevise > 0) {
+        fraisChine = Math.round(numFraisChineDevise * taux);
+      } else if (!isNaN(numFraisLivraison) && numFraisLivraison > 0) {
+        fraisChine = numFraisLivraison;
       }
 
       // 3. Montant total marchandise (Articles + Frais transport interne Chine)
@@ -90,13 +96,14 @@ export function getProductCostBreakdown(
     const prixAchat = Number(p?.prixAchatAr) || Number(p?.prixAchat) || (Number(p?.puRmb || 0) * (devises?.rmb || 680)) || 0;
     const coutRendu = Number(p?.coutTotalRenduAr) || 0;
     const fretEstime = coutRendu > prixAchat ? coutRendu - prixAchat : 0;
+    const fraisChineFallback = Number(p?.fraisLivraisonChine || p?.fraisLivraison || 0) || (p?.fraisLivraisonChineDevise ? Math.round(Number(p.fraisLivraisonChineDevise) * (devises?.rmb || 680)) : 0);
 
     articlesPu = prixAchat;
-    fraisChinePu = 0;
-    basePu = prixAchat;
+    fraisChinePu = fraisChineFallback;
+    basePu = prixAchat + fraisChineFallback;
     fretPu = fretEstime;
     transportLocalPu = 0;
-    coutRevient = coutRendu > 0 ? coutRendu : prixAchat;
+    coutRevient = coutRendu > 0 ? coutRendu : (basePu + fretEstime);
   }
 
   return {
