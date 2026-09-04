@@ -13,7 +13,6 @@ interface ColisRowProps {
   paiements?: any[];
   onOuvrir: (id: string, step?: number) => void;
   onEdit?: (commande: any) => void;
-  onPayerFret?: (commande: any) => void;
   onNavigateTab?: (tab: string) => void;
 }
 
@@ -24,7 +23,6 @@ export default function ColisRow({
   paiements = [],
   onOuvrir,
   onEdit,
-  onPayerFret,
   onNavigateTab,
 }: ColisRowProps) {
   const isCompletedQC = c.qualityCheck?.isCompleted;
@@ -128,30 +126,6 @@ export default function ColisRow({
       </div>
 
       <div className="w-full sm:w-auto flex items-center justify-end gap-2 shrink-0 flex-wrap">
-        {Number(c.fraisTransport) > 0 && resteFret > 0 && onPayerFret && (
-          <button
-            onClick={() => onPayerFret(c)}
-            className="w-full sm:w-auto justify-center"
-            style={{
-              ...ghostBtn,
-              height: 34,
-              fontSize: 12,
-              fontWeight: 600,
-              padding: '0 10px',
-              border: '1px solid #3D5A6C',
-              background: '#EAEBF5',
-              color: '#384282',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-            } as any}
-            title="Régler le fret dû pour ce colis"
-          >
-            <Truck size={13} color="#384282" />
-            <span>Payer Fret ({resteFret.toLocaleString('fr-FR')} Ar)</span>
-          </button>
-        )}
-
         {onEdit && (
           <button
             onClick={() => onEdit(c)}

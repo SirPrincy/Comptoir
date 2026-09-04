@@ -15,7 +15,6 @@ import LogistiqueStats from './LogistiqueStats';
 import ColisRow from './ColisRow';
 import ColisWizardModal from './ColisWizardModal';
 import AchatEditModal from '../achat/components/AchatEditModal';
-import AchatPaiementModal from '../achat/components/AchatPaiementModal';
 
 interface LogistiqueProps {
   products: any[];
@@ -36,15 +35,11 @@ const Logistique = memo(function Logistique({
   const [selectedCommandeId, setSelectedCommandeId] = useState<string | null>(null);
   const [selectedStep, setSelectedStep] = useState<number | undefined>(undefined);
   const [editingCommande, setEditingCommande] = useState<any | null>(null);
-  const [paiementCommande, setPaiementCommande] = useState<any | null>(null);
-  const [typePaiement, setTypePaiement] = useState<'total' | 'acompte'>('total');
-  const [montantSaisiPaiement, setMontantSaisiPaiement] = useState('');
   const [recherche, setRecherche] = useState('');
   const [filtreStatut, setFiltreStatut] = useState<string>('all');
 
   const tauxUsd = Number(devises?.usd) || 4600;
   const today = new Date().toISOString().slice(0, 10);
-  const [datePaiementChoisie, setDatePaiementChoisie] = useState(today);
 
   const updateCommandeField = (id: string, fields: Record<string, any>) => {
     updateAll(products, ventes, commandes.map((c: any) => (c.id === id ? { ...c, ...fields } : c)));
@@ -58,13 +53,6 @@ const Logistique = memo(function Logistique({
   const handleCloseWizard = () => {
     setSelectedCommandeId(null);
     setSelectedStep(undefined);
-  };
-
-  const handlePayerFret = (commande: any) => {
-    setPaiementCommande({
-      ...commande,
-      targetCible: 'fret',
-    });
   };
 
   const commandesLogistique = useMemo(() => {
@@ -199,7 +187,6 @@ const Logistique = memo(function Logistique({
               paiements={paiements}
               onOuvrir={handleOuvrir}
               onEdit={setEditingCommande}
-              onPayerFret={handlePayerFret}
               onNavigateTab={onNavigateTab}
             />
           ))}
@@ -220,29 +207,6 @@ const Logistique = memo(function Logistique({
           paiements={paiements}
           today={today}
           onNavigateTab={onNavigateTab}
-        />
-      )}
-
-      {paiementCommande && (
-        <AchatPaiementModal
-          paiementCommande={paiementCommande}
-          setPaiementCommande={setPaiementCommande}
-          typePaiement={typePaiement}
-          setTypePaiement={setTypePaiement}
-          montantSaisiPaiement={montantSaisiPaiement}
-          setMontantSaisiPaiement={setMontantSaisiPaiement}
-          datePaiementChoisie={datePaiementChoisie}
-          setDatePaiementChoisie={setDatePaiementChoisie}
-          products={products}
-          commandes={commandes}
-          ventes={ventes}
-          fournisseurs={fournisseurs}
-          devises={devises}
-          today={today}
-          updateAll={updateAll}
-          updateData={updateData}
-          paiements={paiements}
-          initialCible={paiementCommande.targetCible || 'fret'}
         />
       )}
 

@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Wallet, FileText, ArrowLeftRight, CreditCard } from 'lucide-react';
+import { Wallet, FileText, ArrowLeftRight, CreditCard, Truck } from 'lucide-react';
 import { THEME } from '../colors';
 import { TYPOGRAPHY } from '../fonts';
 import Tresorerie from './index';
 import NotesDeFrais from '../frais/NotesDeFrais';
 import ChangeRMB from '../change/ChangeRMB';
 import CreancesClients from './CreancesClients';
+import DettesFournisseurs from './DettesFournisseurs';
 import ModalPaiementFacture from './ModalPaiementFacture';
 import { useTresorerieForms } from './useTresorerieForms';
-import { getRestePayeVente, calculerSoldeRMB } from '../paymentUtils';
+import { getRestePayeVente, getRestePayeFret, getRestePayeMarchandise, calculerSoldeRMB } from '../paymentUtils';
 
 interface TresorerieEtFraisProps {
   ventes?: any[];
@@ -23,7 +24,7 @@ interface TresorerieEtFraisProps {
   comptes?: string[];
   paiements?: any[];
   updateData: (patch: any) => void;
-  initialSubTab?: 'tresorerie' | 'creances' | 'frais' | 'change';
+  initialSubTab?: 'tresorerie' | 'creances' | 'dettes' | 'frais' | 'change';
 }
 
 export default function TresorerieEtFrais({
@@ -41,7 +42,7 @@ export default function TresorerieEtFrais({
   updateData,
   initialSubTab = 'tresorerie',
 }: TresorerieEtFraisProps) {
-  const [subTab, setSubTab] = useState<'tresorerie' | 'creances' | 'frais' | 'change'>(
+  const [subTab, setSubTab] = useState<'tresorerie' | 'creances' | 'dettes' | 'frais' | 'change'>(
     initialSubTab
   );
 
@@ -114,11 +115,100 @@ export default function TresorerieEtFrais({
     setShowPaiementFactureModal(true);
   };
 
+  const handlePayerFret = (commandeId: string) => {
+    const c = commandes.find((item: any) => item.id === commandeId);
+    const reste = c ? getRestePayeFret(c, paiements) : 0;
+    const trans = fournisseurs.find((f: any) => f.id === c?.transitaireId);
+    const p = products.find((pr: any) => pr.id === c?.productId);
+
+    setFactureForm({
+      nature: 'fret',
+      selectedIds: [commandeId],
+      selectedId: commandeId,
+      compte: c?.compteFret || 'MVola',
+      montant: String(reste),
+      frais: '',
+      beneficiaire: trans?.nom || 'Transitaire',
+      description: `Règlement Fret — ${p ? p.nom : 'Colis'} (${trans?.nom || c?.modeExpedition || 'Fret'})`,
+      reference: c?.tracking || '',
+      date: today,
+    });
+    setShowPaiementFactureModal(true);
+  };
+
+  const handlePayerTransitaireGroup = (transitaireId: string, commandeIds: string[]) => {
+    let sum = 0;
+    commandeIds.forEach(id => {
+      const c = commandes.find((item: any) => item.id === id);
+      if (c) sum += getRestePayeFret(c, paiements);
+    });
+    const trans = fournisseurs.find((f: any) => f.id === transitaireId);
+
+    setFactureForm({
+      nature: 'fret',
+      selectedIds: commandeIds,
+      selectedId: commandeIds[0] || '',
+      compte: 'MVola',
+      montant: String(sum),
+      frais: '',
+      beneficiaire: trans?.nom || 'Transitaire',
+      description: `Règlement groupé Fret Transitaire (${commandeIds.length} colis)`,
+      reference: '',
+      date: today,
+    });
+    setShowPaiementFactureModal(true);
+  };
+
+  const handlePayerAchat = (commandeId: string) => {
+    const c = commandes.find((item: any) => item.id === commandeId);
+    const reste = c ? getRestePayeMarchandise(c, paiements) : 0;
+    const four = fournisseurs.find((f: any) => f.id === c?.fournisseurId);
+    const p = products.find((pr: any) => pr.id === c?.productId);
+
+    setFactureForm({
+      nature: 'marchandise',
+      selectedIds: [commandeId],
+      selectedId: commandeId,
+      compte: c?.comptePayeur || 'MVola',
+      montant: String(reste),
+      frais: '',
+      beneficiaire: four?.nom || c?.source || 'Fournisseur Chine',
+      description: `Règlement Achat — ${p ? p.nom : 'Article'}`,
+      reference: c?.tracking || '',
+      date: today,
+    });
+    setShowPaiementFactureModal(true);
+  };
+
+  const handlePayerFournisseurGroup = (fournisseurId: string, commandeIds: string[]) => {
+    let sum = 0;
+    commandeIds.forEach(id => {
+      const c = commandes.find((item: any) => item.id === id);
+      if (c) sum += getRestePayeMarchandise(c, paiements);
+    });
+    const four = fournisseurs.find((f: any) => f.id === fournisseurId);
+
+    setFactureForm({
+      nature: 'marchandise',
+      selectedIds: commandeIds,
+      selectedId: commandeIds[0] || '',
+      compte: 'MVola',
+      montant: String(sum),
+      frais: '',
+      beneficiaire: four?.nom || 'Fournisseur Chine',
+      description: `Règlement groupé Achats Chine (${commandeIds.length} commandes)`,
+      reference: '',
+      date: today,
+    });
+    setShowPaiementFactureModal(true);
+  };
+
   const soldeRmbInfo = calculerSoldeRMB(changes, mouvements, commandes, devises, paiements);
 
   const TABS = [
     { id: 'tresorerie', label: 'Trésorerie & Mouvements', icon: Wallet },
-    { id: 'creances', label: 'Créances Clients', icon: CreditCard },
+    { id: 'dettes', label: `Dettes & Factures Fret (${commandesUnpaidFret.length + commandesUnpaidMarchandise.length})`, icon: Truck },
+    { id: 'creances', label: `Créances Clients (${ventesUnpaid.length})`, icon: CreditCard },
     { id: 'change', label: 'Change RMB', icon: ArrowLeftRight },
     { id: 'frais', label: 'Notes de Frais', icon: FileText },
   ] as const;
@@ -213,6 +303,19 @@ export default function TresorerieEtFrais({
           updateData={updateData}
           comptes={comptes}
           paiements={paiements}
+        />
+      )}
+
+      {subTab === 'dettes' && (
+        <DettesFournisseurs
+          commandes={commandes}
+          fournisseurs={fournisseurs}
+          products={products}
+          paiements={paiements}
+          onPayerFret={handlePayerFret}
+          onPayerTransitaireGroup={handlePayerTransitaireGroup}
+          onPayerAchat={handlePayerAchat}
+          onPayerFournisseurGroup={handlePayerFournisseurGroup}
         />
       )}
 

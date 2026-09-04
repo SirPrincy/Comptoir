@@ -71,24 +71,14 @@ export default function AchatListe({
         const totalFret = Number(c.fraisTransport) || 0;
         const resteFret = getRestePayeFret(c, paiements);
 
-        const resteTotal = resteM + resteFret;
-
         let boutonPmtTexte = 'Historique Pmt';
         let boutonPmtColor = THEME.text.secondary;
         let boutonPmtBorder = `1px solid ${THEME.border.strong}`;
 
-        if (resteM > 0 && resteFret > 0) {
-          boutonPmtTexte = `Payer solde (${resteTotal.toLocaleString('fr-FR')} Ar)`;
+        if (resteM > 0) {
+          boutonPmtTexte = `Payer Achat (${resteM.toLocaleString('fr-FR')} Ar)`;
           boutonPmtColor = THEME.accent.orange;
           boutonPmtBorder = `1px solid ${THEME.accent.orange}`;
-        } else if (resteM > 0) {
-          boutonPmtTexte = `Payer marchandise (${resteM.toLocaleString('fr-FR')} Ar)`;
-          boutonPmtColor = THEME.accent.orange;
-          boutonPmtBorder = `1px solid ${THEME.accent.orange}`;
-        } else if (resteFret > 0) {
-          boutonPmtTexte = `Payer fret (${resteFret.toLocaleString('fr-FR')} Ar)`;
-          boutonPmtColor = '#3D5A6C';
-          boutonPmtBorder = '1px solid #3D5A6C';
         }
 
         return (
@@ -152,7 +142,7 @@ export default function AchatListe({
                   )}
                   {totalFret > 0 && (
                     <span style={{ color: resteFret > 0 ? '#B5532A' : '#1B6A3E', fontWeight: 600 }}>
-                      🚢 Fret ({transitaire?.nom || c.modeExpedition || 'Transitaire'}): {totalFret.toLocaleString('fr-FR')} Ar {resteFret > 0 ? `(Reste ${resteFret.toLocaleString('fr-FR')} Ar)` : '(Payé)'}
+                      🚢 Fret ({transitaire?.nom || c.modeExpedition || 'Transitaire'}): {totalFret.toLocaleString('fr-FR')} Ar {resteFret > 0 ? `(Reste ${resteFret.toLocaleString('fr-FR')} Ar · Trésorerie)` : '(Payé)'}
                     </span>
                   )}
                   {c.tracking && <span>📦 Trk: {c.tracking}</span>}
@@ -162,15 +152,15 @@ export default function AchatListe({
               <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                 <div style={{ textAlign: 'right', minWidth: 110 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: THEME.text.primary }}>
-                    {(itemTotal + totalFret).toLocaleString('fr-FR')} Ar
+                    {itemTotal.toLocaleString('fr-FR')} Ar
                   </div>
-                  {resteTotal > 0 ? (
+                  {resteM > 0 ? (
                     <div style={{ fontSize: 11, color: THEME.accent.orange, fontWeight: 600 }}>
-                      Reste : {resteTotal.toLocaleString('fr-FR')} Ar
+                      Reste Achat: {resteM.toLocaleString('fr-FR')} Ar
                     </div>
                   ) : (
                     <div style={{ fontSize: 11, color: THEME.accent.green, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
-                      <CheckCircle2 size={12} /> Réglé à 100%
+                      <CheckCircle2 size={12} /> Achat Réglé
                     </div>
                   )}
                 </div>
@@ -210,7 +200,7 @@ export default function AchatListe({
                   )}
                   <button
                     onClick={() => ouvrirModalPaiement(c)}
-                    style={{ ...ghostBtn, fontSize: 11, padding: '4px 8px', border: boutonPmtBorder, color: boutonPmtColor, fontWeight: resteTotal > 0 ? 600 : 400 }}
+                    style={{ ...ghostBtn, fontSize: 11, padding: '4px 8px', border: boutonPmtBorder, color: boutonPmtColor, fontWeight: resteM > 0 ? 600 : 400 }}
                   >
                     {boutonPmtTexte}
                   </button>
