@@ -1,8 +1,15 @@
 import React, { useMemo } from 'react';
-import { Package, Trash2, CheckCircle2, Clock, Edit3, Calendar } from 'lucide-react';
+import { Package, Trash2, CheckCircle2, Clock, Edit3, Calendar, Truck, ShoppingCart } from 'lucide-react';
 import { THEME } from '../../colors';
 import { Empty, ghostBtn, iconBtn } from '../../ui';
-import { getMontantPayeMarchandise, getRestePayeMarchandise, getStatutMarchandiseLabel } from '../../paymentUtils';
+import {
+  getMontantPayeMarchandise,
+  getRestePayeMarchandise,
+  getMontantPayeFret,
+  getRestePayeFret,
+  getStatutMarchandiseLabel,
+  getStatutFretLabel,
+} from '../../paymentUtils';
 
 export function formatDateJMA(dateString?: string) {
   if (!dateString) return '—';
@@ -56,10 +63,33 @@ export default function AchatListe({
       {listeFiltree.map((c: any) => {
         const p = products.find((pr: any) => pr.id === c.productId);
         const fourn = fournisseurs.find((f: any) => f.id === c.fournisseurId);
+        const transitaire = fournisseurs.find((f: any) => f.id === c.transitaireId);
+
         const itemTotal = c.total !== undefined ? Number(c.total) : (Number(c.pu || 0) * Number(c.qty || 1));
-        const paye = getMontantPayeMarchandise(c, paiements);
-        const reste = getRestePayeMarchandise(c, paiements);
-        const statutInfo = getStatutMarchandiseLabel(c, paiements);
+        const resteM = getRestePayeMarchandise(c, paiements);
+
+        const totalFret = Number(c.fraisTransport) || 0;
+        const resteFret = getRestePayeFret(c, paiements);
+
+        const resteTotal = resteM + resteFret;
+
+        let boutonPmtTexte = 'Historique Pmt';
+        let boutonPmtColor = THEME.text.secondary;
+        let boutonPmtBorder = `1px solid ${THEME.border.strong}`;
+
+        if (resteM > 0 && resteFret > 0) {
+          boutonPmtTexte = `Payer solde (${resteTotal.toLocaleString('fr-FR')} Ar)`;
+          boutonPmtColor = THEME.accent.orange;
+          boutonPmtBorder = `1px solid ${THEME.accent.orange}`;
+        } else if (resteM > 0) {
+          boutonPmtTexte = `Payer marchandise (${resteM.toLocaleString('fr-FR')} Ar)`;
+          boutonPmtColor = THEME.accent.orange;
+          boutonPmtBorder = `1px solid ${THEME.accent.orange}`;
+        } else if (resteFret > 0) {
+          boutonPmtTexte = `Payer fret (${resteFret.toLocaleString('fr-FR')} Ar)`;
+          boutonPmtColor = '#3D5A6C';
+          boutonPmtBorder = '1px solid #3D5A6C';
+        }
 
         return (
           <div key={c.id} style={{ background: THEME.bg.card, border: `1px solid ${THEME.border.base}`, borderRadius: 10, padding: '10px 14px' }}>
@@ -99,7 +129,7 @@ export default function AchatListe({
                   </span>
                   {(c.payeEnMgaDirect || c.modeReglement === 'mga_direct') && (
                     <span style={{ fontSize: 10.5, background: '#FEF3C7', color: '#92400E', padding: '2px 6px', borderRadius: 4, fontWeight: 700, border: '1px solid #FDE68A' }}>
-                      🇲🇬 Payé MGA Direct (Exclu Réserve RMB)
+                      🇲🇬 Payé MGA Direct
                     </span>
                   )}
                   {c.modeReglement === 'change_auto' && (
@@ -117,7 +147,12 @@ export default function AchatListe({
                   )}
                   {Number(c.fraisLivraisonChine || c.fraisLivraison || 0) > 0 && (
                     <span>
-                      🚚 Livr.: {c.fraisLivraisonChineDevise ? `¥${c.fraisLivraisonChineDevise}` : `${Number(c.fraisLivraisonChine || c.fraisLivraison).toLocaleString('fr-FR')} Ar`}
+                      🚚 Livr. Chine: {c.fraisLivraisonChineDevise ? `¥${c.fraisLivraisonChineDevise}` : `${Number(c.fraisLivraisonChine || c.fraisLivraison).toLocaleString('fr-FR')} Ar`}
+                    </span>
+                  )}
+                  {totalFret > 0 && (
+                    <span style={{ color: resteFret > 0 ? '#B5532A' : '#1B6A3E', fontWeight: 600 }}>
+                      🚢 Fret ({transitaire?.nom || c.modeExpedition || 'Transitaire'}): {totalFret.toLocaleString('fr-FR')} Ar {resteFret > 0 ? `(Reste ${resteFret.toLocaleString('fr-FR')} Ar)` : '(Payé)'}
                     </span>
                   )}
                   {c.tracking && <span>📦 Trk: {c.tracking}</span>}
@@ -125,13 +160,17 @@ export default function AchatListe({
               </div>
 
               <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-                <div style={{ textAlign: 'right', minWidth: 100 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: THEME.text.primary }}>{itemTotal.toLocaleString('fr-FR')} Ar</div>
-                  {reste > 0 ? (
-                    <div style={{ fontSize: 11, color: THEME.accent.orange, fontWeight: 600 }}>Reste : {reste.toLocaleString('fr-FR')} Ar</div>
+                <div style={{ textAlign: 'right', minWidth: 110 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: THEME.text.primary }}>
+                    {(itemTotal + totalFret).toLocaleString('fr-FR')} Ar
+                  </div>
+                  {resteTotal > 0 ? (
+                    <div style={{ fontSize: 11, color: THEME.accent.orange, fontWeight: 600 }}>
+                      Reste : {resteTotal.toLocaleString('fr-FR')} Ar
+                    </div>
                   ) : (
                     <div style={{ fontSize: 11, color: THEME.accent.green, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
-                      <CheckCircle2 size={12} /> Payé
+                      <CheckCircle2 size={12} /> Réglé à 100%
                     </div>
                   )}
                 </div>
@@ -171,9 +210,9 @@ export default function AchatListe({
                   )}
                   <button
                     onClick={() => ouvrirModalPaiement(c)}
-                    style={{ ...ghostBtn, fontSize: 11, padding: '4px 8px', border: reste > 0 ? `1px solid ${THEME.accent.orange}` : `1px solid ${THEME.border.strong}`, color: reste > 0 ? THEME.accent.orange : THEME.text.secondary }}
+                    style={{ ...ghostBtn, fontSize: 11, padding: '4px 8px', border: boutonPmtBorder, color: boutonPmtColor, fontWeight: resteTotal > 0 ? 600 : 400 }}
                   >
-                    {reste > 0 ? 'Payer le solde' : 'Historique Pmt'}
+                    {boutonPmtTexte}
                   </button>
                   <button onClick={() => {
                     supprimerCommande(c.id);

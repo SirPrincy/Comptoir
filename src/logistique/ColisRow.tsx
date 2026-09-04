@@ -1,8 +1,8 @@
 import React from 'react';
-import { ArrowRight, Edit3, Calendar } from 'lucide-react';
+import { ArrowRight, Edit3, Calendar, Truck, CreditCard } from 'lucide-react';
 import { primaryBtn, ghostBtn } from '../ui';
 import { WIZARD_STEPS, getActiveStep } from './logistiqueUtils';
-import { getStatutMarchandiseLabel, getStatutFretLabel } from '../paymentUtils';
+import { getStatutMarchandiseLabel, getStatutFretLabel, getRestePayeFret } from '../paymentUtils';
 import { formatDateJMA } from '../achat/components/AchatListe';
 
 interface ColisRowProps {
@@ -10,16 +10,28 @@ interface ColisRowProps {
   commande: any;
   product?: any;
   transitaire?: any;
+  paiements?: any[];
   onOuvrir: (id: string, step?: number) => void;
   onEdit?: (commande: any) => void;
+  onPayerFret?: (commande: any) => void;
   onNavigateTab?: (tab: string) => void;
 }
 
-export default function ColisRow({ commande: c, product: p, transitaire, onOuvrir, onEdit, onNavigateTab }: ColisRowProps) {
+export default function ColisRow({
+  commande: c,
+  product: p,
+  transitaire,
+  paiements = [],
+  onOuvrir,
+  onEdit,
+  onPayerFret,
+  onNavigateTab,
+}: ColisRowProps) {
   const isCompletedQC = c.qualityCheck?.isCompleted;
   const activeStepNumber = getActiveStep(c);
-  const stMarchandise = getStatutMarchandiseLabel(c);
-  const stFret = getStatutFretLabel(c);
+  const stMarchandise = getStatutMarchandiseLabel(c, paiements);
+  const stFret = getStatutFretLabel(c, paiements);
+  const resteFret = getRestePayeFret(c, paiements);
 
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-3 bg-white border border-[#EAE2D4] rounded-lg shadow-xs">
@@ -78,10 +90,12 @@ export default function ColisRow({ commande: c, product: p, transitaire, onOuvri
           <span>Source : <strong>{c.source}</strong></span>
           <span>•</span>
           <span>Quantité : <strong>{c.qty} pièces</strong></span>
-          {c.fraisTransport > 0 && (
+          {Number(c.fraisTransport) > 0 && (
             <>
               <span>•</span>
-              <span>Fret : <strong>{Number(c.fraisTransport).toLocaleString('fr-FR')} Ar</strong> ({c.modeExpedition || 'Transport'})</span>
+              <span style={{ color: resteFret > 0 ? '#B5532A' : '#1B6A3E', fontWeight: 600 }}>
+                Fret : <strong>{Number(c.fraisTransport).toLocaleString('fr-FR')} Ar</strong> ({c.modeExpedition || 'Transport'}) {resteFret > 0 ? `· Reste ${resteFret.toLocaleString('fr-FR')} Ar` : '· Réglé'}
+              </span>
             </>
           )}
           {Number(c.fraisTransportLocal) > 0 && (
@@ -113,7 +127,31 @@ export default function ColisRow({ commande: c, product: p, transitaire, onOuvri
         />
       </div>
 
-      <div className="w-full sm:w-auto flex items-center justify-end gap-2 shrink-0">
+      <div className="w-full sm:w-auto flex items-center justify-end gap-2 shrink-0 flex-wrap">
+        {Number(c.fraisTransport) > 0 && resteFret > 0 && onPayerFret && (
+          <button
+            onClick={() => onPayerFret(c)}
+            className="w-full sm:w-auto justify-center"
+            style={{
+              ...ghostBtn,
+              height: 34,
+              fontSize: 12,
+              fontWeight: 600,
+              padding: '0 10px',
+              border: '1px solid #3D5A6C',
+              background: '#EAEBF5',
+              color: '#384282',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+            } as any}
+            title="Régler le fret dû pour ce colis"
+          >
+            <Truck size={13} color="#384282" />
+            <span>Payer Fret ({resteFret.toLocaleString('fr-FR')} Ar)</span>
+          </button>
+        )}
+
         {onEdit && (
           <button
             onClick={() => onEdit(c)}
@@ -135,6 +173,7 @@ export default function ColisRow({ commande: c, product: p, transitaire, onOuvri
             <span>Éditer</span>
           </button>
         )}
+
         {isCompletedQC && onNavigateTab && (
           <button
             onClick={() => onNavigateTab('vente')}
@@ -154,6 +193,7 @@ export default function ColisRow({ commande: c, product: p, transitaire, onOuvri
             <span>🛒 Vendre</span>
           </button>
         )}
+
         <button
           onClick={() => onOuvrir(c.id)}
           className="w-full sm:w-auto justify-center"
@@ -178,51 +218,42 @@ function MicroStepper({
   onStepClick?: (step: number) => void;
 }) {
   return (
-    <div className="flex items-center gap-1 sm:gap-1.5 mt-2 flex-wrap">
-      {WIZARD_STEPS.map((ws, i) => {
-        const isDone = ws.step < activeStepNumber || (ws.step === 5 && isCompletedQC);
-        const isCurrent = ws.step === activeStepNumber && !(ws.step === 5 && isCompletedQC);
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8, flexWrap: 'wrap' }}>
+      {WIZARD_STEPS.map((s, idx) => {
+        const stepNum = idx + 1;
+        const isPassed = isCompletedQC || stepNum < activeStepNumber;
+        const isCurrent = !isCompletedQC && stepNum === activeStepNumber;
+        const IconComponent = s.icon;
+
         return (
-          <React.Fragment key={ws.step}>
-            {i > 0 && <div style={{ width: 10, height: 2, background: isDone || isCurrent ? '#3D5A6C' : '#EAE2D4' }} />}
-            <button
-              type="button"
-              onClick={() => onStepClick?.(ws.step)}
-              title={`Étape ${ws.step} : ${ws.label} (Cliquer pour ouvrir et modifier)`}
+          <React.Fragment key={s.id}>
+            <div
+              onClick={() => onStepClick && onStepClick(stepNum)}
               style={{
-                background: 'none',
-                border: 'none',
-                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '2px 8px',
+                borderRadius: 4,
+                fontSize: 11,
+                fontWeight: isCurrent ? 700 : 500,
                 cursor: 'pointer',
-                borderRadius: '50%',
+                background: isCurrent ? '#3D5A6C' : (isPassed ? '#EBF4EC' : '#F5EFE6'),
+                color: isCurrent ? '#FFFFFF' : (isPassed ? '#1B6A3E' : '#8A8375'),
+                border: isCurrent ? '1px solid #3D5A6C' : (isPassed ? '1px solid #C4DEC0' : '1px solid #EAE2D4'),
+                transition: 'all 0.15s ease',
               }}
+              title={`Étape ${stepNum} : ${s.label}`}
             >
-              <div
-                style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: '50%',
-                  background: isDone ? '#3F7A5C' : isCurrent ? '#3D5A6C' : '#FAF7F2',
-                  border: `1.5px solid ${isDone ? '#3F7A5C' : isCurrent ? '#3D5A6C' : '#D9CFC1'}`,
-                  color: isDone || isCurrent ? '#FFFFFF' : '#8A8375',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: isCurrent ? '0 0 0 2px rgba(61,90,108,0.2)' : 'none',
-                  transition: 'transform 0.1s ease',
-                }}
-              >
-                {isDone ? '✓' : ws.step}
-              </div>
-            </button>
+              <IconComponent size={12} />
+              <span>{s.label}</span>
+            </div>
+            {idx < WIZARD_STEPS.length - 1 && (
+              <span style={{ color: '#D8D0C0', fontSize: 10 }}>›</span>
+            )}
           </React.Fragment>
         );
       })}
-      <span style={{ fontSize: 11, fontWeight: 600, color: isCompletedQC ? '#3F7A5C' : '#3D5A6C', marginLeft: 4 }}>
-        {isCompletedQC ? '✅ Contrôlé & En Stock' : WIZARD_STEPS[activeStepNumber - 1].label}
-      </span>
     </div>
   );
 }

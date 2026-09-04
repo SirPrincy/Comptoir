@@ -605,7 +605,7 @@ const Header = memo(function Header({ saving, isOnline = true, onOpenDrawer, onO
           }}
           title={darkMode ? 'Passer en mode clair' : 'Passer en mode sombre'}
         >
-          {darkMode ? <Sun size={16} strokeWidth={2.2} /> : <Moon size={16} strokeWidth={2.2} />}
+          {darkMode ? <Sun size={16} strokeWidth={2.2} color="#FBBF24" /> : <Moon size={16} strokeWidth={2.2} color="#2563EB" />}
         </button>
       </div>
     </div>
@@ -664,7 +664,7 @@ const NavDrawer = memo(function NavDrawer({ open, onClose, tab, setTab, counts, 
           borderBottom: `1px solid ${THEME.border.base}`,
           background: THEME.bg.surface,
         }}>
-          <ComptoirLogo size="sm" subtitle="Système de Gestion" />
+          <ComptoirLogo size="sm" subtitle="L'Audace sans frontières" />
           <button
             onClick={onClose}
             style={{
@@ -729,7 +729,7 @@ const NavDrawer = memo(function NavDrawer({ open, onClose, tab, setTab, counts, 
                           fontWeight: active ? 600 : 500,
                           fontSize: 13,
                           letterSpacing: '-0.01em',
-                          boxShadow: active ? '0 1px 3px rgba(0, 113, 227, 0.25)' : 'none',
+                          boxShadow: active ? '0 2px 8px -1px rgba(37, 99, 235, 0.35)' : 'none',
                           width: '100%',
                           transition: 'background-color 0.12s ease, color 0.12s ease',
                         }}

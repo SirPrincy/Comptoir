@@ -12,9 +12,8 @@ interface MonogramProps {
 }
 
 /**
- * Monogramme Comptoir Central — Design Signature Haute Précision
- * Géométrie pure : Hexagone biseauté / Cube isométrique architectural
- * symbolisant le transit international, le container de négoce et le "C" de Comptoir.
+ * Monogramme Étoile des Mondes & Boussole Navigatrice
+ * Symbole intemporel du commerce d'envergure : guidance, horizon, excellence et expansion sans frontières.
  */
 export const ComptoirMonogram: React.FC<MonogramProps> = ({
   size = 36,
@@ -22,7 +21,7 @@ export const ComptoirMonogram: React.FC<MonogramProps> = ({
   className = '',
   style = {},
 }) => {
-  const squircleRadius = Math.round(size * 0.24);
+  const squircleRadius = Math.round(size * 0.25);
 
   return (
     <div
@@ -38,89 +37,106 @@ export const ComptoirMonogram: React.FC<MonogramProps> = ({
         borderRadius: squircleRadius,
         background:
           variant === 'solid'
-            ? 'linear-gradient(145deg, #1C2028 0%, #0F1216 100%)'
+            ? 'linear-gradient(145deg, #151821 0%, #0B0D12 100%)'
             : variant === 'stamp'
-              ? 'linear-gradient(145deg, #0071E3 0%, #004BB3 100%)'
+              ? 'linear-gradient(145deg, #1E3A8A 0%, #0F172A 100%)'
               : variant === 'glass'
                 ? 'rgba(255, 255, 255, 0.08)'
                 : 'transparent',
         border:
           variant === 'outline'
-            ? `1.5px solid ${THEME.brand.blue}`
-            : '1px solid rgba(255, 255, 255, 0.12)',
+            ? `1.5px solid #F59E0B`
+            : '1px solid rgba(251, 191, 36, 0.22)',
         boxShadow:
           variant === 'solid' || variant === 'stamp'
-            ? '0 3px 12px -2px rgba(10, 14, 20, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.2)'
+            ? '0 4px 14px -2px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(254, 243, 199, 0.25)'
             : SHADOWS.subtle,
         transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease',
         ...style,
       }}
     >
       <svg
-        width={size * 0.64}
-        height={size * 0.64}
+        width={size * 0.7}
+        height={size * 0.7}
         viewBox="0 0 100 100"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         style={{ display: 'block' }}
       >
         <defs>
-          {/* Dégradés premium haute définition */}
-          <linearGradient id="cmTopFacet" x1="50" y1="14" x2="50" y2="48" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#60A5FA" />
-            <stop offset="100%" stopColor="#2563EB" />
+          {/* Or Stellaire Lumineux & Royal */}
+          <linearGradient id="goldLightGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#FFFBEB" />
+            <stop offset="40%" stopColor="#FDE68A" />
+            <stop offset="100%" stopColor="#F59E0B" />
           </linearGradient>
 
-          <linearGradient id="cmLeftFacet" x1="18" y1="44" x2="50" y2="92" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#1E40AF" />
-            <stop offset="100%" stopColor="#0F2468" />
+          <linearGradient id="goldDeepGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#F59E0B" />
+            <stop offset="70%" stopColor="#D97706" />
+            <stop offset="100%" stopColor="#92400E" />
           </linearGradient>
 
-          <linearGradient id="cmRightFacet" x1="82" y1="44" x2="50" y2="92" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#38BDF8" />
-            <stop offset="100%" stopColor="#1D4ED8" />
+          {/* Anneau Méridien et Horizon */}
+          <linearGradient id="meridianGrad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.8" />
+            <stop offset="50%" stopColor="#FBBF24" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.4" />
           </linearGradient>
 
-          <linearGradient id="cmInnerEdge" x1="50" y1="28" x2="50" y2="72" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#93C5FD" stopOpacity="0.4" />
-          </linearGradient>
-
-          <linearGradient id="cmGoldAccent" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#FDE047" />
-            <stop offset="100%" stopColor="#D97706" />
+          <linearGradient id="sapphirePoint" x1="50" y1="50" x2="70" y2="30" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#93C5FD" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.3" />
           </linearGradient>
         </defs>
 
-        {/* Facette Supérieure (Toit isométrique du hub) */}
-        <path
-          d="M 50 14 L 81 31 L 50 48 L 19 31 Z"
-          fill="url(#cmTopFacet)"
-        />
-
-        {/* Facette Gauche (Solide / Stock / Sécurité) */}
-        <path
-          d="M 19 33 L 48 49 L 48 83 L 19 67 Z"
-          fill="url(#cmLeftFacet)"
-        />
-
-        {/* Facette Droite sculptée formant l'arche ouverte du "C" */}
-        <path
-          d="M 52 49 L 81 33 L 81 50 L 65 59 L 65 67 L 81 58 L 81 67 L 52 83 Z"
-          fill="url(#cmRightFacet)"
-        />
-
-        {/* Ligne de faisceau central haute précision */}
-        <path
-          d="M 50 16 L 78 32 L 50 47 L 22 32 Z"
-          stroke="url(#cmInnerEdge)"
+        {/* Cercle Méridien Ciselé (Horizon Terrestre) */}
+        <circle
+          cx="50"
+          cy="50"
+          r="37"
+          stroke="url(#meridianGrad)"
           strokeWidth="1.2"
-          fill="none"
+          strokeDasharray="3 3.5"
+          opacity="0.4"
         />
 
-        {/* Point focal d'échange et d'énergie commerciale (Or ambré) */}
-        <circle cx="50" cy="48" r="3.5" fill="url(#cmGoldAccent)" />
-        <circle cx="50" cy="48" r="1.5" fill="#FFFFFF" />
+        {/* Arc Majeur sculptant le "C" de Comptoir autour de l'étoile */}
+        <path
+          d="M 68 22 A 38 38 0 1 0 68 78"
+          stroke="url(#meridianGrad)"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          fill="none"
+          opacity="0.85"
+        />
+
+        {/* Rayons Secondaires Intercardinaux (Platine/Saphir) */}
+        <path d="M 50 50 L 71 29 L 55 46 Z" fill="url(#sapphirePoint)" />
+        <path d="M 50 50 L 71 71 L 55 54 Z" fill="url(#sapphirePoint)" />
+        <path d="M 50 50 L 29 71 L 45 54 Z" fill="url(#sapphirePoint)" />
+        <path d="M 50 50 L 29 29 L 45 46 Z" fill="url(#sapphirePoint)" />
+
+        {/* Branche NORD — Cap & Vision (Facette claire / Facette ambrée) */}
+        <path d="M 50 14 L 50 50 L 43 45 Z" fill="url(#goldLightGrad)" />
+        <path d="M 50 14 L 57 45 L 50 50 Z" fill="url(#goldDeepGrad)" />
+
+        {/* Branche SUD — Ancrage & Solidité */}
+        <path d="M 50 86 L 43 55 L 50 50 Z" fill="url(#goldDeepGrad)" />
+        <path d="M 50 86 L 50 50 L 57 55 Z" fill="url(#goldLightGrad)" />
+
+        {/* Branche EST — Source & Approvisionnement Orient */}
+        <path d="M 86 50 L 55 43 L 50 50 Z" fill="url(#goldLightGrad)" />
+        <path d="M 86 50 L 50 50 L 55 57 Z" fill="url(#goldDeepGrad)" />
+
+        {/* Branche OUEST — Distribution & Marchés */}
+        <path d="M 14 50 L 50 50 L 45 43 Z" fill="url(#goldDeepGrad)" />
+        <path d="M 14 50 L 45 57 L 50 50 Z" fill="url(#goldLightGrad)" />
+
+        {/* Diamant Central — Cœur d'Or Pur */}
+        <polygon points="50,44 56,50 50,56 44,50" fill="#FFFFFF" />
+        <circle cx="50" cy="50" r="2.2" fill="#D97706" />
+        <circle cx="50" cy="50" r="1" fill="#FFFFFF" />
       </svg>
     </div>
   );
@@ -135,7 +151,7 @@ interface LogoProps {
 }
 
 /**
- * Logo complet "Comptoir Central" avec typographie moderne et raffinée
+ * Logo complet "Comptoir Central" avec typographie noble et baseline inspirante
  */
 export const ComptoirLogo: React.FC<LogoProps> = ({
   size = 'md',
@@ -144,9 +160,12 @@ export const ComptoirLogo: React.FC<LogoProps> = ({
   onClick,
   style = {},
 }) => {
-  const monogramSize = size === 'sm' ? 28 : size === 'lg' ? 40 : 33;
-  const titleSize = size === 'sm' ? 14 : size === 'lg' ? 19 : 15.5;
-  const subSize = size === 'sm' ? 10 : size === 'lg' ? 11.5 : 10.5;
+  const monogramSize = size === 'sm' ? 28 : size === 'lg' ? 42 : 34;
+  const titleSize = size === 'sm' ? 14 : size === 'lg' ? 19.5 : 16;
+  const subSize = size === 'sm' ? 9.5 : size === 'lg' ? 11.5 : 10;
+
+  // Baseline par défaut inspirante et prestigieuse
+  const displaySubtitle = subtitle || "L'Audace sans frontières";
 
   return (
     <div
@@ -155,7 +174,7 @@ export const ComptoirLogo: React.FC<LogoProps> = ({
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: size === 'sm' ? 8 : 10,
+        gap: size === 'sm' ? 9 : 11,
         minWidth: 0,
         cursor: onClick ? 'pointer' : 'default',
         userSelect: 'none',
@@ -167,25 +186,27 @@ export const ComptoirLogo: React.FC<LogoProps> = ({
         <div
           style={{
             fontFamily: FONTS.display,
-            fontWeight: 800,
+            fontWeight: 850,
             fontSize: titleSize,
             letterSpacing: '-0.035em',
-            lineHeight: 1.15,
+            lineHeight: 1.12,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             color: THEME.text.primary,
             display: 'flex',
             alignItems: 'center',
-            gap: 4,
+            gap: 4.5,
           }}
         >
-          <span>COMPTOIR</span>
+          <span style={{ letterSpacing: '-0.025em' }}>COMPTOIR</span>
           <span
             style={{
-              color: THEME.brand.blue,
-              fontWeight: 800,
-              letterSpacing: '-0.02em',
+              background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 60%, #D97706 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontWeight: 900,
+              letterSpacing: '-0.015em',
             }}
           >
             CENTRAL
@@ -199,19 +220,19 @@ export const ComptoirLogo: React.FC<LogoProps> = ({
               gap: 5,
               fontFamily: FONTS.body,
               fontSize: subSize,
-              fontWeight: 600,
-              letterSpacing: '0.04em',
+              fontWeight: 700,
+              letterSpacing: '0.08em',
               textTransform: 'uppercase',
               color: THEME.text.muted,
-              marginTop: 1,
+              marginTop: 2,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
             }}
           >
-            <span style={{ color: THEME.brand.blue, fontSize: 8 }}>◆</span>
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {subtitle || 'Négoce & Logistique'}
+            <span style={{ color: '#D97706', fontSize: 7.5 }}>✦</span>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.09em' }}>
+              {displaySubtitle}
             </span>
           </div>
         )}
@@ -228,13 +249,13 @@ interface SceauProps {
 }
 
 /**
- * Sceau d'authentification géométrique
+ * Sceau d'excellence et de conformité
  */
 export const ComptoirSceau: React.FC<SceauProps> = ({
   text = 'COMPTOIR CENTRAL',
-  subtext = 'CONTRÔLE CONFORME',
+  subtext = 'EXCELLENCE SANS FRONTIÈRES',
   size = 96,
-  color = THEME.brand.blue,
+  color = '#D97706',
 }) => {
   return (
     <div
@@ -242,17 +263,17 @@ export const ComptoirSceau: React.FC<SceauProps> = ({
         width: size,
         height: size,
         borderRadius: RADIUS.pill,
-        border: `1.5px solid ${color}35`,
+        border: `1.5px solid ${color}40`,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         padding: 8,
         textAlign: 'center',
-        opacity: 0.8,
+        opacity: 0.85,
         userSelect: 'none',
         pointerEvents: 'none',
-        background: `${color}06`,
+        background: `${color}08`,
       }}
     >
       <div
@@ -261,7 +282,7 @@ export const ComptoirSceau: React.FC<SceauProps> = ({
           fontSize: size * 0.095,
           fontWeight: 800,
           color: color,
-          letterSpacing: '0.04em',
+          letterSpacing: '0.06em',
           textTransform: 'uppercase',
           lineHeight: 1.15,
         }}
@@ -270,20 +291,20 @@ export const ComptoirSceau: React.FC<SceauProps> = ({
       </div>
       <div
         style={{
-          width: '45%',
+          width: '50%',
           height: 1,
           background: color,
           margin: '4px 0',
-          opacity: 0.35,
+          opacity: 0.45,
         }}
       />
       <div
         style={{
           fontFamily: FONTS.body,
           fontSize: size * 0.065,
-          fontWeight: 600,
+          fontWeight: 700,
           color: color,
-          letterSpacing: '0.06em',
+          letterSpacing: '0.08em',
           textTransform: 'uppercase',
         }}
       >
@@ -303,9 +324,6 @@ interface BrandIconProps {
   style?: React.CSSProperties;
 }
 
-/**
- * Encapsuleur d'icônes standardisé
- */
 export const BrandIcon: React.FC<BrandIconProps> = ({
   icon: Icon,
   size = 32,
@@ -352,58 +370,76 @@ export const downloadOfficialSvg = (variant: 'logo' | 'favicon' = 'logo') => {
 export const RAW_COMPTOIR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 120" width="100%" height="100%" fill="none">
   <defs>
     <linearGradient id="monogramBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stopColor="#1C2028" />
-      <stop offset="100%" stopColor="#0F1216" />
+      <stop offset="0%" stopColor="#151821" />
+      <stop offset="100%" stopColor="#0B0D12" />
     </linearGradient>
-    <linearGradient id="cmTopFacet" x1="50" y1="14" x2="50" y2="48" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stopColor="#60A5FA" />
-      <stop offset="100%" stopColor="#2563EB" />
+    <linearGradient id="goldLightGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stopColor="#FFFBEB" />
+      <stop offset="40%" stopColor="#FDE68A" />
+      <stop offset="100%" stopColor="#F59E0B" />
     </linearGradient>
-    <linearGradient id="cmLeftFacet" x1="18" y1="44" x2="50" y2="92" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stopColor="#1E40AF" />
-      <stop offset="100%" stopColor="#0F2468" />
+    <linearGradient id="goldDeepGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stopColor="#F59E0B" />
+      <stop offset="70%" stopColor="#D97706" />
+      <stop offset="100%" stopColor="#92400E" />
     </linearGradient>
-    <linearGradient id="cmRightFacet" x1="82" y1="44" x2="50" y2="92" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stopColor="#38BDF8" />
-      <stop offset="100%" stopColor="#1D4ED8" />
+    <linearGradient id="meridianGrad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.8" />
+      <stop offset="50%" stopColor="#FBBF24" stopOpacity="0.9" />
+      <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.4" />
     </linearGradient>
-    <linearGradient id="cmInnerEdge" x1="50" y1="28" x2="50" y2="72" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
-      <stop offset="100%" stopColor="#93C5FD" stopOpacity="0.4" />
+    <linearGradient id="sapphirePoint" x1="50" y1="50" x2="70" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#93C5FD" stopOpacity="0.9" />
+      <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.3" />
     </linearGradient>
-    <linearGradient id="cmGoldAccent" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stopColor="#FDE047" />
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stopColor="#2563EB" />
+      <stop offset="60%" stopColor="#1D4ED8" />
       <stop offset="100%" stopColor="#D97706" />
     </linearGradient>
-    <linearGradient id="brandBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stopColor="#2563EB" />
-      <stop offset="100%" stopColor="#0284C7" />
-    </linearGradient>
     <filter id="subtleShadow" x="-10%" y="-10%" width="130%" height="130%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="4" stdDeviation="5" floodColor="#0A0E14" floodOpacity="0.3" />
+      <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000000" floodOpacity="0.4" />
     </filter>
   </defs>
 
   <g transform="translate(12, 10)" filter="url(#subtleShadow)">
-    <rect x="0" y="0" width="100" height="100" rx="24" fill="url(#monogramBg)" />
-    <rect x="0.75" y="0.75" width="98.5" height="98.5" rx="23.25" stroke="#FFFFFF" strokeWidth="1" strokeOpacity="0.15" fill="none" />
-    <path d="M 50 14 L 81 31 L 50 48 L 19 31 Z" fill="url(#cmTopFacet)" />
-    <path d="M 19 33 L 48 49 L 48 83 L 19 67 Z" fill="url(#cmLeftFacet)" />
-    <path d="M 52 49 L 81 33 L 81 50 L 65 59 L 65 67 L 81 58 L 81 67 L 52 83 Z" fill="url(#cmRightFacet)" />
-    <path d="M 50 16 L 78 32 L 50 47 L 22 32 Z" stroke="url(#cmInnerEdge)" strokeWidth="1.2" fill="none" />
-    <circle cx="50" cy="48" r="3.5" fill="url(#cmGoldAccent)" />
-    <circle cx="50" cy="48" r="1.5" fill="#FFFFFF" />
+    <rect x="0" y="0" width="100" height="100" rx="25" fill="url(#monogramBg)" />
+    <rect x="0.75" y="0.75" width="98.5" height="98.5" rx="24.25" stroke="#FBBF24" strokeWidth="1" strokeOpacity="0.25" fill="none" />
+    
+    <!-- Méridien & Arc C -->
+    <circle cx="50" cy="50" r="37" stroke="url(#meridianGrad)" strokeWidth="1.2" strokeDasharray="3 3.5" opacity="0.4" />
+    <path d="M 68 22 A 38 38 0 1 0 68 78" stroke="url(#meridianGrad)" strokeWidth="2.2" strokeLinecap="round" fill="none" opacity="0.85" />
+    
+    <!-- Rayons secondaires -->
+    <path d="M 50 50 L 71 29 L 55 46 Z" fill="url(#sapphirePoint)" />
+    <path d="M 50 50 L 71 71 L 55 54 Z" fill="url(#sapphirePoint)" />
+    <path d="M 50 50 L 29 71 L 45 54 Z" fill="url(#sapphirePoint)" />
+    <path d="M 50 50 L 29 29 L 45 46 Z" fill="url(#sapphirePoint)" />
+
+    <!-- Branches Cardinales -->
+    <path d="M 50 14 L 50 50 L 43 45 Z" fill="url(#goldLightGrad)" />
+    <path d="M 50 14 L 57 45 L 50 50 Z" fill="url(#goldDeepGrad)" />
+    <path d="M 50 86 L 43 55 L 50 50 Z" fill="url(#goldDeepGrad)" />
+    <path d="M 50 86 L 50 50 L 57 55 Z" fill="url(#goldLightGrad)" />
+    <path d="M 86 50 L 55 43 L 50 50 Z" fill="url(#goldLightGrad)" />
+    <path d="M 86 50 L 50 50 L 55 57 Z" fill="url(#goldDeepGrad)" />
+    <path d="M 14 50 L 50 50 L 45 43 Z" fill="url(#goldDeepGrad)" />
+    <path d="M 14 50 L 45 57 L 50 50 Z" fill="url(#goldLightGrad)" />
+
+    <!-- Cœur Diamant -->
+    <polygon points="50,44 56,50 50,56 44,50" fill="#FFFFFF" />
+    <circle cx="50" cy="50" r="2.2" fill="#D97706" />
+    <circle cx="50" cy="50" r="1" fill="#FFFFFF" />
   </g>
 
   <g transform="translate(132, 24)">
-    <text x="0" y="44" fontFamily="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif" fontSize="36" fontWeight="800" letterSpacing="-0.035em" fill="#18181B">
+    <text x="0" y="44" fontFamily="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif" fontSize="36" fontWeight="850" letterSpacing="-0.035em" fill="#18181B">
       COMPTOIR
-      <tspan fill="url(#brandBlueGrad)" dx="8">CENTRAL</tspan>
+      <tspan fill="url(#textGrad)" dx="8">CENTRAL</tspan>
     </text>
     <g transform="translate(2, 68)">
-      <circle cx="4" cy="-4" r="3" fill="#0071E3" />
-      <text x="16" y="-1" fontFamily="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif" fontSize="12" fontWeight="700" letterSpacing="0.14em" fill="#64748B">
-        GESTION, IMPORT CHINE &amp; NÉGOCE
+      <text x="0" y="-1" fontFamily="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif" fontSize="13" fontWeight="700" letterSpacing="0.18em" fill="#92400E">
+        ✦ L'AUDACE SANS FRONTIÈRES
       </text>
     </g>
   </g>
@@ -433,56 +469,70 @@ export const ComptoirSvgLogo: React.FC<{
       style={{ display: 'block', maxWidth: '100%', ...style }}
     >
       <defs>
-        <linearGradient id="compIsoBg" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#1C2028" />
-          <stop offset="100%" stopColor="#0F1216" />
+        <linearGradient id="svgMonogramBg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#151821" />
+          <stop offset="100%" stopColor="#0B0D12" />
         </linearGradient>
-        <linearGradient id="compTopFacet" x1="50" y1="14" x2="50" y2="48" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#60A5FA" />
-          <stop offset="100%" stopColor="#2563EB" />
+        <linearGradient id="svgGoldLight" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#FFFBEB" />
+          <stop offset="40%" stopColor="#FDE68A" />
+          <stop offset="100%" stopColor="#F59E0B" />
         </linearGradient>
-        <linearGradient id="compLeftFacet" x1="18" y1="44" x2="50" y2="92" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#1E40AF" />
-          <stop offset="100%" stopColor="#0F2468" />
+        <linearGradient id="svgGoldDeep" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#F59E0B" />
+          <stop offset="70%" stopColor="#D97706" />
+          <stop offset="100%" stopColor="#92400E" />
         </linearGradient>
-        <linearGradient id="compRightFacet" x1="82" y1="44" x2="50" y2="92" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#38BDF8" />
-          <stop offset="100%" stopColor="#1D4ED8" />
+        <linearGradient id="svgMeridian" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.8" />
+          <stop offset="50%" stopColor="#FBBF24" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.4" />
         </linearGradient>
-        <linearGradient id="compInnerEdge" x1="50" y1="28" x2="50" y2="72" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#93C5FD" stopOpacity="0.4" />
+        <linearGradient id="svgSapphire" x1="50" y1="50" x2="70" y2="30" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#93C5FD" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.3" />
         </linearGradient>
-        <linearGradient id="compGoldAccent" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#FDE047" />
-          <stop offset="100%" stopColor="#D97706" />
-        </linearGradient>
-        <linearGradient id="compTextBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id="svgTextGrad" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stopColor="#2563EB" />
-          <stop offset="100%" stopColor="#0284C7" />
+          <stop offset="60%" stopColor="#1D4ED8" />
+          <stop offset="100%" stopColor="#D97706" />
         </linearGradient>
       </defs>
 
       <g transform="translate(12, 10)">
-        <rect x="0" y="0" width="100" height="100" rx="24" fill="url(#compIsoBg)" />
-        <rect x="0.75" y="0.75" width="98.5" height="98.5" rx="23.25" stroke="#FFFFFF" strokeWidth="1" strokeOpacity="0.15" fill="none" />
-        <path d="M 50 14 L 81 31 L 50 48 L 19 31 Z" fill="url(#compTopFacet)" />
-        <path d="M 19 33 L 48 49 L 48 83 L 19 67 Z" fill="url(#compLeftFacet)" />
-        <path d="M 52 49 L 81 33 L 81 50 L 65 59 L 65 67 L 81 58 L 81 67 L 52 83 Z" fill="url(#compRightFacet)" />
-        <path d="M 50 16 L 78 32 L 50 47 L 22 32 Z" stroke="url(#compInnerEdge)" strokeWidth="1.2" fill="none" />
-        <circle cx="50" cy="48" r="3.5" fill="url(#compGoldAccent)" />
-        <circle cx="50" cy="48" r="1.5" fill="#FFFFFF" />
+        <rect x="0" y="0" width="100" height="100" rx="25" fill="url(#svgMonogramBg)" />
+        <rect x="0.75" y="0.75" width="98.5" height="98.5" rx="24.25" stroke="#FBBF24" strokeWidth="1" strokeOpacity="0.25" fill="none" />
+        
+        <circle cx="50" cy="50" r="37" stroke="url(#svgMeridian)" strokeWidth="1.2" strokeDasharray="3 3.5" opacity="0.4" />
+        <path d="M 68 22 A 38 38 0 1 0 68 78" stroke="url(#svgMeridian)" strokeWidth="2.2" strokeLinecap="round" fill="none" opacity="0.85" />
+        
+        <path d="M 50 50 L 71 29 L 55 46 Z" fill="url(#svgSapphire)" />
+        <path d="M 50 50 L 71 71 L 55 54 Z" fill="url(#svgSapphire)" />
+        <path d="M 50 50 L 29 71 L 45 54 Z" fill="url(#svgSapphire)" />
+        <path d="M 50 50 L 29 29 L 45 46 Z" fill="url(#svgSapphire)" />
+
+        <path d="M 50 14 L 50 50 L 43 45 Z" fill="url(#svgGoldLightGrad)" />
+        <path d="M 50 14 L 57 45 L 50 50 Z" fill="url(#svgGoldDeep)" />
+        <path d="M 50 86 L 43 55 L 50 50 Z" fill="url(#svgGoldDeep)" />
+        <path d="M 50 86 L 50 50 L 57 55 Z" fill="url(#svgGoldLight)" />
+        <path d="M 86 50 L 55 43 L 50 50 Z" fill="url(#svgGoldLight)" />
+        <path d="M 86 50 L 50 50 L 55 57 Z" fill="url(#svgGoldDeep)" />
+        <path d="M 14 50 L 50 50 L 45 43 Z" fill="url(#svgGoldDeep)" />
+        <path d="M 14 50 L 45 57 L 50 50 Z" fill="url(#svgGoldLight)" />
+
+        <polygon points="50,44 56,50 50,56 44,50" fill="#FFFFFF" />
+        <circle cx="50" cy="50" r="2.2" fill="#D97706" />
+        <circle cx="50" cy="50" r="1" fill="#FFFFFF" />
       </g>
 
       <g transform="translate(132, 24)">
-        <text x="0" y="44" fontFamily="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif" fontSize="36" fontWeight="800" letterSpacing="-0.035em" fill={isDark ? '#F4F4F5' : '#18181B'}>
+        <text x="0" y="44" fontFamily="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif" fontSize="36" fontWeight="850" letterSpacing="-0.035em" fill={isDark ? '#F8FAFC' : '#18181B'}>
           COMPTOIR
-          <tspan fill="url(#compTextBlue)" dx="8">CENTRAL</tspan>
+          <tspan fill="url(#svgTextGrad)" dx="8">CENTRAL</tspan>
         </text>
         <g transform="translate(2, 68)">
-          <circle cx="4" cy="-4" r="3" fill="#0071E3" />
-          <text x="16" y="-1" fontFamily="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif" fontSize="12" fontWeight="700" letterSpacing="0.14em" fill={isDark ? '#94A3B8' : '#64748B'}>
-            GESTION, IMPORT CHINE &amp; NÉGOCE
+          <text x="0" y="-1" fontFamily="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif" fontSize="13" fontWeight="700" letterSpacing="0.18em" fill={isDark ? '#FBBF24' : '#92400E'}>
+            ✦ L'AUDACE SANS FRONTIÈRES
           </text>
         </g>
       </g>

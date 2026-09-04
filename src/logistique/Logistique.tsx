@@ -15,6 +15,7 @@ import LogistiqueStats from './LogistiqueStats';
 import ColisRow from './ColisRow';
 import ColisWizardModal from './ColisWizardModal';
 import AchatEditModal from '../achat/components/AchatEditModal';
+import AchatPaiementModal from '../achat/components/AchatPaiementModal';
 
 interface LogistiqueProps {
   products: any[];
@@ -35,11 +36,15 @@ const Logistique = memo(function Logistique({
   const [selectedCommandeId, setSelectedCommandeId] = useState<string | null>(null);
   const [selectedStep, setSelectedStep] = useState<number | undefined>(undefined);
   const [editingCommande, setEditingCommande] = useState<any | null>(null);
+  const [paiementCommande, setPaiementCommande] = useState<any | null>(null);
+  const [typePaiement, setTypePaiement] = useState<'total' | 'acompte'>('total');
+  const [montantSaisiPaiement, setMontantSaisiPaiement] = useState('');
   const [recherche, setRecherche] = useState('');
   const [filtreStatut, setFiltreStatut] = useState<string>('all');
 
   const tauxUsd = Number(devises?.usd) || 4600;
   const today = new Date().toISOString().slice(0, 10);
+  const [datePaiementChoisie, setDatePaiementChoisie] = useState(today);
 
   const updateCommandeField = (id: string, fields: Record<string, any>) => {
     updateAll(products, ventes, commandes.map((c: any) => (c.id === id ? { ...c, ...fields } : c)));
@@ -55,6 +60,13 @@ const Logistique = memo(function Logistique({
     setSelectedStep(undefined);
   };
 
+  const handlePayerFret = (commande: any) => {
+    setPaiementCommande({
+      ...commande,
+      targetCible: 'fret',
+    });
+  };
+
   const commandesLogistique = useMemo(() => {
     return [...commandes]
       .filter((c: any) => STATUTS_LOGISTIQUE.includes(c.statut) || c.statut === 'Payé' || c.qualityCheck)
@@ -68,65 +80,89 @@ const Logistique = memo(function Logistique({
   const colisFiltres = useMemo(() => {
     return commandesLogistique.filter((c: any) => {
       if (filtreStatut === 'en-cours' && c.statut === 'Arrivé' && c.qualityCheck?.isCompleted) return false;
-      if (filtreStatut === 'qc-pending' && (c.statut !== 'Arrivé' || c.qualityCheck?.isCompleted)) return false;
-      if (filtreStatut === 'completed' && (!c.qualityCheck || !c.qualityCheck?.isCompleted)) return false;
-      if (!['all', 'en-cours', 'qc-pending', 'completed'].includes(filtreStatut) && c.statut !== filtreStatut) return false;
+      if (filtreStatut === 'termine' && !(c.statut === 'Arrivé' && c.qualityCheck?.isCompleted)) return false;
 
       if (!recherche.trim()) return true;
       const q = recherche.toLowerCase();
       const p = products.find((pr: any) => pr.id === c.productId);
-      const transitaire = fournisseurs.find((f: any) => f.id === c.transitaireId);
-      return (
-        (p && p.nom.toLowerCase().includes(q)) ||
-        (c.tracking && c.tracking.toLowerCase().includes(q)) ||
-        (c.source && c.source.toLowerCase().includes(q)) ||
-        (transitaire && transitaire.nom.toLowerCase().includes(q))
-      );
+      const f = fournisseurs.find((fr: any) => fr.id === c.fournisseurId);
+      const trans = fournisseurs.find((fr: any) => fr.id === c.transitaireId);
+      const nomP = p ? p.nom.toLowerCase() : '';
+      const nomF = f ? f.nom.toLowerCase() : '';
+      const nomTrans = trans ? trans.nom.toLowerCase() : '';
+      const track = (c.tracking || '').toLowerCase();
+      const src = (c.source || '').toLowerCase();
+      return nomP.includes(q) || nomF.includes(q) || nomTrans.includes(q) || track.includes(q) || src.includes(q);
     });
   }, [commandesLogistique, filtreStatut, recherche, products, fournisseurs]);
 
-  const stats = useMemo(() => ({
-    enLivraison: commandesLogistique.filter(c => c.statut === 'En livraison').length,
-    enEntrepot: commandesLogistique.filter(c => c.statut === 'En entrepôt').length,
-    enExpedition: commandesLogistique.filter(c => c.statut === 'En expédition').length,
-    qcAfaire: commandesLogistique.filter(c => c.statut === 'Arrivé' && (!c.qualityCheck || !c.qualityCheck.isCompleted)).length,
-    termines: commandesLogistique.filter(c => c.qualityCheck?.isCompleted).length,
-  }), [commandesLogistique]);
+  const stats = useMemo(() => {
+    const total = commandesLogistique.length;
+    const termines = commandesLogistique.filter((c: any) => c.statut === 'Arrivé' && c.qualityCheck?.isCompleted).length;
+    const enCours = total - termines;
+    const aerien = commandesLogistique.filter((c: any) => (c.modeExpedition || '').toLowerCase().includes('aérien') || (c.modeExpedition || '').toLowerCase().includes('aerien')).length;
+    const maritime = commandesLogistique.filter((c: any) => (c.modeExpedition || '').toLowerCase().includes('maritime')).length;
+    const totalFretAr = commandesLogistique.reduce((acc: number, c: any) => acc + (Number(c.fraisTransport) || 0), 0);
+    return { total, enCours, termines, aerien, maritime, totalFretAr };
+  }, [commandesLogistique]);
 
-  const selectedCommande = useMemo(
-    () => commandes.find((c: any) => c.id === selectedCommandeId) || null,
-    [commandes, selectedCommandeId]
-  );
+  const selectedCommande = useMemo(() => {
+    if (!selectedCommandeId) return null;
+    return commandes.find((c: any) => c.id === selectedCommandeId) || null;
+  }, [selectedCommandeId, commandes]);
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 my-1 mb-3">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* En-tête avec Recherche et Actions */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#8A8375', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Suivi Logistique & Acheminement
-          </div>
-          <div style={{ fontSize: 11.5, color: '#5E584E', marginTop: 2 }}>
-            Assistant pas-à-pas : de l'usine chinoise au contrôle qualité final à Madagascar
-          </div>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: '#26333D', margin: 0 }}>
+            Logistique & Suivi Colis ({commandesLogistique.length})
+          </h2>
+          <p style={{ fontSize: 12, color: '#8A8375', margin: '2px 0 0 0' }}>
+            Suivi des expéditions Chine ➔ Madagascar et contrôle qualité (QC)
+          </p>
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
           {onNavigateTab && (
             <button
-              onClick={() => onNavigateTab('vente')}
+              onClick={() => onNavigateTab('achat')}
               style={{
-                height: 32,
-                padding: '0 10px',
-                borderRadius: 6,
                 fontSize: 12,
                 fontWeight: 600,
+                color: '#3D5A6C',
+                background: '#FAF7F2',
+                border: '1px solid #D8D0C0',
+                borderRadius: 6,
+                padding: '6px 10px',
                 cursor: 'pointer',
-                border: '1px solid #C4DEC0',
-                background: '#EBF4EC',
-                color: '#2C5E43',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 5,
+                gap: 4,
+                whiteSpace: 'nowrap',
+              }}
+              title="Aller au module Achats"
+            >
+              <span>🛒 Module Achats</span>
+            </button>
+          )}
+
+          {onNavigateTab && (
+            <button
+              onClick={() => onNavigateTab('vente')}
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#3F7A5C',
+                background: '#E9F2EC',
+                border: '1px solid #D1E5D9',
+                borderRadius: 6,
+                padding: '6px 10px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
                 whiteSpace: 'nowrap',
               }}
               title="Aller au module de Ventes"
@@ -160,8 +196,10 @@ const Logistique = memo(function Logistique({
               commande={c}
               product={products.find((pr: any) => pr.id === c.productId)}
               transitaire={fournisseurs.find((f: any) => f.id === c.transitaireId)}
+              paiements={paiements}
               onOuvrir={handleOuvrir}
               onEdit={setEditingCommande}
+              onPayerFret={handlePayerFret}
               onNavigateTab={onNavigateTab}
             />
           ))}
@@ -182,6 +220,29 @@ const Logistique = memo(function Logistique({
           paiements={paiements}
           today={today}
           onNavigateTab={onNavigateTab}
+        />
+      )}
+
+      {paiementCommande && (
+        <AchatPaiementModal
+          paiementCommande={paiementCommande}
+          setPaiementCommande={setPaiementCommande}
+          typePaiement={typePaiement}
+          setTypePaiement={setTypePaiement}
+          montantSaisiPaiement={montantSaisiPaiement}
+          setMontantSaisiPaiement={setMontantSaisiPaiement}
+          datePaiementChoisie={datePaiementChoisie}
+          setDatePaiementChoisie={setDatePaiementChoisie}
+          products={products}
+          commandes={commandes}
+          ventes={ventes}
+          fournisseurs={fournisseurs}
+          devises={devises}
+          today={today}
+          updateAll={updateAll}
+          updateData={updateData}
+          paiements={paiements}
+          initialCible={paiementCommande.targetCible || 'fret'}
         />
       )}
 

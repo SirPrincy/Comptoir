@@ -34,8 +34,10 @@ import {
   Building2,
   HelpCircle,
   BookOpen,
-  FileText
+  FileText,
+  Smartphone,
 } from 'lucide-react';
+import AndroidBuildHub from './AndroidBuildHub';
 import { THEME } from '../colors';
 import { FONTS, TYPOGRAPHY } from '../fonts';
 import { Card, cardTitle, Stat, inputStyle, selectStyle, primaryBtn, ghostBtn, Label, RADIUS, SHADOWS, ComptoirSvgLogo, downloadOfficialSvg, RAW_COMPTOIR_SVG } from '../ui';
@@ -542,6 +544,7 @@ export default function SystemeOutils({
         {[
           { id: 'apercu', label: 'Menu Paramètres', icon: Sliders },
           { id: 'general', label: 'Général & Thème', icon: Settings },
+          { id: 'android', label: 'Build Android / APK', icon: Smartphone },
           { id: 'devises', label: 'Taux & Devises', icon: Coins },
           { id: 'comptes', label: 'Comptes Financiers', icon: DollarSign },
           { id: 'backup', label: 'Sauvegarde & Restore', icon: HardDrive },
@@ -603,6 +606,25 @@ export default function SystemeOutils({
               </button>
               <button onClick={() => setSubTab('general')} style={{ ...ghostBtn, flex: 1, justifyContent: 'center' }}>
                 <span>OPTIONS</span>
+              </button>
+            </div>
+          </Card>
+
+          {/* CARTE 0.5 : PLATEFORME ANDROID & BUILD APK */}
+          <Card>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ fontFamily: FONTS.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.14em', color: THEME.text.muted, fontWeight: 600 }}>
+                PLATEFORME ANDROID & APK
+              </div>
+              <Smartphone size={16} color={THEME.accent.primary} />
+            </div>
+            <div style={{ fontSize: 13, color: THEME.text.secondary, lineHeight: 1.5, marginBottom: 16 }}>
+              Générez le package binaire APK Android, synchronisez les assets natifs et testez le pont API local.
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setSubTab('android')} style={{ ...primaryBtn, flex: 1, justifyContent: 'center' }}>
+                <Smartphone size={13} />
+                <span>BUILD ANDROID</span>
               </button>
             </div>
           </Card>
@@ -759,7 +781,7 @@ export default function SystemeOutils({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div style={{ fontSize: 13, color: THEME.text.secondary, lineHeight: 1.5 }}>
-                Le système utilise la palette architecturale <strong>Variation 7 (Sable & Encre)</strong> avec typographie d'atelier maritime et contraste élevé.
+                Le système applique le <strong>Thème Signature Comptoir Central</strong>, directement synchronisé avec l'emblème de la marque (Or Stellaire, Saphir Impérial &amp; Titane Nuit).
               </div>
 
               <div style={{
@@ -767,16 +789,16 @@ export default function SystemeOutils({
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '14px 16px',
-                borderRadius: 6,
+                borderRadius: RADIUS.item,
                 background: THEME.bg.soft,
                 border: `1px solid ${THEME.border.base}`,
               }}>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: 14, color: THEME.text.primary }}>
-                    Mode Actuel : {darkMode ? 'Sombre (Dark)' : 'Clair (Light)'}
+                    Mode Actuel : {darkMode ? 'Obsidienne Nuit (Dark)' : 'Platine Minéral (Light)'}
                   </div>
                   <div style={{ fontSize: 12, color: THEME.text.muted, marginTop: 2 }}>
-                    Optimisé pour les conditions de bureau ou d'entrepôt
+                    Finitions haute lisibilité et reflets d'or satiné
                   </div>
                 </div>
                 <button
@@ -789,12 +811,12 @@ export default function SystemeOutils({
               </div>
 
               <div style={{ borderTop: `1px solid ${THEME.border.base}`, paddingTop: 14 }}>
-                <Label>Aperçu de la palette</Label>
+                <Label>Harmonie issue de l'emblème</Label>
                 <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                  <div style={{ flex: 1, height: 28, background: '#F2EFE9', borderRadius: 4, border: '1px solid #D6D1C7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontFamily: FONTS.mono, color: '#1D1A16', fontWeight: 600 }}>SABLE</div>
-                  <div style={{ flex: 1, height: 28, background: '#1D1A16', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontFamily: FONTS.mono, color: '#F2EFE9', fontWeight: 600 }}>ENCRE</div>
-                  <div style={{ flex: 1, height: 28, background: '#A67C52', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontFamily: FONTS.mono, color: '#FFFFFF', fontWeight: 600 }}>CUIR</div>
-                  <div style={{ flex: 1, height: 28, background: '#2D6A4F', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontFamily: FONTS.mono, color: '#FFFFFF', fontWeight: 600 }}>VERT</div>
+                  <div style={{ flex: 1, height: 28, background: '#151821', borderRadius: 6, border: '1px solid rgba(251, 191, 36, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontFamily: FONTS.mono, color: '#FDE68A', fontWeight: 700 }}>TITANE</div>
+                  <div style={{ flex: 1, height: 28, background: '#2563EB', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontFamily: FONTS.mono, color: '#FFFFFF', fontWeight: 700 }}>SAPHIR</div>
+                  <div style={{ flex: 1, height: 28, background: '#D97706', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontFamily: FONTS.mono, color: '#FFFFFF', fontWeight: 700 }}>OR ROYAL</div>
+                  <div style={{ flex: 1, height: 28, background: '#10B981', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontFamily: FONTS.mono, color: '#FFFFFF', fontWeight: 700 }}>ÉMERAUDE</div>
                 </div>
               </div>
             </div>
@@ -954,6 +976,9 @@ export default function SystemeOutils({
           </Card>
         </div>
       )}
+
+      {/* VUE : PLATEFORME ANDROID & BUILD APK */}
+      {subTab === 'android' && <AndroidBuildHub />}
 
       {/* VUE 2 : TAUX DE DEVISES & CONVERTISSEUR */}
       {subTab === 'devises' && (

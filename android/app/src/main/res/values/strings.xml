@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Comptoir Central</string>
+    <string name="title_activity_main">Comptoir Central</string>
+    <string name="package_name">com.comptoircentral.erp</string>
+    <string name="custom_url_scheme">com.comptoircentral.erp</string>
+</resources>

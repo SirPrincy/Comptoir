@@ -5,48 +5,50 @@
   --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-mono: 'SF Mono', 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
 
-  /* Thème Apple Light - Canvas Épuré & Cartes Cristallines */
-  --bg: #F5F5F7;
-  --ink: #1D1D1F;
-  --accent: #0071E3;
-  --ink-faint: rgba(0, 0, 0, 0.04);
+  /* Thème Comptoir Central Light - Platine Minéral, Saphir & Or Ciselé */
+  --bg: #F8FAFC;
+  --ink: #0F172A;
+  --accent: #2563EB;
+  --ink-faint: rgba(15, 23, 42, 0.04);
 
-  --color-bg-base: #F5F5F7;
+  --color-bg-base: #F8FAFC;
   --color-bg-card: #FFFFFF;
-  --color-bg-surface: #F2F2F7;
-  --color-bg-soft: #FBFBFC;
-  --color-bg-inputDisabled: #E5E5EA;
-  --color-bg-alert: #FFF5F5;
-  --color-bg-chip: #EBEBED;
+  --color-bg-surface: #F1F5F9;
+  --color-bg-soft: #F8FAFC;
+  --color-bg-inputDisabled: #E2E8F0;
+  --color-bg-alert: #FEF2F2;
+  --color-bg-chip: #E2E8F0;
 
-  --color-border-base: rgba(0, 0, 0, 0.06);
-  --color-border-strong: rgba(0, 0, 0, 0.12);
+  --color-border-base: rgba(15, 23, 42, 0.08);
+  --color-border-strong: rgba(15, 23, 42, 0.14);
 
-  --color-text-primary: #1D1D1F;
-  --color-text-secondary: #6E6E73;
-  --color-text-muted: #86868B;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748B;
   --color-text-light: #FFFFFF;
 
-  /* Palette Apple HIG */
-  --color-accent-primary: #0071E3;   /* Apple Blue */
-  --color-accent-terracotta: #FF9500;/* Apple Orange / Ambre */
-  --color-accent-emerald: #34C759;   /* Apple Mint Green */
-  --color-accent-navy: #1E3A5F;      /* Space Navy */
-  --color-accent-amber: #FF9500;     /* Apple Amber */
-  --color-accent-orange: #FF9500;    /* Apple Orange */
-  --color-accent-green: #34C759;     /* Apple Green */
-  --color-accent-greenLight: #E8F8EE;
-  --color-accent-danger: #FF3B30;    /* Apple Red */
-  --color-accent-dangerSoft: #FEECEB;
-  --color-accent-purple: #5856D6;    /* Apple Indigo */
+  /* Palette Signature Issue du Logo */
+  --color-accent-primary: #2563EB;   /* Saphir Impérial */
+  --color-accent-terracotta: #D97706;/* Or Ambré du Logo */
+  --color-accent-emerald: #10B981;   /* Émeraude Profits */
+  --color-accent-navy: #0F172A;      /* Ardoise Nuit */
+  --color-accent-amber: #D97706;     /* Or Ambré */
+  --color-accent-orange: #D97706;    /* Or Chaud */
+  --color-accent-gold: #D97706;      /* Or Stellaire */
+  --color-accent-goldLight: #FEF3C7; /* Champagne Clair */
+  --color-accent-green: #10B981;     /* Vert Trésorerie */
+  --color-accent-greenLight: #ECFDF5;
+  --color-accent-danger: #EF4444;    /* Rubis Alerte */
+  --color-accent-dangerSoft: #FEF2F2;
+  --color-accent-purple: #6366F1;    /* Indigo */
 
-  --color-chart-0: #34C759; /* Apple Emerald */
-  --color-chart-1: #0071E3; /* Apple Blue */
-  --color-chart-2: #FF9500; /* Apple Orange */
-  --color-chart-3: #5856D6; /* Apple Indigo */
-  --color-chart-4: #AF52DE; /* Apple Purple */
+  --color-chart-0: #10B981; /* Émeraude */
+  --color-chart-1: #2563EB; /* Saphir Impérial */
+  --color-chart-2: #D97706; /* Or Stellaire */
+  --color-chart-3: #6366F1; /* Indigo */
+  --color-chart-4: #8B5CF6; /* Pourpre */
 
-  /* Radii Scale - Style Apple Fluide (Squircles continus) */
+  /* Radii Scale - Style Squircles continus */
   --radius-micro: 6px;
   --radius-tag: 8px;
   --radius-control: 10px;
@@ -57,65 +59,67 @@
   --radius-drawer: 24px;
   --radius-pill: 9999px;
 
-  /* Ombres Diffuses Apple */
+  /* Ombres Diffuses Apple & Comptoir */
   --shadow-none: none;
   --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
-  --shadow-card: 0 2px 12px -2px rgba(0, 0, 0, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.02);
-  --shadow-raised: 0 4px 16px -2px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03);
-  --shadow-floating: 0 12px 32px -4px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
-  --shadow-modal: 0 24px 64px -12px rgba(0, 0, 0, 0.18), 0 8px 24px -4px rgba(0, 0, 0, 0.08);
-  --shadow-drawer: 12px 0 40px -4px rgba(0, 0, 0, 0.12);
+  --shadow-subtle: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+  --shadow-card: 0 2px 12px -2px rgba(15, 23, 42, 0.05), 0 1px 3px 0 rgba(15, 23, 42, 0.02);
+  --shadow-raised: 0 4px 16px -2px rgba(15, 23, 42, 0.08), 0 1px 4px rgba(15, 23, 42, 0.03);
+  --shadow-floating: 0 12px 32px -4px rgba(15, 23, 42, 0.1), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+  --shadow-modal: 0 24px 64px -12px rgba(15, 23, 42, 0.22), 0 8px 24px -4px rgba(15, 23, 42, 0.1);
+  --shadow-drawer: 12px 0 40px -4px rgba(15, 23, 42, 0.15);
 }
 
-/* Theme Apple Dark (OLED Black & Graphite) */
+/* Thème Comptoir Central Dark — Héritage du Logo (Obsidienne Titane, Or Stellaire & Saphir) */
 .dark {
-  --bg: #000000;
-  --ink: #F5F5F7;
-  --accent: #0A84FF;
-  --ink-faint: rgba(255, 255, 255, 0.06);
+  --bg: #0B0D12;
+  --ink: #F8FAFC;
+  --accent: #3B82F6;
+  --ink-faint: rgba(254, 243, 199, 0.06);
 
-  --color-bg-base: #000000;
-  --color-bg-card: #1C1C1E;
-  --color-bg-surface: #2C2C2E;
-  --color-bg-soft: #141416;
-  --color-bg-inputDisabled: #2C2C2E;
-  --color-bg-alert: #2A1515;
-  --color-bg-chip: #2C2C2E;
+  --color-bg-base: #0B0D12;
+  --color-bg-card: #151821;
+  --color-bg-surface: #1C202B;
+  --color-bg-soft: #11131A;
+  --color-bg-inputDisabled: #1E232E;
+  --color-bg-alert: #2A1313;
+  --color-bg-chip: #1F2430;
 
-  --color-border-base: rgba(255, 255, 255, 0.08);
-  --color-border-strong: rgba(255, 255, 255, 0.16);
+  --color-border-base: rgba(251, 191, 36, 0.14);
+  --color-border-strong: rgba(251, 191, 36, 0.26);
 
-  --color-text-primary: #F5F5F7;
-  --color-text-secondary: #A1A1A6;
-  --color-text-muted: #6E6E73;
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #CBD5E1;
+  --color-text-muted: #94A3B8;
   --color-text-light: #FFFFFF;
 
-  --color-accent-primary: #0A84FF;   /* Apple Dark Blue */
-  --color-accent-terracotta: #FF9F0A;/* Apple Dark Orange */
-  --color-accent-emerald: #30D158;   /* Apple Dark Mint */
-  --color-accent-navy: #4B7AB5;      /* Bleu Clair */
-  --color-accent-amber: #FF9F0A;
-  --color-accent-orange: #FF9F0A;
-  --color-accent-green: #30D158;
-  --color-accent-greenLight: #123820;
-  --color-accent-danger: #FF453A;    /* Apple Dark Red */
-  --color-accent-dangerSoft: #3E1616;
-  --color-accent-purple: #5E5CE6;
+  --color-accent-primary: #3B82F6;   /* Saphir Luminescent */
+  --color-accent-terracotta: #F59E0B;/* Or Solaire */
+  --color-accent-emerald: #34D399;   /* Vert Menthe Océan */
+  --color-accent-navy: #60A5FA;      /* Bleu Ciel Lumineux */
+  --color-accent-amber: #F59E0B;     /* Or Éclatant */
+  --color-accent-orange: #F59E0B;
+  --color-accent-gold: #FBBF24;      /* Or Stellaire */
+  --color-accent-goldLight: #291E0A;
+  --color-accent-green: #34D399;
+  --color-accent-greenLight: #064E3B;
+  --color-accent-danger: #F87171;    /* Rubis Éclatant */
+  --color-accent-dangerSoft: #450A0A;
+  --color-accent-purple: #818CF8;
 
-  --color-chart-0: #30D158;
-  --color-chart-1: #0A84FF;
-  --color-chart-2: #FF9F0A;
-  --color-chart-3: #5E5CE6;
-  --color-chart-4: #BF5AF2;
+  --color-chart-0: #34D399;
+  --color-chart-1: #3B82F6;
+  --color-chart-2: #F59E0B;
+  --color-chart-3: #818CF8;
+  --color-chart-4: #A78BFA;
 
-  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-card: 0 2px 12px -2px rgba(0, 0, 0, 0.5), 0 1px 3px 0 rgba(0, 0, 0, 0.3);
-  --shadow-raised: 0 4px 16px -2px rgba(0, 0, 0, 0.6), 0 1px 4px rgba(0, 0, 0, 0.35);
-  --shadow-floating: 0 12px 32px -4px rgba(0, 0, 0, 0.7), 0 4px 12px -2px rgba(0, 0, 0, 0.4);
-  --shadow-modal: 0 24px 64px -12px rgba(0, 0, 0, 0.8), 0 8px 24px -4px rgba(0, 0, 0, 0.5);
-  --shadow-drawer: 12px 0 40px -4px rgba(0, 0, 0, 0.7);
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 3px 14px -2px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(254, 243, 199, 0.05);
+  --shadow-raised: 0 4px 18px -2px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(254, 243, 199, 0.08);
+  --shadow-floating: 0 12px 32px -4px rgba(0, 0, 0, 0.8), 0 4px 12px -2px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 24px 64px -12px rgba(0, 0, 0, 0.9), 0 8px 24px -4px rgba(0, 0, 0, 0.6);
+  --shadow-drawer: 12px 0 40px -4px rgba(0, 0, 0, 0.85);
 }
 
 html, body, #root {
@@ -684,4 +688,30 @@ div:has(> table), .table-responsive {
   [style*="gridTemplateColumns"] {
     grid-template-columns: 1fr !important;
   }
+}
+
+/* Optimisations Android & Native App */
+html.is-android, html.is-native-app {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+/* Safe-area insets uniquement pour conteneur natif ou écran avec encoche */
+html.is-native-app body {
+  padding-top: var(--sat);
+  padding-bottom: var(--sab);
+  padding-left: var(--sal);
+  padding-right: var(--sar);
+}
+
+input, textarea, select {
+  user-select: text !important;
 }

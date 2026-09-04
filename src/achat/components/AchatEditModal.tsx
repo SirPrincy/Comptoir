@@ -4,7 +4,13 @@ import { THEME } from '../../colors';
 import { SOURCES, STATUTS, uid } from '../../constants';
 import { Field, Modal, inputStyle, selectStyle, primaryBtn, ghostBtn, safeDateIso } from '../../ui';
 import { calculerScoreFournisseur, getQCBadgeInfo } from '../../qcUtils';
-import { getMontantPayeMarchandise, getRestePayeMarchandise } from '../../paymentUtils';
+import {
+  getMontantPayeMarchandise,
+  getRestePayeMarchandise,
+  getMontantPayeFret,
+  getRestePayeFret,
+  getStatutFretLabel,
+} from '../../paymentUtils';
 import RecommandationTransitaire from '../RecommandationTransitaire';
 
 interface AchatEditModalProps {
@@ -182,6 +188,17 @@ export default function AchatEditModal({
       ? 'Partiel'
       : 'Non payé';
 
+    const totalFretNum = Number(form.fraisTransport) || 0;
+    const dejaPayeFret = getMontantPayeFret(commande, paiements);
+    const montantPayeFret = commande.montantPayeFret !== undefined
+      ? Math.min(totalFretNum, Number(commande.montantPayeFret))
+      : dejaPayeFret;
+    const statutPaiementFret = totalFretNum <= 0
+      ? 'Inclus'
+      : (montantPayeFret >= totalFretNum
+        ? 'Payé'
+        : (montantPayeFret > 0 ? 'Partiel' : 'Non payé'));
+
     const updatedCommande = {
       ...commande,
       productId: form.productId,
@@ -196,7 +213,11 @@ export default function AchatEditModal({
       fraisLivraisonChineDevise: form.devise === 'RMB' ? Number(form.fraisLivraisonChineDevise) || 0 : undefined,
       fraisLivraisonChine: fraisChineVal,
       total: totalCalcule,
-      fraisTransport: Number(form.fraisTransport) || 0,
+      fraisTransport: totalFretNum,
+      montantPayeFret,
+      statutPaiementFret,
+      compteFret: commande.compteFret,
+      datePaiementFret: commande.datePaiementFret,
       modeExpedition: form.modeExpedition,
       modeTransport: form.modeExpedition,
       tracking: form.tracking,

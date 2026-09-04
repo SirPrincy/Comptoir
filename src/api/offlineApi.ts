@@ -1,8 +1,10 @@
 // src/api/offlineApi.ts
-// Service d'API local pour l'accès aux données de l'ERP en mode hors-ligne.
-// Accessible directement en TypeScript/JavaScript et via window.ComptoirAPI.
+// Service d'API local universel (Android WebView, Capacitor, PWA & Web).
+// Accessible directement via import TS, via window.ComptoirAPI et via fetch('/api/v1/...')
 
 import { idbGet, idbSet } from '../backup/indexedDbStore';
+import { installAndroidFetchInterceptor } from './httpInterceptor';
+import { isAndroidDevice, isAndroidNative, getAndroidDeviceInfo } from './androidBridge';
 
 export interface ErpData {
   products: any[];
@@ -25,10 +27,16 @@ export interface ErpData {
 const STORAGE_KEY = 'erp-data';
 
 /**
- * Récupère le state complet depuis IndexedDB avec fallback sur localStorage
+ * Récupère le state complet depuis IndexedDB avec fallback résilient sur localStorage
  */
 export async function getLocalErpData(): Promise<ErpData> {
-  let data = await idbGet<ErpData>(STORAGE_KEY);
+  let data: ErpData | null = null;
+  try {
+    data = await idbGet<ErpData>(STORAGE_KEY);
+  } catch (e) {
+    console.warn('[Offline API] IndexedDB indisponible, utilisation du cache mémoire/localStorage:', e);
+  }
+
   if (!data) {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -39,34 +47,39 @@ export async function getLocalErpData(): Promise<ErpData> {
   }
 
   return {
-    products: data?.products || [],
-    ventes: data?.ventes || [],
-    commandes: data?.commandes || [],
-    fournisseurs: data?.fournisseurs || [],
-    clients: data?.clients || [],
-    sourcing: data?.sourcing || [],
-    mouvements: data?.mouvements || [],
-    changes: data?.changes || [],
+    products: Array.isArray(data?.products) ? data!.products : [],
+    ventes: Array.isArray(data?.ventes) ? data!.ventes : [],
+    commandes: Array.isArray(data?.commandes) ? data!.commandes : [],
+    fournisseurs: Array.isArray(data?.fournisseurs) ? data!.fournisseurs : [],
+    clients: Array.isArray(data?.clients) ? data!.clients : [],
+    sourcing: Array.isArray(data?.sourcing) ? data!.sourcing : [],
+    mouvements: Array.isArray(data?.mouvements) ? data!.mouvements : [],
+    changes: Array.isArray(data?.changes) ? data!.changes : [],
     devises: data?.devises || { rmb: 680, usd: 4600 },
-    comptes: data?.comptes || [],
-    immobilisations: data?.immobilisations || [],
-    emprunts: data?.emprunts || [],
-    frais: data?.frais || [],
-    chargesFixes: data?.chargesFixes || [],
-    paiements: data?.paiements || [],
+    comptes: Array.isArray(data?.comptes) ? data!.comptes : ['Caisse Principale', 'Banque BNI', 'Mobile Money'],
+    immobilisations: Array.isArray(data?.immobilisations) ? data!.immobilisations : [],
+    emprunts: Array.isArray(data?.emprunts) ? data!.emprunts : [],
+    frais: Array.isArray(data?.frais) ? data!.frais : [],
+    chargesFixes: Array.isArray(data?.chargesFixes) ? data!.chargesFixes : [],
+    paiements: Array.isArray(data?.paiements) ? data!.paiements : [],
   };
 }
 
 /**
- * Persiste le state complet dans IndexedDB & localStorage
+ * Persiste le state complet dans IndexedDB & localStorage en miroir
  */
 export async function saveLocalErpData(data: ErpData): Promise<void> {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (e) {
-    console.warn('[Offline API] localStorage saturé:', e);
+    console.warn('[Offline API] localStorage saturé ou inaccessible:', e);
   }
-  await idbSet(STORAGE_KEY, data);
+  try {
+    await idbSet(STORAGE_KEY, data);
+  } catch (e) {
+    console.warn('[Offline API] Échec idbSet:', e);
+  }
+
   // Notifier l'application des changements de données
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('comptoir-data-updated', { detail: data }));
@@ -75,13 +88,20 @@ export async function saveLocalErpData(data: ErpData): Promise<void> {
 
 export const offlineApi = {
   /**
-   * Diagnostic de santé de l'API locale
+   * Diagnostic de santé de l'API locale & compatibilité Android
    */
   async ping() {
     const data = await getLocalErpData();
+    const androidInfo = getAndroidDeviceInfo();
     return {
       status: 'online_local',
-      mode: 'offline-indexeddb',
+      engine: 'Comptoir-Universal-API-v2',
+      android: {
+        isNative: androidInfo.isNative,
+        isAndroid: androidInfo.isAndroid,
+        platform: androidInfo.platform,
+        storageEngine: androidInfo.storageStatus,
+      },
       timestamp: new Date().toISOString(),
       counts: {
         products: data.products.length,
@@ -89,7 +109,20 @@ export const offlineApi = {
         commandes: data.commandes.length,
         clients: data.clients.length,
         fournisseurs: data.fournisseurs.length,
+        sourcing: data.sourcing.length,
+        mouvements: data.mouvements.length,
       },
+    };
+  },
+
+  /**
+   * Informations sur l'environnement d'exécution
+   */
+  async getSystemInfo() {
+    return {
+      device: getAndroidDeviceInfo(),
+      offlineEngineReady: true,
+      apiCapabilities: ['REST_INTERCEPTOR', 'NATIVE_BRIDGE', 'INDEXEDDB_PERSISTENCE', 'HARDWARE_BACK_BUTTON'],
     };
   },
 
@@ -115,6 +148,9 @@ export const offlineApi = {
         prixAchat: Number(product.prixAchat) || 0,
         prixVente: Number(product.prixVente) || 0,
         categorie: product.categorie || 'Bois',
+        fournisseur: product.fournisseur || '',
+        seuilAlerte: Number(product.seuilAlerte) || 5,
+        masque: product.masque === true,
         createdAt: new Date().toISOString(),
         ...product,
       };
@@ -136,6 +172,28 @@ export const offlineApi = {
       await saveLocalErpData(data);
       return { success: true, deletedId: id };
     },
+    async adjustStock(id: string, delta: number, motif = 'Ajustement API Android') {
+      const data = await getLocalErpData();
+      const idx = data.products.findIndex((p) => p.id === id);
+      if (idx === -1) throw new Error(`Produit ${id} introuvable`);
+      const oldStock = Number(data.products[idx].stock) || 0;
+      const newStock = Math.max(0, oldStock + delta);
+      data.products[idx].stock = newStock;
+      data.products[idx].updatedAt = new Date().toISOString();
+
+      // Enregistrer le mouvement
+      data.mouvements.push({
+        id: `mvt_${Date.now()}`,
+        date: new Date().toISOString().split('T')[0],
+        productId: id,
+        type: delta >= 0 ? 'ENTREE' : 'SORTIE',
+        qty: Math.abs(delta),
+        motif,
+      });
+
+      await saveLocalErpData(data);
+      return data.products[idx];
+    },
   },
 
   /**
@@ -145,6 +203,10 @@ export const offlineApi = {
     async getAll() {
       const data = await getLocalErpData();
       return data.ventes;
+    },
+    async getById(id: string) {
+      const data = await getLocalErpData();
+      return data.ventes.find((v) => v.id === id) || null;
     },
     async create(vente: any) {
       const data = await getLocalErpData();
@@ -162,7 +224,7 @@ export const offlineApi = {
         ...vente,
       };
 
-      // Mettre à jour le stock du produit en local
+      // Décrémenter le stock
       if (newVente.productId) {
         const pIdx = data.products.findIndex((p) => p.id === newVente.productId);
         if (pIdx !== -1) {
@@ -189,6 +251,10 @@ export const offlineApi = {
     async getAll() {
       const data = await getLocalErpData();
       return data.commandes;
+    },
+    async getById(id: string) {
+      const data = await getLocalErpData();
+      return data.commandes.find((c) => c.id === id) || null;
     },
     async create(commande: any) {
       const data = await getLocalErpData();
@@ -217,6 +283,12 @@ export const offlineApi = {
       await saveLocalErpData(data);
       return data.commandes[idx];
     },
+    async delete(id: string) {
+      const data = await getLocalErpData();
+      data.commandes = data.commandes.filter((c) => c.id !== id);
+      await saveLocalErpData(data);
+      return { success: true, deletedId: id };
+    },
   },
 
   /**
@@ -231,7 +303,9 @@ export const offlineApi = {
       const data = await getLocalErpData();
       const newClient = {
         id: client.id || `cli_${Date.now()}`,
-        nom: client.nom || client,
+        nom: client.nom || (typeof client === 'string' ? client : 'Nouveau Client'),
+        telephone: client.telephone || '',
+        adresse: client.adresse || '',
         createdAt: new Date().toISOString(),
       };
       data.clients.push(newClient);
@@ -246,7 +320,9 @@ export const offlineApi = {
       const data = await getLocalErpData();
       const newF = {
         id: fournisseur.id || `fourn_${Date.now()}`,
-        nom: fournisseur.nom || fournisseur,
+        nom: fournisseur.nom || (typeof fournisseur === 'string' ? fournisseur : 'Nouveau Fournisseur'),
+        contact: fournisseur.contact || '',
+        pays: fournisseur.pays || 'Chine',
         createdAt: new Date().toISOString(),
       };
       data.fournisseurs.push(newF);
@@ -256,7 +332,49 @@ export const offlineApi = {
   },
 
   /**
-   * API Synthèse Tableau de Bord
+   * API Sourcing
+   */
+  sourcing: {
+    async getAll() {
+      const data = await getLocalErpData();
+      return data.sourcing;
+    },
+    async create(item: any) {
+      const data = await getLocalErpData();
+      const newItem = {
+        id: item.id || `src_${Date.now()}`,
+        article: item.article || 'Article Sourcing',
+        fournisseur: item.fournisseur || '',
+        prixRMB: Number(item.prixRMB) || 0,
+        prixAr: Number(item.prixAr) || 0,
+        statut: item.statut || 'En recherche',
+        createdAt: new Date().toISOString(),
+        ...item,
+      };
+      data.sourcing.push(newItem);
+      await saveLocalErpData(data);
+      return newItem;
+    },
+  },
+
+  /**
+   * API Devises & Taux de Change
+   */
+  devises: {
+    async get() {
+      const data = await getLocalErpData();
+      return data.devises;
+    },
+    async update(devisesPatch: { rmb?: number; usd?: number }) {
+      const data = await getLocalErpData();
+      data.devises = { ...data.devises, ...devisesPatch };
+      await saveLocalErpData(data);
+      return data.devises;
+    },
+  },
+
+  /**
+   * API Synthèse Métriques / Dashboard
    */
   stats: {
     async getOverview() {
@@ -279,7 +397,7 @@ export const offlineApi = {
   },
 
   /**
-   * API Import / Export complet
+   * API Backup & Migration
    */
   backup: {
     async exportAll() {
@@ -292,7 +410,8 @@ export const offlineApi = {
   },
 };
 
-// Injection sur l'objet global window pour les tests et scripts tiers
+// Initialisation immédiate de l'intercepteur fetch pour Android
 if (typeof window !== 'undefined') {
+  installAndroidFetchInterceptor();
   (window as any).ComptoirAPI = offlineApi;
 }

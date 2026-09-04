@@ -5,7 +5,7 @@ import { THEME } from '../colors';
 import { SOURCES, STATUTS_LOGISTIQUE, uid } from '../constants';
 import { SectionHeader, Card, Field, Modal, Empty, inputStyle, selectStyle, primaryBtn, ghostBtn, iconBtn } from '../ui';
 import { calculerScoreFournisseur, getQCBadgeInfo } from '../qcUtils';
-import { getMontantPayeMarchandise, getRestePayeMarchandise, getStatutMarchandiseLabel, calculerSoldeRMB } from '../paymentUtils';
+import { getMontantPayeMarchandise, getRestePayeMarchandise, getMontantPayeFret, getRestePayeFret, getStatutMarchandiseLabel, calculerSoldeRMB } from '../paymentUtils';
 import RecommandationTransitaire from './RecommandationTransitaire';
 import AchatFormModal from './components/AchatFormModal';
 import AchatEditModal from './components/AchatEditModal';
@@ -74,14 +74,15 @@ const Achat = memo(function Achat({
 
   const supprimerCommande = (id: string) => updateAll(safeProducts, safeVentes, safeCommandes.filter((c: any) => c.id !== id));
 
-  // Commandes avec solde restant à payer (non payées ou avec acompte partiel)
+  // Commandes avec solde restant à payer (marchandise ou fret non payé / partiel)
   const commandesAvecSolde = safeCommandes.filter((c: any) => {
-    const reste = getRestePayeMarchandise(c, safePaiements);
-    return reste > 0 || c.statut === 'Commandé';
+    const resteM = getRestePayeMarchandise(c, safePaiements);
+    const resteF = getRestePayeFret(c, safePaiements);
+    return resteM > 0 || resteF > 0 || c.statut === 'Commandé';
   }).sort((a: any, b: any) => new Date(b.dateAchat || 0).getTime() - new Date(a.dateAchat || 0).getTime());
 
-  const soldeTotalRestantDu = commandesAvecSolde.reduce((acc, c) => acc + getRestePayeMarchandise(c, safePaiements), 0);
-  const dejaPayeesTotal = safeCommandes.filter((c: any) => getRestePayeMarchandise(c, safePaiements) <= 0 && STATUTS_LOGISTIQUE.includes(c.statut)).length;
+  const soldeTotalRestantDu = safeCommandes.reduce((acc, c) => acc + getRestePayeMarchandise(c, safePaiements) + getRestePayeFret(c, safePaiements), 0);
+  const dejaPayeesTotal = safeCommandes.filter((c: any) => getRestePayeMarchandise(c, safePaiements) <= 0 && getRestePayeFret(c, safePaiements) <= 0 && STATUTS_LOGISTIQUE.includes(c.statut)).length;
 
   return (
     <div>

@@ -331,7 +331,7 @@ export interface FournisseurStat {
 }
 
 export function calculerStatsFournisseur(fournisseurId: string, commandes: any[], paiements: any[] = []): FournisseurStat {
-  const cmds = (commandes || []).filter((c: any) => c.fournisseurId === fournisseurId);
+  const cmds = (commandes || []).filter((c: any) => c.fournisseurId === fournisseurId || c.transitaireId === fournisseurId);
   
   let totalDepenseAr = 0;
   let totalPayeAr = 0;
@@ -341,15 +341,30 @@ export function calculerStatsFournisseur(fournisseurId: string, commandes: any[]
   let premierAchatDate: string | undefined;
 
   cmds.forEach((c: any) => {
-    const totalCmd = c.total !== undefined ? Number(c.total) : (Number(c.pu || 0) * Number(c.qty || 1));
-    const payeCmd = getMontantPayeMarchandise(c, paiements);
-    const duCmd = getRestePayeMarchandise(c, paiements);
-    const qty = Number(c.qty) || 0;
+    const isFournisseur = c.fournisseurId === fournisseurId;
+    const isTransitaire = c.transitaireId === fournisseurId;
 
-    totalDepenseAr += totalCmd;
-    totalPayeAr += payeCmd;
-    totalDuAr += duCmd;
-    totalPieces += qty;
+    if (isFournisseur) {
+      const totalCmd = c.total !== undefined ? Number(c.total) : (Number(c.pu || 0) * Number(c.qty || 1));
+      const payeCmd = getMontantPayeMarchandise(c, paiements);
+      const duCmd = getRestePayeMarchandise(c, paiements);
+      const qty = Number(c.qty) || 0;
+
+      totalDepenseAr += totalCmd;
+      totalPayeAr += payeCmd;
+      totalDuAr += duCmd;
+      totalPieces += qty;
+    }
+
+    if (isTransitaire && !isFournisseur) {
+      const totalFret = Number(c.fraisTransport) || 0;
+      const payeFret = getMontantPayeFret(c, paiements);
+      const duFret = getRestePayeFret(c, paiements);
+
+      totalDepenseAr += totalFret;
+      totalPayeAr += payeFret;
+      totalDuAr += duFret;
+    }
 
     const dateStr = c.dateAchat || c.date;
     if (dateStr) {

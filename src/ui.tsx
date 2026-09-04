@@ -298,13 +298,19 @@ export const brandBtn = {
   cursor: 'pointer',
   height: 38,
   whiteSpace: 'nowrap' as const,
-  boxShadow: '0 1px 3px rgba(0, 113, 227, 0.25)',
+  boxShadow: '0 2px 8px -1px rgba(37, 99, 235, 0.35)',
+};
+
+export const goldBtn = {
+  ...brandBtn,
+  background: 'linear-gradient(135deg, #D97706 0%, #B45309 100%)',
+  boxShadow: '0 2px 8px -1px rgba(217, 119, 6, 0.35)',
 };
 
 export const terracottaBtn = {
   ...brandBtn,
   background: THEME.brand.amber,
-  boxShadow: '0 1px 3px rgba(255, 149, 0, 0.25)',
+  boxShadow: '0 2px 8px -1px rgba(217, 119, 6, 0.35)',
 };
 
 export const emeraldBtn = {
