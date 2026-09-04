@@ -33,6 +33,7 @@ export interface PnlData {
   margeBrutePct: number;
   loyerEtCharges: number;
   marketingEtPub: number;
+  deplacementsEtTransport?: number;
   fretEtLogistique: number;
   fraisGenerauxNotes: number;
   autresSorties: number;

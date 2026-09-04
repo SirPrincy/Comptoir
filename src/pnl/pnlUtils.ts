@@ -51,31 +51,22 @@ export function getProductCostBreakdown(
         puAr = Math.round(Number(c.puDevise) * taux);
       } else if (c.puRmb !== undefined && c.puRmb !== null && !isNaN(Number(c.puRmb)) && Number(c.puRmb) > 0) {
         puAr = Math.round(Number(c.puRmb) * taux);
+      } else if (c.total !== undefined && c.total !== null && !isNaN(Number(c.total)) && Number(c.total) > 0) {
+        puAr = Math.round(Number(c.total) / qty);
       }
 
       // 2. Frais transport fournisseur Chine vers entrepôt Chine (livraison locale interne Chine)
+      // Uniquement si explicitement renseigné dans la commande
       let fraisChine = 0;
       if (c.fraisLivraisonChine !== undefined && c.fraisLivraisonChine !== null && !isNaN(Number(c.fraisLivraisonChine)) && Number(c.fraisLivraisonChine) > 0) {
         fraisChine = Number(c.fraisLivraisonChine);
       } else if (c.fraisLivraisonChineDevise !== undefined && c.fraisLivraisonChineDevise !== null && !isNaN(Number(c.fraisLivraisonChineDevise)) && Number(c.fraisLivraisonChineDevise) > 0) {
         fraisChine = Math.round(Number(c.fraisLivraisonChineDevise) * taux);
-      } else if (c.fraisLivraison !== undefined && c.fraisLivraison !== null && !isNaN(Number(c.fraisLivraison)) && Number(c.fraisLivraison) > 0) {
-        fraisChine = Number(c.fraisLivraison);
       }
 
-      // 3. Montant total payé au fournisseur pour la marchandise (articles + transport interne Chine)
-      let cmdTotalMarchandise = 0;
-      if (c.total !== undefined && c.total !== null && !isNaN(Number(c.total)) && Number(c.total) > 0) {
-        cmdTotalMarchandise = Number(c.total);
-      } else {
-        cmdTotalMarchandise = (puAr * qty) + fraisChine;
-      }
-
-      // Si le total renseigné dépasse les articles purs et que fraisChine n'était pas séparé
-      if (fraisChine === 0 && cmdTotalMarchandise > (puAr * qty) && (puAr * qty) > 0) {
-        fraisChine = cmdTotalMarchandise - (puAr * qty);
-      }
-      const cmdArticles = Math.max(0, cmdTotalMarchandise - fraisChine);
+      // 3. Montant total marchandise (Articles + Frais transport interne Chine)
+      const cmdArticles = puAr * qty;
+      const cmdTotalMarchandise = cmdArticles + fraisChine;
 
       const fret = Number(c.fraisTransport || c.fretEstimeAr) || 0;
       const transportLocal = Number(c.fraisTransportLocal) || 0;
@@ -493,17 +484,18 @@ export function calculerOpex(
 ): {
   loyerEtCharges: number;
   marketingEtPub: number;
+  deplacementsEtTransport: number;
   fretEtLogistique: number;
   fraisGenerauxNotes: number;
   autresSorties: number;
 } {
   let loyerEtCharges = 0;
   let marketingEtPub = 0;
-  let fretEtLogistique = 0;
+  let deplacementsEtTransport = 0;
   let fraisGenerauxNotes = 0;
   let autresSorties = 0;
 
-  // Prise en compte des Notes de Frais
+  // Prise en compte des Notes de Frais (dépenses d'exploitation réelles)
   (frais || []).forEach((f) => {
     const mnt = Number(f.montant) || 0;
     const cat = f.categorie || '';
@@ -513,19 +505,29 @@ export function calculerOpex(
     } else if (cat === 'Marketing & Publicité') {
       marketingEtPub += mnt;
     } else if (cat === 'Déplacements & Transport') {
-      fretEtLogistique += mnt;
+      // Déplacements et transport opérationnel local (taxi, carburant, livraisons clients)
+      deplacementsEtTransport += mnt;
     } else {
       fraisGenerauxNotes += mnt;
     }
   });
 
-  // Prise en compte des mouvements de trésorerie (sorties)
+  // Prise en compte des mouvements de trésorerie (sorties d'exploitation)
   (mouvements || []).forEach((m) => {
     if (m.type === 'sortie') {
       const montant = Number(m.montant) || 0;
       const tag = m.tag || '';
+      const refLower = (m.reference || '').toLowerCase();
+      const descLower = (m.description || '').toLowerCase();
 
-      // Exclusions : Remboursements emprunts, retraits de capital / prélèvements perso (flux de capitaux propres, PAS une charge !), stock achats, immobilisations, change devise, et notes de frais
+      // Exclusions :
+      // 1. Flux de capitaux propres (retraits perso, retraits capital, prélèvements)
+      // 2. Remboursements emprunts (#remboursement)
+      // 3. Opérations de change devise (#change-rmb)
+      // 4. Immobilisations / Matériel amortissable (#materiel, immo)
+      // 5. Notes de frais (déjà comptabilisées ci-dessus via l'entité NoteDeFrais pour éviter les doublons)
+      // 6. Achats de marchandise (#stock-chine, categorie 'achat', achat stock) -> Déjà dans le COGS
+      // 7. Fret & logistique internationale Chine → Mada (#fret-logistique, categorie 'fret', paiement transitaire) -> Déjà intégré dans le COGS sur ventes !
       if (
         isRetraitCapitalOuPerso(m) ||
         tag === '#remboursement' ||
@@ -533,12 +535,22 @@ export function calculerOpex(
         tag === '#change-rmb' ||
         tag === '#materiel' ||
         tag === '#notes-de-frais' ||
-        m.reference?.toLowerCase().includes('note de frais') ||
-        m.description?.toLowerCase().includes('note de frais') ||
-        m.reference?.toLowerCase().includes('immo') ||
+        refLower.includes('note de frais') ||
+        descLower.includes('note de frais') ||
+        refLower.includes('immo') ||
         tag === '#stock-chine' ||
-        m.reference?.toLowerCase().includes('achat stock') ||
-        m.description?.toLowerCase().includes('achat de stock')
+        m.categorie === 'achat' ||
+        refLower.includes('achat stock') ||
+        descLower.includes('achat de stock') ||
+        descLower.includes('achat marchandise') ||
+        tag === '#fret-logistique' ||
+        tag === '#fret' ||
+        m.categorie === 'fret' ||
+        refLower.includes('fret') ||
+        descLower.includes('règlement fret') ||
+        descLower.includes('solde fret') ||
+        descLower.includes('frais de fret') ||
+        descLower.includes('fret transitaire')
       ) {
         return;
       }
@@ -547,8 +559,8 @@ export function calculerOpex(
         loyerEtCharges += montant;
       } else if (tag === '#marketing-pub') {
         marketingEtPub += montant;
-      } else if (tag === '#fret-logistique') {
-        fretEtLogistique += montant;
+      } else if (tag === '#transport-local' || tag === '#deplacement' || tag === '#courses') {
+        deplacementsEtTransport += montant;
       } else if (tag === '#frais-bancaires' || tag === '#amortissement') {
         return;
       } else {
@@ -560,7 +572,8 @@ export function calculerOpex(
   return {
     loyerEtCharges,
     marketingEtPub,
-    fretEtLogistique,
+    deplacementsEtTransport,
+    fretEtLogistique: deplacementsEtTransport, // alias pour rétrocompatibilité
     fraisGenerauxNotes,
     autresSorties,
   };
@@ -646,8 +659,8 @@ export function computePnlWithBounds(
   const { pertesStock, gainsInventaire, quantitePertesStock, detailsPertes } = calculerPertesEtGains(mvts, products, commandes, devises);
 
   // 5. Charges d'Exploitation (OPEX)
-  const { loyerEtCharges, marketingEtPub, fretEtLogistique, fraisGenerauxNotes, autresSorties } = calculerOpex(frs, mvts);
-  const totalOpex = loyerEtCharges + marketingEtPub + fretEtLogistique + fraisGenerauxNotes + autresSorties + pertesStock - gainsInventaire;
+  const { loyerEtCharges, marketingEtPub, deplacementsEtTransport, fretEtLogistique, fraisGenerauxNotes, autresSorties } = calculerOpex(frs, mvts);
+  const totalOpex = loyerEtCharges + marketingEtPub + deplacementsEtTransport + fraisGenerauxNotes + autresSorties + pertesStock - gainsInventaire;
 
   // 6. Dotation aux amortissements
   const dotationAmortissement = calculerDotationAmortissement(immobilisations, periode, bounds, devises);
@@ -676,6 +689,7 @@ export function computePnlWithBounds(
     margeBrutePct,
     loyerEtCharges,
     marketingEtPub,
+    deplacementsEtTransport,
     fretEtLogistique,
     fraisGenerauxNotes,
     autresSorties,

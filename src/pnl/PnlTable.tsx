@@ -304,9 +304,9 @@ export default function PnlTable({
         })}
 
         {renderRow({
-          title: 'Déplacements & Logistique générale (`#fret-logistique` & Notes)',
-          currentVal: pnl.fretEtLogistique,
-          prevVal: pnlPrevious?.fretEtLogistique,
+          title: 'Déplacements & Transport local (Notes de frais & Courses locales)',
+          currentVal: pnl.deplacementsEtTransport ?? pnl.fretEtLogistique ?? 0,
+          prevVal: pnlPrevious ? (pnlPrevious.deplacementsEtTransport ?? pnlPrevious.fretEtLogistique ?? 0) : undefined,
           prefix: '-',
           isCharge: true,
           indent: true,
