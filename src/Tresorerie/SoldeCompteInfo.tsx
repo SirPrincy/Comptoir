@@ -6,6 +6,7 @@ interface SoldeCompteInfoProps {
   soldesParCompte: Record<string, number>;
   soldeRmbDispo?: number;
   montantOperation?: number;
+  montantDevise?: number;
   typeOperation?: 'debit' | 'credit'; // 'debit' = dépense/règlement, 'credit' = encaissement/entrée
   activeComptes?: string[];
   deviseOrigine?: string;
@@ -17,6 +18,7 @@ export default function SoldeCompteInfo({
   soldesParCompte = {},
   soldeRmbDispo,
   montantOperation = 0,
+  montantDevise,
   typeOperation = 'debit',
   activeComptes = [],
   deviseOrigine,
@@ -33,9 +35,13 @@ export default function SoldeCompteInfo({
 
   // Montant effectif à déduire ou ajouter
   let montantEffectif = Number(montantOperation) || 0;
-  if (isRmb && deviseOrigine !== 'RMB' && montantEffectif > 0 && tauxRmb > 0) {
-    // Si l'opération a été saisie en Ar mais on débite le compte RMB
-    montantEffectif = montantEffectif / tauxRmb;
+  if (isRmb) {
+    if (montantDevise !== undefined && Number(montantDevise) > 0) {
+      montantEffectif = Number(montantDevise);
+    } else if (deviseOrigine !== 'RMB' && montantEffectif > 0 && tauxRmb > 0) {
+      // Si l'opération a été saisie en Ar mais on débite le compte RMB
+      montantEffectif = montantEffectif / tauxRmb;
+    }
   }
 
   const soldeApres = typeOperation === 'debit'

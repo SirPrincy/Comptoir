@@ -58,7 +58,11 @@ export default function ModalDetailTransaction({
     <Modal
       isOpen={Boolean(transaction)}
       onClose={onClose}
-      title={hasMultipleLignes ? `Bordereau de Règlement Groupé (${paiementObj.lignes.length} éléments)` : 'Détails de la Transaction'}
+      title={
+        transaction.numSeq
+          ? `Détails de la Transaction N° ${transaction.numSeq}`
+          : (hasMultipleLignes ? `Bordereau de Règlement Groupé (${paiementObj.lignes.length} éléments)` : 'Détails de la Transaction')
+      }
       maxWidth={620}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -75,7 +79,20 @@ export default function ModalDetailTransaction({
           gap: 12,
         }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+              {transaction.numSeq && (
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  padding: '3px 8px',
+                  borderRadius: 6,
+                  background: '#2C3E50',
+                  color: '#FFFFFF',
+                  letterSpacing: '0.02em',
+                }}>
+                  N° {transaction.numSeq}
+                </span>
+              )}
               <span style={{
                 fontSize: 11,
                 fontWeight: 700,

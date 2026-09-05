@@ -150,6 +150,14 @@ export default function StockItemCard({
           {/* Textes descriptifs */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
+              {(p.uidCode || p.codeUid || p.numSeq) && (
+                <span
+                  className="inline-flex items-center px-2 py-0.5 rounded-md text-[#FAF7F2] bg-[#2C3E50] font-extrabold text-[11px] tracking-wide shrink-0"
+                  title={`UID Article : ${p.uidCode || p.codeUid || `ART${String(p.numSeq).padStart(4, '0')}`}`}
+                >
+                  {p.uidCode || p.codeUid || `ART${String(p.numSeq).padStart(4, '0')}`}
+                </span>
+              )}
               <h3 className="font-bold text-base sm:text-[17px] text-[#26333D] tracking-tight leading-snug">
                 {p.nom} {p.couleur ? `· ${p.couleur}` : ''}
               </h3>

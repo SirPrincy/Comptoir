@@ -247,8 +247,13 @@ export default function AchatEditModal({
         
         {/* Résumé de la commande en cours d'édition */}
         <div style={{ background: '#FAF7F2', border: '1px solid #EAE2D4', borderRadius: 8, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-          <div style={{ fontSize: 12, color: '#5E584E' }}>
-            ID Commande : <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{commande.id}</span>
+          <div style={{ fontSize: 12, color: '#5E584E', display: 'flex', alignItems: 'center', gap: 6 }}>
+            {(commande.codeAchat || commande.uidAchat || commande.numSeq) && (
+              <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 7px', borderRadius: 4, background: '#2C3E50', color: '#FFFFFF', letterSpacing: '0.2px' }}>
+                {commande.codeAchat || commande.uidAchat || `A${String(commande.numSeq).padStart(4, '0')}`}
+              </span>
+            )}
+            <span>ID Commande : <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{commande.id}</span></span>
           </div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <span style={{ fontSize: 11.5, fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: '#E0E7FF', color: '#3730A3' }}>

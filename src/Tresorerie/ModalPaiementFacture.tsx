@@ -243,6 +243,10 @@ export default function ModalPaiementFacture({
 
                   const dateStr = item.dateAchat || item.date ? new Date(item.dateAchat || item.date).toLocaleDateString('fr-FR') : '';
 
+                  const isItemRmb = factureForm.nature === 'marchandise' && (item.deviseOrigine === 'RMB' || Number(item.puDevise) > 0);
+                  const costRmb = isItemRmb ? ((Number(item.puDevise || 0) * Number(item.qty || 1)) + Number(item.fraisLivraisonChineDevise || 0)) : 0;
+                  const resteRmb = isItemRmb && totalItem > 0 ? (resteItem / totalItem) * costRmb : costRmb;
+
                   return (
                     <div
                       key={item.id}
@@ -278,6 +282,11 @@ export default function ModalPaiementFacture({
                       <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 8 }}>
                         <div style={{ fontWeight: 700, fontSize: 12, color: '#B5532A' }}>
                           Reste: {resteItem.toLocaleString('fr-FR')} Ar
+                          {isItemRmb && resteRmb > 0 && (
+                            <span style={{ color: '#C24A3F', marginLeft: 5, fontSize: 11, fontWeight: 800 }}>
+                              ({resteRmb.toFixed(2)} ¥)
+                            </span>
+                          )}
                         </div>
                         <div style={{ fontSize: 10, color: '#736B5E' }}>
                           {payeItem > 0 ? (
@@ -354,19 +363,58 @@ export default function ModalPaiementFacture({
             </Field>
           </div>
 
-          {/* Badge Solde Portefeuille */}
-          <SoldeCompteInfo
-            compteSelectionne={factureForm.compte}
-            soldesParCompte={soldesParCompte}
-            soldeRmbDispo={soldeRmbInfo?.soldeRmbDispo}
-            montantOperation={
-              factureForm.nature === 'vente'
-                ? Math.max(0, (Number(factureForm.montant) || 0) - (Number(factureForm.frais) || 0))
-                : ((Number(factureForm.montant) || 0) + (Number(factureForm.frais) || 0))
+          {/* Calcul précis du montant en devise si le compte choisi est Réserve RMB */}
+          {(() => {
+            const isCompteRmb = factureForm.compte === 'Réserve RMB (¥)' || factureForm.compte?.toLowerCase().includes('rmb');
+            let montantDeviseForSolde: number | undefined = undefined;
+
+            if (isCompteRmb && factureForm.nature === 'marchandise') {
+              let selectedRmbTotal = 0;
+              selectedIds.forEach((id: string) => {
+                const item = itemsList.find((it: any) => it.id === id);
+                if (item) {
+                  const totalItem = item.total !== undefined ? Number(item.total) : (Number(item.pu || 0) * Number(item.qty || 1));
+                  const resteItem = getRestePayeMarchandise(item, paiements);
+                  const puRmb = Number(item.puDevise || item.puRmb || 0);
+                  const qty = Number(item.qty || 1);
+                  const fraisChineRmb = Number(item.fraisLivraisonChineDevise || 0);
+                  const costRmb = (puRmb * qty) + fraisChineRmb;
+                  if (costRmb > 0) {
+                    const itemRmb = totalItem > 0 ? (resteItem / totalItem) * costRmb : costRmb;
+                    selectedRmbTotal += itemRmb;
+                  }
+                }
+              });
+
+              if (selectedRmbTotal > 0) {
+                if (totalResteDuSelection > 0 && montantSaisi > 0) {
+                  if (montantSaisi >= totalResteDuSelection) {
+                    montantDeviseForSolde = Math.round(selectedRmbTotal * 100) / 100;
+                  } else {
+                    montantDeviseForSolde = Math.round((selectedRmbTotal * (montantSaisi / totalResteDuSelection)) * 100) / 100;
+                  }
+                }
+              }
             }
-            typeOperation={factureForm.nature === 'vente' ? 'credit' : 'debit'}
-            activeComptes={activeComptes}
-          />
+
+            return (
+              <SoldeCompteInfo
+                compteSelectionne={factureForm.compte}
+                soldesParCompte={soldesParCompte}
+                soldeRmbDispo={soldeRmbInfo?.soldeRmbDispo}
+                montantOperation={
+                  factureForm.nature === 'vente'
+                    ? Math.max(0, (Number(factureForm.montant) || 0) - (Number(factureForm.frais) || 0))
+                    : ((Number(factureForm.montant) || 0) + (Number(factureForm.frais) || 0))
+                }
+                montantDevise={montantDeviseForSolde}
+                deviseOrigine={factureForm.nature === 'marchandise' && isCompteRmb ? 'RMB' : undefined}
+                tauxRmb={soldeRmbInfo?.tauxActuel || 680}
+                typeOperation={factureForm.nature === 'vente' ? 'credit' : 'debit'}
+                activeComptes={activeComptes}
+              />
+            );
+          })()}
 
           <Field label={factureForm.nature === 'vente' ? "Client / Payeur" : "Bénéficiaire / Créancier"}>
             <input

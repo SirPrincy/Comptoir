@@ -72,17 +72,41 @@ const Achat = memo(function Achat({
   }, [safeChanges, safeMouvements, safeCommandes, devises, safePaiements]);
 
 
+  // Enrichir les commandes avec codeAchat persistant (ex: A0001)
+  const commandesWithNum = useMemo(() => {
+    const sorted = [...safeCommandes].sort((a: any, b: any) => {
+      const tA = new Date(a.dateAchat || a.datePaiement || a.date || 0).getTime();
+      const tB = new Date(b.dateAchat || b.datePaiement || b.date || 0).getTime();
+      return tA - tB;
+    });
+
+    const mapNum = new Map<string, number>();
+    sorted.forEach((c: any, idx: number) => {
+      if (c.id) mapNum.set(c.id, idx + 1);
+    });
+
+    return safeCommandes.map((c: any) => {
+      const seq = c.numSeq || mapNum.get(c.id) || 1;
+      const codeAchat = c.codeAchat || c.uidAchat || `A${String(seq).padStart(4, '0')}`;
+      return {
+        ...c,
+        numSeq: seq,
+        codeAchat,
+      };
+    });
+  }, [safeCommandes]);
+
   const supprimerCommande = (id: string) => updateAll(safeProducts, safeVentes, safeCommandes.filter((c: any) => c.id !== id));
 
   // Commandes avec solde restant à payer (marchandise ou fret non payé / partiel)
-  const commandesAvecSolde = safeCommandes.filter((c: any) => {
+  const commandesAvecSolde = commandesWithNum.filter((c: any) => {
     const resteM = getRestePayeMarchandise(c, safePaiements);
     const resteF = getRestePayeFret(c, safePaiements);
     return resteM > 0 || resteF > 0 || c.statut === 'Commandé';
   }).sort((a: any, b: any) => new Date(b.dateAchat || 0).getTime() - new Date(a.dateAchat || 0).getTime());
 
-  const soldeTotalRestantDu = safeCommandes.reduce((acc, c) => acc + getRestePayeMarchandise(c, safePaiements) + getRestePayeFret(c, safePaiements), 0);
-  const dejaPayeesTotal = safeCommandes.filter((c: any) => getRestePayeMarchandise(c, safePaiements) <= 0 && getRestePayeFret(c, safePaiements) <= 0 && STATUTS_LOGISTIQUE.includes(c.statut)).length;
+  const soldeTotalRestantDu = commandesWithNum.reduce((acc, c) => acc + getRestePayeMarchandise(c, safePaiements) + getRestePayeFret(c, safePaiements), 0);
+  const dejaPayeesTotal = commandesWithNum.filter((c: any) => getRestePayeMarchandise(c, safePaiements) <= 0 && getRestePayeFret(c, safePaiements) <= 0 && STATUTS_LOGISTIQUE.includes(c.statut)).length;
 
   return (
     <div>
@@ -207,7 +231,7 @@ const Achat = memo(function Achat({
       </div>
 
       <AchatListe 
-        commandes={subTab === 'attente' ? commandesAvecSolde : safeCommandes} 
+        commandes={subTab === 'attente' ? commandesAvecSolde : commandesWithNum} 
         products={safeProducts}
         fournisseurs={safeFournisseurs}
         searchHistory={searchHistory}

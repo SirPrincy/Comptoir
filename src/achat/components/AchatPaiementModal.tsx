@@ -81,10 +81,20 @@ export default function AchatPaiementModal({
 
   const isAchatRmb = c.deviseOrigine === 'RMB' || Number(c.puDevise) > 0;
   const tauxPaiement = c.tauxRmb || devises?.rmb || 680;
+  const totalRmbCommande = isAchatRmb
+    ? ((Number(c.puDevise || 0) * Number(c.qty || 1)) + Number(c.fraisLivraisonChineDevise || 0))
+    : 0;
+  const payeRmbPrecedent = isAchatRmb && totalMarchandise > 0
+    ? (payeMarchandise / totalMarchandise) * totalRmbCommande
+    : 0;
+  const resteDuRmb = isAchatRmb ? Math.max(0, totalRmbCommande - payeRmbPrecedent) : 0;
 
   const montantPayerAr = typePaiement === 'total' ? resteMarchandise : (Number(montantSaisiPaiement) || 0);
-  const montantPayerRmb = isAchatRmb ? (montantPayerAr / tauxPaiement) : 0;
-  const resteDuRmb = isAchatRmb ? (resteMarchandise / tauxPaiement) : 0;
+  const montantPayerRmb = isAchatRmb
+    ? (typePaiement === 'total'
+        ? resteDuRmb
+        : Math.round(((montantPayerAr / (totalMarchandise || 1)) * totalRmbCommande) * 100) / 100)
+    : 0;
 
   const isCompteRmb = compteChoisi === 'Réserve RMB (¥)';
   const isRmbInsuffisant = isCompteRmb && isAchatRmb && (montantPayerRmb > (soldeRmbInfo?.soldeRmbDispo || 0) + 0.05);
@@ -104,17 +114,21 @@ export default function AchatPaiementModal({
     const pmtMarchandise = {
       id: uid(),
       date: iso,
-      nature: 'marchandise',
+      nature: 'marchandise' as const,
       compte: compteChoisi,
       montantTotal: montantAjouteAr,
+      montantDevise: isAchatRmb ? montantPayerRmb : undefined,
+      devise: isAchatRmb ? 'RMB' : undefined,
+      tauxChange: isAchatRmb ? tauxPaiement : undefined,
       beneficiaire: c.source || fourn?.nom || 'Fournisseur Chine',
-      description: `Règlement Achat — ${p ? p.nom : 'Article'} (x${c.qty || 1})${isAchatRmb ? ` [≈ ${montantPayerRmb.toFixed(2)} ¥ @ ${tauxPaiement} Ar/¥]` : ''}`,
+      description: `Règlement Achat — ${p ? p.nom : 'Article'} (x${c.qty || 1})${isAchatRmb ? ` [${montantPayerRmb.toFixed(2)} ¥ @ ${tauxPaiement} Ar/¥]` : ''}`,
       reference: c.source || '',
       lignes: [
         {
-          cibleType: 'marchandise',
+          cibleType: 'marchandise' as const,
           cibleId: c.id,
           montantAlloue: montantAjouteAr,
+          montantAlloueDevise: isAchatRmb ? montantPayerRmb : undefined,
         },
       ],
     };
@@ -137,7 +151,7 @@ export default function AchatPaiementModal({
     const updatedCommandes = safeCommandes.map((cmd: any) => cmd.id === c.id ? {
       ...cmd,
       comptePayeur: compteChoisi,
-      payeEnMgaDirect: isMgaDirect || cmd.payeEnMgaDirect,
+      payeEnMgaDirect: isMgaDirect,
       modeReglement: isMgaDirect ? 'mga_direct' : 'reserve_rmb',
       montantPayeMarchandise: nouveauPaye,
       statutPaiementMarchandise: estEntierementPaye ? 'Payé' : 'Partiel',
@@ -328,6 +342,7 @@ export default function AchatPaiementModal({
           soldesParCompte={soldesParCompte}
           soldeRmbDispo={soldeRmbInfo?.soldeRmbDispo}
           montantOperation={montantPayerAr}
+          montantDevise={isAchatRmb && isCompteRmb ? montantPayerRmb : undefined}
           typeOperation="debit"
           activeComptes={activeComptes}
           deviseOrigine={c.deviseOrigine}

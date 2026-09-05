@@ -46,6 +46,7 @@ import SetupWizard from './setup/SetupWizard';
 import { Sparkles } from 'lucide-react';
 import { persistDouble, loadWithFallback } from './backup/indexedDbStore';
 import { verifierAutoBackupQuotidien, verifierAutoBackupApresVente, migrateDataSchema } from './backup/backupUtils';
+import { ensureProductUids, ensureCommandeUids, ensureVenteUids } from './utils/uidUtils';
 
 
 export default function App() {
@@ -157,10 +158,14 @@ export default function App() {
 
   const save = useCallback((overrides: any) => {
     const cur = stateRef.current;
+    const rawProducts = overrides.products ?? cur.products;
+    const rawCommandes = overrides.commandes ?? cur.commandes;
+    const rawVentes = overrides.ventes ?? cur.ventes;
+
     const next = {
-      products: overrides.products ?? cur.products,
-      ventes: overrides.ventes ?? cur.ventes,
-      commandes: overrides.commandes ?? cur.commandes,
+      products: ensureProductUids(rawProducts),
+      commandes: ensureCommandeUids(rawCommandes),
+      ventes: ensureVenteUids(rawVentes),
       fournisseurs: overrides.fournisseurs ?? cur.fournisseurs,
       clients: overrides.clients ?? cur.clients,
       sourcing: overrides.sourcing ?? cur.sourcing,

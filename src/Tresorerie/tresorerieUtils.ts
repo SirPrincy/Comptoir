@@ -249,7 +249,7 @@ export function buildToutesTransactions({
         const sourceLabel = c.source ? `[${c.source}]` : '';
         const statutLabel = c.statut ? ` • ${c.statut}` : '';
 
-        const isReserveRmb = (c.modeReglement === 'reserve_rmb' || String(c.comptePayeur || '').toLowerCase().includes('rmb') || String(c.comptePayeur || '').toLowerCase().includes('yuan')) && !c.payeEnMgaDirect;
+        const isReserveRmb = (c.modeReglement === 'reserve_rmb' || String(c.comptePayeur || '').toLowerCase().includes('rmb') || String(c.comptePayeur || '').toLowerCase().includes('yuan'));
         const comptePayeur = isReserveRmb ? 'Réserve RMB (¥)' : (c.comptePayeur || 'MVola');
 
         items.push({
@@ -380,6 +380,20 @@ export function buildToutesTransactions({
     }
   });
 
+  // 1. Trier par date croissante (du plus ancien au plus récent) pour la numérotation séquentielle
+  items.sort((a, b) => {
+    const tA = new Date(a.date).getTime() || 0;
+    const tB = new Date(b.date).getTime() || 0;
+    return tA - tB;
+  });
+
+  // 2. Attribuer le numéro de transaction immuable (N° 1, N° 2, N° 3...)
+  items.forEach((item, index) => {
+    item.numSeq = index + 1;
+    item.numStr = `N° ${index + 1}`;
+  });
+
+  // 3. Re-trier par date décroissante (du plus récent au plus ancien) pour l'affichage en tête de journal
   return items.sort((a, b) => {
     const tA = new Date(a.date).getTime() || 0;
     const tB = new Date(b.date).getTime() || 0;

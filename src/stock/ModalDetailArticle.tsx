@@ -247,6 +247,19 @@ export default function ModalDetailArticle({
           {/* Informations produit */}
           <div style={{ flex: '1 1 200px', minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              {(product.uidCode || product.codeUid || product.numSeq) && (
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  padding: '2px 7px',
+                  borderRadius: 4,
+                  background: '#2C3E50',
+                  color: '#FFFFFF',
+                  letterSpacing: '0.2px',
+                }}>
+                  {product.uidCode || product.codeUid || `ART${String(product.numSeq).padStart(4, '0')}`}
+                </span>
+              )}
               <span style={{ fontWeight: 800, fontSize: 16, color: '#26333D' }}>{product.nom}</span>
               {product.couleur && (
                 <span style={{ fontSize: 11, background: '#EAE2D4', color: '#5E584E', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>

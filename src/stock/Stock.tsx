@@ -1,6 +1,7 @@
 import React, { useState, useMemo, memo } from 'react';
 import { Search, History } from 'lucide-react';
 import { CATEGORIES, uid } from '../constants';
+import { getNextProductUid } from '../utils/uidUtils';
 import { SectionHeader, Card, Empty, inputStyle, selectStyle, ghostBtn } from '../ui';
 import { computeStock } from './stockUtils';
 import ModalDetailArticle from './ModalDetailArticle';
@@ -124,9 +125,17 @@ const Stock = memo(function Stock({
     return { totalUnites, valeurAchatTotale, caPotentielTotal, margePotentielle, margeGlobalPct, alertesCount };
   }, [products, stockByProduct, devises]);
 
+  // Produits enrichis avec numérotation séquentielle immuable
+  const productsWithNum = useMemo(() => {
+    return (products || []).map((p: any, idx: number) => ({
+      ...p,
+      numSeq: p.numSeq || (idx + 1),
+    }));
+  }, [products]);
+
   // Produits filtrés
   const filteredProducts = useMemo(() => {
-    return products.filter((p: any) => {
+    return productsWithNum.filter((p: any) => {
       const isArchived = Boolean(p.isArchive || p.masque || p.archive);
       const st = stockByProduct[p.id] || 0;
       const seuil = p.seuilMin !== undefined ? Number(p.seuilMin) : 3;
@@ -151,11 +160,13 @@ const Stock = memo(function Stock({
         const ref = (p.reference || '').toLowerCase();
         const cat = (p.categorie || '').toLowerCase();
         const col = (p.couleur || '').toLowerCase();
-        return nom.includes(q) || ref.includes(q) || cat.includes(q) || col.includes(q);
+        const codeUid = (p.uidCode || p.codeUid || '').toLowerCase();
+        const numStr = p.numSeq ? `n°${p.numSeq} n° ${p.numSeq} #${p.numSeq} ${p.numSeq}` : '';
+        return nom.includes(q) || ref.includes(q) || cat.includes(q) || col.includes(q) || codeUid.includes(q) || numStr.includes(q);
       }
       return true;
     });
-  }, [products, stockByProduct, stockFilter, showArchived, selectedCat, searchTerm]);
+  }, [productsWithNum, stockByProduct, stockFilter, showArchived, selectedCat, searchTerm]);
 
   // Enregistrer ou modifier un produit
   const enregistrerProduit = () => {
@@ -198,6 +209,7 @@ const Stock = memo(function Stock({
     } else {
       const p = {
         id: uid(),
+        uidCode: getNextProductUid(products),
         nom: form.nom,
         reference: form.reference,
         categorie: catFinal,

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Compass, Coins, AlertCircle } from 'lucide-react';
 import { SOURCES, uid } from '../../constants';
+import { getNextProductUid, getNextAchatUid, getNextImportUid } from '../../utils/uidUtils';
 import { Field, Modal, inputStyle, selectStyle, primaryBtn, ghostBtn, safeDateIso } from '../../ui';
 import { calculerScoreFournisseur, getQCBadgeInfo } from '../../qcUtils';
 import RecommandationTransitaire from '../RecommandationTransitaire';
@@ -43,6 +44,7 @@ export default function AchatFormModal({
     const prixAchatArNum = Number(quickProduct.prixAchatAr) || Math.round(puRmbNum * (devises?.rmb || 680));
     const newProduct = {
       id: uid(),
+      uidCode: getNextProductUid(safeProducts),
       nom: quickProduct.nom.trim(),
       couleur: quickProduct.couleur.trim() || undefined,
       puRmb: puRmbNum,
@@ -184,6 +186,8 @@ export default function AchatFormModal({
 
     const c = {
       id: uid(),
+      codeAchat: getNextAchatUid(safeCommandes),
+      codeImport: getNextImportUid(safeCommandes),
       productId: cmdForm.productId,
       source: cmdForm.source,
       fournisseurId: cmdForm.fournisseurId,
@@ -204,31 +208,38 @@ export default function AchatFormModal({
       statutPaiementMarchandise: statutPaiementInitial,
       datePaiementMarchandise: montantPayeInitial > 0 ? isoDateAchat : undefined,
       datePaiement: (montantPayeInitial >= totalCalcule && totalCalcule > 0) ? isoDateAchat : undefined,
-      payeEnMgaDirect: true,
-      modeReglement: 'mga_direct',
+      payeEnMgaDirect: cmdForm.devise === 'RMB' ? (requestedRmbAcompte > 0 ? false : undefined) : true,
+      modeReglement: cmdForm.devise === 'RMB' ? (requestedRmbAcompte > 0 ? 'reserve_rmb' : undefined) : 'mga_direct',
+      comptePayeur: cmdForm.devise === 'RMB' && requestedRmbAcompte > 0 ? 'Réserve RMB (¥)' : undefined,
       tracking: cmdForm.tracking,
       statut: (montantPayeInitial >= totalCalcule && totalCalcule > 0) ? 'En livraison' : 'Commandé',
       dateAchat: isoDateAchat,
     };
 
-
     const prod = safeProducts.find((p: any) => p.id === cmdForm.productId);
 
     if (montantPayeInitial > 0 && typeof updateData === 'function') {
+      const isPmtRmb = cmdForm.devise === 'RMB' && requestedRmbAcompte > 0;
+      const comptePmt = isPmtRmb ? 'Réserve RMB (¥)' : 'Caisse / Espèces';
+
       const nouveauPaiement = {
         id: uid(),
         date: isoDateAchat,
-        nature: 'marchandise',
-        compte: 'Caisse / Espèces',
+        nature: 'marchandise' as const,
+        compte: comptePmt,
         montantTotal: montantPayeInitial,
+        montantDevise: isPmtRmb ? requestedRmbAcompte : undefined,
+        devise: isPmtRmb ? 'RMB' : undefined,
+        tauxChange: isPmtRmb ? userTauxRmb : undefined,
         beneficiaire: cmdForm.source || 'Fournisseur Chine',
-        description: `Acompte Achat — ${prod ? prod.nom : 'Article'} (x${qtyVal})${cmdForm.devise === 'RMB' ? ` [≈ ${(montantPayeInitial / userTauxRmb).toFixed(2)} ¥ @ ${userTauxRmb} Ar/¥]` : ''}`,
+        description: `Acompte Achat — ${prod ? prod.nom : 'Article'} (x${qtyVal})${cmdForm.devise === 'RMB' ? ` [${requestedRmbAcompte.toFixed(2)} ¥ @ ${userTauxRmb} Ar/¥]` : ''}`,
         reference: cmdForm.source || '',
         lignes: [
           {
-            cibleType: 'marchandise',
+            cibleType: 'marchandise' as const,
             cibleId: c.id,
             montantAlloue: montantPayeInitial,
+            montantAlloueDevise: isPmtRmb ? requestedRmbAcompte : undefined,
           }
         ],
       };

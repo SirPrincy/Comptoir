@@ -224,7 +224,13 @@ export default function Tresorerie({
         const refMatch = item.reference?.toLowerCase().includes(q);
         const tagMatch = item.tag?.toLowerCase().includes(q);
         const compteMatch = item.compte?.toLowerCase().includes(q);
-        if (!descMatch && !refMatch && !tagMatch && !compteMatch) return false;
+        const numMatch = item.numSeq ? (
+          String(item.numSeq).includes(q) ||
+          `n°${item.numSeq}`.includes(q) ||
+          `n° ${item.numSeq}`.includes(q) ||
+          `#${item.numSeq}`.includes(q)
+        ) : false;
+        if (!descMatch && !refMatch && !tagMatch && !compteMatch && !numMatch) return false;
       }
 
       return true;

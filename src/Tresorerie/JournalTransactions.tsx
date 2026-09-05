@@ -207,11 +207,12 @@ export default function JournalTransactions({
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {transactionsFiltrees.map(item => {
+          {transactionsFiltrees.map((item, index) => {
             const badge = getCategoryBadge(item.categorie, item.tag, item.isInvestissement);
             const isPositif = item.type === 'entrée';
             const nbLignes = item.paiementObj?.lignes?.length || 0;
             const isRegroupe = nbLignes > 1;
+            const numDisplay = item.numSeq ? `N° ${item.numSeq}` : `N° ${transactionsFiltrees.length - index}`;
 
             return (
               <div
@@ -232,6 +233,23 @@ export default function JournalTransactions({
               >
                 <div style={{ flex: '1 1 200px', minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    {/* Badge de numérotation de la transaction */}
+                    <span
+                      style={{
+                        fontSize: 10.5,
+                        fontWeight: 800,
+                        padding: '2px 7px',
+                        borderRadius: 4,
+                        background: '#2C3E50',
+                        color: '#FFFFFF',
+                        whiteSpace: 'nowrap',
+                        letterSpacing: '0.2px',
+                      }}
+                      title={`Transaction ${numDisplay}`}
+                    >
+                      {numDisplay}
+                    </span>
+
                     <span
                       style={{
                         fontSize: 10.5,

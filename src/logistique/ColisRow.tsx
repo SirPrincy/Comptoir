@@ -35,6 +35,22 @@ export default function ColisRow({
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-3 bg-white border border-[#EAE2D4] rounded-lg shadow-xs">
       <div style={{ flex: '1 1 280px', minWidth: 0, width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          {(c.codeImport || c.uidImport || c.numSeq) && (
+            <span
+              style={{
+                fontSize: 10.5,
+                fontWeight: 800,
+                padding: '2px 7px',
+                borderRadius: 4,
+                background: '#2C3E50',
+                color: '#FFFFFF',
+                letterSpacing: '0.2px',
+              }}
+              title={`Code Import : ${c.codeImport || c.uidImport || `I${String(c.numSeq).padStart(4, '0')}`}`}
+            >
+              {c.codeImport || c.uidImport || `I${String(c.numSeq).padStart(4, '0')}`}
+            </span>
+          )}
           <span style={{ fontWeight: 700, fontSize: 14.5, color: '#26333D' }}>
             {p ? p.nom : 'Article commandé'} {p?.couleur ? `· ${p.couleur}` : ''}
           </span>

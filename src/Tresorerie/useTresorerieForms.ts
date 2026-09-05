@@ -248,22 +248,44 @@ export function useTresorerieForms({
     });
 
     const result = repartirPaiement(montantGlobal, itemsPayables);
-
     const dateIso = safeDateIso(factureForm.date);
-
     const fraisNum = Number(factureForm.frais) || 0;
+    const isCompteRmb = factureForm.compte === 'Réserve RMB (¥)' || factureForm.compte?.toLowerCase().includes('rmb');
+
+    let totalDeviseRmb = 0;
+    const lignesWithDevise = result.lignes.map((l: any) => {
+      if (!isCompteRmb || nature !== 'marchandise') return l;
+      const cmd = (commandes || []).find((c: any) => String(c.id) === String(l.cibleId));
+      if (cmd) {
+        const totalAchat = cmd.total !== undefined ? Number(cmd.total) : (Number(cmd.pu || 0) * Number(cmd.qty || 1));
+        const puRmb = Number(cmd.puDevise || cmd.puRmb || 0);
+        const qty = Number(cmd.qty || 1);
+        const fraisChineRmb = Number(cmd.fraisLivraisonChineDevise || 0);
+        const costRmb = (puRmb * qty) + fraisChineRmb;
+        if (costRmb > 0) {
+          const ligneRmb = (totalAchat > 0 && Number(l.montantAlloue) >= totalAchat)
+            ? costRmb
+            : (totalAchat > 0 ? Math.round((Number(l.montantAlloue) / totalAchat) * costRmb * 100) / 100 : costRmb);
+          totalDeviseRmb += ligneRmb;
+          return { ...l, montantAlloueDevise: ligneRmb };
+        }
+      }
+      return l;
+    });
 
     const nouveauPaiement = {
       id: uid(),
       nature,
       date: dateIso,
       montantTotal: montantGlobal,
+      montantDevise: isCompteRmb && totalDeviseRmb > 0 ? Math.round(totalDeviseRmb * 100) / 100 : undefined,
+      devise: isCompteRmb ? 'RMB' : undefined,
       frais: fraisNum > 0 ? fraisNum : undefined,
       compte: factureForm.compte,
       reference: factureForm.reference.trim(),
       description: factureForm.description.trim(),
       beneficiaire: factureForm.beneficiaire.trim(),
-      lignes: result.lignes,
+      lignes: lignesWithDevise,
     };
 
     const nextMvs: any[] = [];
@@ -396,8 +418,8 @@ export function useTresorerieForms({
 
           return {
             ...c,
-            payeEnMgaDirect: factureForm.compte !== 'Réserve RMB (¥)' ? true : c.payeEnMgaDirect,
-            modeReglement: factureForm.compte !== 'Réserve RMB (¥)' ? 'mga_direct' : 'reserve_rmb',
+            payeEnMgaDirect: !isCompteRmb,
+            modeReglement: isCompteRmb ? 'reserve_rmb' : 'mga_direct',
             montantPayeMarchandise: nouveauPaye,
             statutPaiementMarchandise: nouveauStatut,
             datePaiementMarchandise: isComplete ? dateIso : c.datePaiementMarchandise,

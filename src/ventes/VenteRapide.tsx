@@ -1,6 +1,7 @@
 import React, {  useState, useMemo , memo } from 'react';
 import { Trash2, CheckCircle2, Clock, Search, Filter, Calendar, User, X } from 'lucide-react';
 import { COMPTES_FINANCIERS, uid } from '../constants';
+import { getNextVenteUid } from '../utils/uidUtils';
 import { SectionHeader, Modal, Field, Empty, inputStyle, selectStyle, primaryBtn, ghostBtn, iconBtn, RADIUS, SHADOWS, safeDateIso, safeDateDisplay } from '../ui';
 import { THEME } from '../colors';
 import { computeStock } from '../stock/stockUtils';
@@ -100,6 +101,7 @@ const VenteRapide = memo(function VenteRapide({
     const venteId = uid();
     const vente = {
       id: venteId,
+      codeVente: getNextVenteUid(ventes),
       productId,
       qty: Number(qty),
       pu,
@@ -214,9 +216,33 @@ const VenteRapide = memo(function VenteRapide({
     setVenteASupprimer(null);
   };
 
+  // Ventes enrichies avec codeVente persistant (ex: V0001)
+  const ventesWithNum = useMemo(() => {
+    const sorted = [...(ventes || [])].sort((a: any, b: any) => {
+      const tA = new Date(a.date || 0).getTime();
+      const tB = new Date(b.date || 0).getTime();
+      return tA - tB;
+    });
+
+    const mapNum = new Map<string, number>();
+    sorted.forEach((v: any, idx: number) => {
+      if (v.id) mapNum.set(v.id, idx + 1);
+    });
+
+    return (ventes || []).map((v: any) => {
+      const seq = v.numSeq || mapNum.get(v.id) || 1;
+      const codeVente = v.codeVente || v.uidVente || `V${String(seq).padStart(4, '0')}`;
+      return {
+        ...v,
+        numSeq: seq,
+        codeVente,
+      };
+    });
+  }, [ventes]);
+
   // Filtrage et Tri de la liste des ventes
   const ventesFiltrees = useMemo(() => {
-    return ventes
+    return ventesWithNum
       .filter((v: any) => {
         const p = products.find((pr: any) => pr.id === v.productId);
         const cl = clients.find((c: any) => c.id === v.clientId);
@@ -236,7 +262,7 @@ const VenteRapide = memo(function VenteRapide({
         if (filterDateDebut && dateStr < filterDateDebut) return false;
         if (filterDateFin && dateStr > filterDateFin) return false;
 
-        // Recherche texte libre (produit, client, description, moyen de paiement)
+        // Recherche texte libre (produit, client, description, moyen de paiement, numéro, code)
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
           const pNom = (p?.nom || '').toLowerCase();
@@ -244,7 +270,9 @@ const VenteRapide = memo(function VenteRapide({
           const clNom = (cl?.nom || '').toLowerCase();
           const desc = (v.description || '').toLowerCase();
           const mode = (v.modePaiement || '').toLowerCase();
-          if (!pNom.includes(q) && !pCouleur.includes(q) && !clNom.includes(q) && !desc.includes(q) && !mode.includes(q)) {
+          const codeV = (v.codeVente || v.uidVente || '').toLowerCase();
+          const numStr = v.numSeq ? `n°${v.numSeq} n° ${v.numSeq} #${v.numSeq} ${v.numSeq}` : '';
+          if (!pNom.includes(q) && !pCouleur.includes(q) && !clNom.includes(q) && !desc.includes(q) && !mode.includes(q) && !codeV.includes(q) && !numStr.includes(q)) {
             return false;
           }
         }
@@ -252,7 +280,7 @@ const VenteRapide = memo(function VenteRapide({
         return true;
       })
       .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [ventes, products, clients, filterStatut, filterClientId, filterDateDebut, filterDateFin, searchQuery, paiements]);
+  }, [ventesWithNum, products, clients, filterStatut, filterClientId, filterDateDebut, filterDateFin, searchQuery, paiements]);
 
   // Totaux filtrés
   const statsFiltrees = useMemo(() => {
@@ -687,6 +715,19 @@ const VenteRapide = memo(function VenteRapide({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                   <div style={{ flex: '1 1 200px', minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      {(v.codeVente || v.uidVente || v.numSeq) && (
+                        <span style={{
+                          fontSize: 10.5,
+                          fontWeight: 800,
+                          padding: '2px 7px',
+                          borderRadius: RADIUS.tag,
+                          background: '#2C3E50',
+                          color: '#FFFFFF',
+                          letterSpacing: '0.2px',
+                        }}>
+                          {v.codeVente || v.uidVente || `V${String(v.numSeq).padStart(4, '0')}`}
+                        </span>
+                      )}
                       <span style={{ fontWeight: 600, fontSize: 14, color: THEME.text.primary }}>{p ? p.nom : '(produit supprimé)'} {p?.couleur ? `· ${p.couleur}` : ''}</span>
                       <span style={{
                         fontSize: 10.5,

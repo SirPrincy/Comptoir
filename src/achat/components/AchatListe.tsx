@@ -49,8 +49,10 @@ export default function AchatListe({
       const nomP = p ? p.nom.toLowerCase() : '';
       const nomF = f ? f.nom.toLowerCase() : '';
       const track = (c.tracking || '').toLowerCase();
+      const codeA = (c.codeAchat || c.uidAchat || '').toLowerCase();
+      const numStr = c.numSeq ? `n°${c.numSeq} n° ${c.numSeq} #${c.numSeq} ${c.numSeq}` : '';
       const q = searchHistory.toLowerCase();
-      return nomP.includes(q) || nomF.includes(q) || track.includes(q) || (c.source || '').toLowerCase().includes(q);
+      return nomP.includes(q) || nomF.includes(q) || track.includes(q) || (c.source || '').toLowerCase().includes(q) || codeA.includes(q) || numStr.includes(q);
     }).sort((a: any, b: any) => new Date(b.dateAchat || 0).getTime() - new Date(a.dateAchat || 0).getTime());
   }, [commandes, searchHistory, products, fournisseurs]);
 
@@ -91,6 +93,22 @@ export default function AchatListe({
                 title={onEditCommande ? 'Cliquer pour modifier cet achat' : undefined}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  {(c.codeAchat || c.uidAchat || c.numSeq) && (
+                    <span
+                      style={{
+                        fontSize: 10.5,
+                        fontWeight: 800,
+                        padding: '2px 7px',
+                        borderRadius: 4,
+                        background: '#2C3E50',
+                        color: '#FFFFFF',
+                        letterSpacing: '0.2px',
+                      }}
+                      title={`Code Achat : ${c.codeAchat || c.uidAchat || `A${String(c.numSeq).padStart(4, '0')}`}`}
+                    >
+                      {c.codeAchat || c.uidAchat || `A${String(c.numSeq).padStart(4, '0')}`}
+                    </span>
+                  )}
                   <Package size={16} color={THEME.text.muted} />
                   <span style={{ fontSize: 13.5, fontWeight: 700, color: THEME.accent.primary, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', textDecoration: onEditCommande ? 'underline' : 'none', textUnderlineOffset: 3 }}>
                     {p ? p.nom : 'Article supprimé'}

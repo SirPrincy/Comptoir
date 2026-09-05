@@ -59,11 +59,33 @@ const Logistique = memo(function Logistique({
   };
 
   const commandesLogistique = useMemo(() => {
-    return [...commandes]
-      .filter((c: any) => STATUTS_LOGISTIQUE.includes(c.statut) || c.statut === 'Payé' || c.qualityCheck)
+    const list = [...commandes].filter((c: any) => STATUTS_LOGISTIQUE.includes(c.statut) || c.statut === 'Payé' || c.qualityCheck);
+
+    // Tri chronologique du plus ancien au plus récent pour numérotation N° 1, N° 2...
+    const sortedAsc = [...list].sort((a, b) => {
+      const tA = new Date(a.datePaiement || a.dateAchat || a.date || 0).getTime();
+      const tB = new Date(b.datePaiement || b.dateAchat || b.date || 0).getTime();
+      return tA - tB;
+    });
+
+    const mapNum = new Map<string, number>();
+    sortedAsc.forEach((c: any, idx: number) => {
+      if (c.id) mapNum.set(c.id, idx + 1);
+    });
+
+    return list
+      .map((c: any) => {
+        const seq = c.numSeq || mapNum.get(c.id) || 1;
+        const codeImport = c.codeImport || c.uidImport || `I${String(seq).padStart(4, '0')}`;
+        return {
+          ...c,
+          numSeq: seq,
+          codeImport,
+        };
+      })
       .sort((a, b) => {
-        const tA = new Date(a.datePaiement || a.dateAchat || 0).getTime();
-        const tB = new Date(b.datePaiement || b.dateAchat || 0).getTime();
+        const tA = new Date(a.datePaiement || a.dateAchat || a.date || 0).getTime();
+        const tB = new Date(b.datePaiement || b.dateAchat || b.date || 0).getTime();
         return tB - tA;
       });
   }, [commandes]);
@@ -106,7 +128,10 @@ const Logistique = memo(function Logistique({
       const nomTrans = trans ? trans.nom.toLowerCase() : '';
       const track = (c.tracking || '').toLowerCase();
       const src = (c.source || '').toLowerCase();
-      return nomP.includes(q) || nomF.includes(q) || nomTrans.includes(q) || track.includes(q) || src.includes(q);
+      const codeImp = (c.codeImport || c.uidImport || '').toLowerCase();
+      const codeAch = (c.codeAchat || c.uidAchat || '').toLowerCase();
+      const numStr = c.numSeq ? `n°${c.numSeq} n° ${c.numSeq} #${c.numSeq} ${c.numSeq}` : '';
+      return nomP.includes(q) || nomF.includes(q) || nomTrans.includes(q) || track.includes(q) || src.includes(q) || codeImp.includes(q) || codeAch.includes(q) || numStr.includes(q);
     });
   }, [commandesLogistique, filtreStatut, recherche, autoArchiveArrives, products, fournisseurs]);
 

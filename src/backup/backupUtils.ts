@@ -2,6 +2,8 @@
 // Gère : l'export JSON, le suivi de sauvegarde, les snapshots automatiques,
 // le versionnage/migration de schéma et le diagnostic de santé des données.
 
+import { ensureProductUids, ensureCommandeUids, ensureVenteUids } from '../utils/uidUtils';
+
 const LAST_BACKUP_KEY = 'erp-last-backup-date';
 const VENTES_DEPUIS_BACKUP_KEY = 'erp-ventes-depuis-backup';
 const AUTO_SNAPSHOT_KEY = 'erp-auto-snapshot-latest';
@@ -98,8 +100,8 @@ export function migrateDataSchema(rawData: any): any {
     devises: rawData.devises && typeof rawData.devises === 'object' ? rawData.devises : { rmb: 680, usd: 4600 },
   };
 
-  // Normalisation douce des champs numériques et conservation rigoureuse des images
-  migrated.products = migrated.products.map((p: any) => {
+  // Assurer la présence des identifiants uniques (UID) persistants (ART0001, A0001, I0001, V0001)
+  migrated.products = ensureProductUids(migrated.products).map((p: any) => {
     let images: string[] = [];
     if (Array.isArray(p.images) && p.images.length > 0) {
       images = p.images.filter((img: any) => typeof img === 'string' && img.trim().length > 0);
@@ -116,7 +118,9 @@ export function migrateDataSchema(rawData: any): any {
     };
   });
 
-  migrated.ventes = migrated.ventes.map((v: any) => ({
+  migrated.commandes = ensureCommandeUids(migrated.commandes);
+
+  migrated.ventes = ensureVenteUids(migrated.ventes).map((v: any) => ({
     ...v,
     prixTotal: Number(v.prixTotal) || 0,
     paye: Number(v.paye) || 0,

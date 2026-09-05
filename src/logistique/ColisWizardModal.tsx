@@ -285,7 +285,7 @@ export default function ColisWizardModal({
   }
 
   return (
-    <Modal title={`Assistant de Suivi Logistique — ${p ? p.nom : 'Colis'}`} onClose={onClose}>
+    <Modal title={`Assistant Logistique ${commande.numSeq ? `N° ${commande.numSeq} ` : ''}— ${p ? p.nom : 'Colis'}`} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {saveNotification && (
           <div style={{ background: '#E9F2EC', border: '1px solid #C4DEC0', borderRadius: 8, padding: '10px 14px', color: '#2C5E43', fontSize: 12.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>

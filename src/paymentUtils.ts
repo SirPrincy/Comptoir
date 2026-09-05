@@ -6,6 +6,7 @@ export interface LignePaiement {
   cibleType: 'marchandise' | 'fret' | 'vente';
   cibleId: string;
   montantAlloue: number;
+  montantAlloueDevise?: number;
 }
 
 export interface Paiement {
@@ -14,6 +15,9 @@ export interface Paiement {
   nature: 'marchandise' | 'fret' | 'vente';
   compte: string;
   montantTotal: number;
+  montantDevise?: number;
+  devise?: string;
+  tauxChange?: number;
   beneficiaire?: string;
   description?: string;
   reference?: string;
@@ -203,42 +207,114 @@ export function calculerSoldeRMB(
     totalMgaChange += mga + frais;
   });
 
+  const tauxActuel = Number(devises?.rmb) || (totalRmbAchete > 0 ? Math.round(totalMgaChange / totalRmbAchete) : 680);
 
-  // 2. Ajustements manuels dans Mouvements sur compte RMB
+  // 2. Ajustements manuels dans Mouvements sur compte RMB (exclure les flux d'achats/paiements déjà comptabilisés)
   (mouvements || []).forEach((m: any) => {
+    if (m.paiementId || m.commandeId || m.categorie === 'achat' || m.tag === '#stock-chine') {
+      return; // Déjà pris en compte dans les paiements / commandes
+    }
     const compte = String(m.compte || '').toLowerCase();
     if (compte.includes('rmb') || compte.includes('yuan')) {
       const val = Number(m.montant) || 0;
-      if (m.type === 'entrée') totalRmbAchete += val;
-      else if (m.type === 'sortie') totalRmbAchete -= val;
+      // Si la saisie manuelle a été effectuée en Ariary (> 10 000 Ar), convertir en RMB au taux
+      const valRmb = val > 10000 && tauxActuel > 0 ? (val / tauxActuel) : val;
+      if (m.type === 'entrée') totalRmbAchete += valRmb;
+      else if (m.type === 'sortie') totalRmbAchete -= valRmb;
     }
   });
 
-  const tauxActuel = Number(devises?.rmb) || (totalRmbAchete > 0 ? Math.round(totalMgaChange / totalRmbAchete) : 680);
-
   // 3. RMB Dépensé UNIQUEMENT quand le compte payeur est la Réserve RMB
   let totalRmbDepense = 0;
+  const processedCommandesIds = new Set<string>();
 
   // A. Règlements explicites enregistrés dans `paiements` sur le compte RMB
   (paiements || []).forEach((p: any) => {
     const compte = String(p.compte || '').toLowerCase();
-    if (compte.includes('rmb') || compte.includes('yuan')) {
-      const montantAr = Number(p.montantTotal) || 0;
-      if (montantAr > 0) {
-        totalRmbDepense += montantAr / tauxActuel;
+    const isCompteRmb = compte.includes('rmb') || compte.includes('yuan') || p.devise === 'RMB';
+    if (!isCompteRmb) return;
+
+    // A1. Si le montant en devise est directement spécifié et qu'il n'y a pas de ventilation de lignes
+    if (Number(p.montantDevise) > 0 && (!p.lignes || p.lignes.length === 0)) {
+      totalRmbDepense += Number(p.montantDevise);
+      return;
+    }
+
+    // A2. Ventilation par lignes : identifier les commandes réelles et leur coût exact en RMB
+    if (Array.isArray(p.lignes) && p.lignes.length > 0) {
+      let rmbPmt = 0;
+      let hasRmbLigne = false;
+
+      p.lignes.forEach((l: any) => {
+        if (Number(l.montantAlloueDevise) > 0) {
+          rmbPmt += Number(l.montantAlloueDevise);
+          hasRmbLigne = true;
+          if (l.cibleId) processedCommandesIds.add(String(l.cibleId));
+          return;
+        }
+
+        const cmd = (secondesCommandes || []).find((c: any) => String(c.id) === String(l.cibleId));
+        if (cmd) {
+          processedCommandesIds.add(String(cmd.id));
+          const puRmb = Number(cmd.puDevise || cmd.puRmb || 0);
+          const qty = Number(cmd.qty || 1);
+          const fraisChineRmb = Number(cmd.fraisLivraisonChineDevise || 0);
+          const costRmb = (puRmb * qty) + fraisChineRmb;
+
+          if (costRmb > 0) {
+            hasRmbLigne = true;
+            const totalAr = cmd.total !== undefined ? Number(cmd.total) : (Number(cmd.pu || 0) * qty + Number(cmd.fraisLivraisonChine || 0));
+            const montantAlloueAr = Number(l.montantAlloue) || 0;
+
+            if (totalAr > 0 && montantAlloueAr > 0) {
+              if (montantAlloueAr >= totalAr) {
+                // Paiement complet de la commande : déduire le coût exact en RMB sans distorsion de conversion
+                rmbPmt += costRmb;
+              } else {
+                // Paiement partiel : prorata du coût RMB
+                const ratio = Math.min(1, montantAlloueAr / totalAr);
+                rmbPmt += costRmb * ratio;
+              }
+            } else if (cmd.tauxRmb && Number(cmd.tauxRmb) > 0) {
+              rmbPmt += montantAlloueAr / Number(cmd.tauxRmb);
+            } else {
+              rmbPmt += costRmb;
+            }
+          }
+        }
+      });
+
+      if (hasRmbLigne) {
+        totalRmbDepense += rmbPmt;
+        return;
       }
+    }
+
+    // A3. Si montantDevise est présent
+    if (Number(p.montantDevise) > 0) {
+      totalRmbDepense += Number(p.montantDevise);
+      return;
+    }
+
+    // A4. Repli sur le montant en Ariary converti au taux du paiement ou au taux actuel
+    const montantAr = Number(p.montantTotal) || 0;
+    const tx = Number(p.tauxChange) || tauxActuel;
+    if (montantAr > 0 && tx > 0) {
+      totalRmbDepense += montantAr / tx;
     }
   });
 
   // B. Commandes historiques payées via Réserve RMB sans enregistrement dans `paiements`
   (secondesCommandes || []).forEach((c: any) => {
+    if (processedCommandesIds.has(String(c.id))) return;
+
     const hasPmt = paiements && paiements.some((p: any) =>
-      p.nature === 'marchandise' && p.lignes?.some((l: any) => l.cibleId === c.id)
+      p.nature === 'marchandise' && p.lignes?.some((l: any) => String(l.cibleId) === String(c.id))
     );
     if (hasPmt) return; // Déjà comptabilisé via la liste des paiements
 
     const comptePayeur = String(c.comptePayeur || '').toLowerCase();
-    const isReserveRmb = (c.modeReglement === 'reserve_rmb' || comptePayeur.includes('rmb') || comptePayeur.includes('yuan')) && !c.payeEnMgaDirect;
+    const isReserveRmb = (c.modeReglement === 'reserve_rmb' || comptePayeur.includes('rmb') || comptePayeur.includes('yuan'));
 
     if (!isReserveRmb) {
       return; // Payé en Ariary direct (MVola, Caisse, Banque, etc.) => Ne pas déduire de la réserve RMB
