@@ -31,6 +31,7 @@ import TresorerieEtFrais from './Tresorerie/TresorerieEtFrais';
 import Partenaires from './partenaires/Partenaires';
 import Sourcing from './sourcing/Sourcing';
 import Dashboard from './dashboard/Dashboard';
+import { AnalyseSection } from './analyse/AnalyseSection';
 import FinancesStructurelles from './finances/FinancesStructurelles';
 import EtatsFinanciers from './finances/EtatsFinanciers';
 import SystemeOutils from './systeme/SystemeOutils';
@@ -404,6 +405,19 @@ export default function App() {
             chargesFixes={chargesFixes}
             comptes={comptes}
             onNavigateTab={(targetTab) => setTab(targetTab)}
+          />
+        )}
+        {(tab === 'analyse' || tab === 'analyses') && (
+          <AnalyseSection
+            products={products}
+            commandes={commandes}
+            ventes={ventes}
+            categories={CATEGORIES}
+            devises={devises}
+            onNavigateTab={(targetTab, preset) => {
+              if (preset) setSearchPreset(preset);
+              setTab(targetTab);
+            }}
           />
         )}
         {(tab === 'systeme' || tab === 'parametres' || tab === 'devises' || tab === 'backup' || tab === 'diagnostic' || tab === 'export-csv' || tab === 'comptes' || tab === 'api') && (

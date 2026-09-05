@@ -58,6 +58,7 @@ export const STATUT_DATE_FIELD: Record<string, string> = {
 export const SECTIONS = [
   // Groupe 1 : Pilotage & Finance
   { id: 'dashboard', label: 'Tableau de bord', group: 'Pilotage & Finance', icon: LayoutDashboard },
+  { id: 'analyse', label: 'Analyses & Sourcing', group: 'Pilotage & Finance', icon: TrendingUp },
   { id: 'tresorerie', label: 'Trésorerie & Devises', group: 'Pilotage & Finance', icon: Wallet },
   { id: 'finances-structurelles', label: 'Finances structurelles', group: 'Pilotage & Finance', icon: Building2 },
   { id: 'etats-financiers', label: 'États financiers', group: 'Pilotage & Finance', icon: FileSpreadsheet },

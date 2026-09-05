@@ -192,6 +192,7 @@ const Dashboard = memo(function Dashboard({
         content = (
           <ProductProfitabilityTable
             rentabiliteParProduit={metrics.rentabiliteParProduit}
+            onNavigateTab={onNavigateTab}
           />
         );
         break;

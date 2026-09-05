@@ -22,10 +22,12 @@ interface ProductProfitabilityItem {
 
 interface ProductProfitabilityTableProps {
   rentabiliteParProduit: ProductProfitabilityItem[];
+  onNavigateTab?: (tab: string) => void;
 }
 
 const ProductProfitabilityTable = memo(function ProductProfitabilityTable({
   rentabiliteParProduit,
+  onNavigateTab,
 }: ProductProfitabilityTableProps) {
   const [rechercheProduit, setRechercheProduit] = useState('');
   const [sortBy, setSortBy] = useState<'benefice' | 'margePct' | 'nom' | 'ca'>('benefice');
@@ -99,6 +101,28 @@ const ProductProfitabilityTable = memo(function ProductProfitabilityTable({
             <option value="ca">Tri : Chiffre d'Affaires (Ar)</option>
             <option value="nom">Tri : Nom de Produit</option>
           </select>
+          {onNavigateTab && (
+            <button
+              onClick={() => onNavigateTab('analyse')}
+              style={{
+                background: 'rgba(37, 99, 235, 0.1)',
+                border: '1px solid rgba(37, 99, 235, 0.25)',
+                color: THEME.brand.blue,
+                borderRadius: 6,
+                padding: '0 10px',
+                height: 32,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+              }}
+            >
+              <TrendingUp size={13} />
+              <span>Analyses & Sourcing</span>
+            </button>
+          )}
         </div>
       </div>
 
